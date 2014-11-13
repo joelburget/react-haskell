@@ -1,6 +1,7 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, CPP #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, CPP, LambdaCase,
+  MultiParamTypeClasses, FlexibleContexts #-}
 
-module Rascal
+module React
     ( module X
     , ReactAttrs(..)
     , defaultAttrs
@@ -13,6 +14,12 @@ module Rascal
 
     , getDomNode
     , renderComponent
+
+    , (<!)
+    , (<!?)
+
+    , className
+
     , onChange
     , onKeyDown
     , onKeyPress
@@ -35,9 +42,16 @@ import Haste.Prim
 
 import Prelude hiding (div)
 
-import Rascal.Types as X
-import Rascal.Events as X
-import Rascal.Imports as X
+import React.Types as X
+import React.Events as X
+import React.Imports as X
+
+-- TODO
+-- * restricted monads
+-- * store elem in monad
+-- * store state in monad / provide better help
+-- * provide alternative names for div, span, others?
+-- * helpers for e.g. className
 
 {-
 class MonadReact m where
@@ -48,44 +62,72 @@ instance MonadReact ReactWithChildren where
 
 class ReactAttr a where
 -}
-
 data ReactAttrs = ReactAttrs
     { attrs :: [(JSString, JSON)]
     , handlers :: [EventHandler]
     }
+
+instance Monoid ReactAttrs where
+    mempty = ReactAttrs [] []
+    (ReactAttrs a1 h1) `mappend` (ReactAttrs a2 h2) =
+        ReactAttrs (a1 <> a2) (h1 <> h2)
 
 defaultAttrs :: ReactAttrs
 defaultAttrs = ReactAttrs [] []
 
 data ReactNode = Div ReactAttrs [ReactNode]
                | Input ReactAttrs
-               | ReactStr String
-               | Pre ReactAttrs String
+               | Pre ReactAttrs [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
+               | Text ReactAttrs String
 
-data ReactM a = ReactM [ReactNode] a
+data ReactM a = ReactM ReactAttrs [ReactNode] a
 
 instance Functor ReactM where
-    f `fmap` (ReactM nodes a) = ReactM nodes (f a)
+    f `fmap` (ReactM attrs nodes a) = ReactM attrs nodes (f a)
 
 instance Applicative ReactM where
-    pure = ReactM []
-    (ReactM nf f) <*> (ReactM na a) = ReactM (nf <> na) (f a)
+    pure = ReactM defaultAttrs []
+    (ReactM af nf f) <*> (ReactM aa na a) = ReactM (af <> aa) (nf <> na) (f a)
 
 instance Monad ReactM where
     return = pure
-    (ReactM na a) >>= nf = let ReactM ns a' = nf a in ReactM (na <> ns) a'
+    (ReactM aa na a) >>= nf =
+        let ReactM as ns a' = nf a
+        in ReactM (aa <> as) (na <> ns) a'
 
 instance IsString (ReactM a) where
-    fromString str = ReactM [ReactStr str] undefined
+    fromString str = ReactM defaultAttrs [Text defaultAttrs str] undefined
 
-div :: ReactAttrs -> ReactM () -> ReactM ()
-div attrs (ReactM children _) = ReactM [Div attrs children] ()
+class Attributable h a where
+    (<!) :: h -> a -> h
 
-pre :: ReactAttrs -> String -> ReactM ()
-pre attrs str = ReactM [Pre attrs str] ()
+(<!?) :: Attributable h a => h -> (Bool, a) -> h
+h <!? (True, a) = h <! a
+h <!? (False, _) = h
 
-input :: ReactAttrs -> ReactM ()
-input attrs = ReactM [Input attrs] ()
+instance Attributable (ReactM b) (JSString, JSON) where
+    (ReactM (ReactAttrs as hs) cs x) <! attr =
+        ReactM (ReactAttrs (attr:as) hs) cs x
+
+instance Attributable (ReactM b) EventHandler where
+    (ReactM (ReactAttrs as hs) cs x) <! hndl =
+        ReactM (ReactAttrs as (hndl:hs)) cs x
+
+instance Attributable (ReactM c) a =>
+         Attributable (ReactM b -> ReactM c) a where
+    f <! attr = (<! attr) . f
+
+className :: JSString -> (JSString, JSON)
+className str = ("className", Str str)
+
+div :: ReactM () -> ReactM ()
+div (ReactM attrs children _) = ReactM defaultAttrs [Div attrs children] ()
+
+pre :: ReactM () -> ReactM ()
+pre (ReactM attrs children _) = ReactM defaultAttrs [Pre attrs children] ()
+
+input :: ReactM () -> ReactM ()
+input (ReactM attrs children _) = ReactM defaultAttrs [Input attrs] ()
 
 getDomNode :: React -> IO (Maybe Elem)
 getDomNode r = fmap fromPtr (js_React_getDomNode r)
@@ -96,17 +138,15 @@ interpretReact :: ReactM () -> IO React
 interpretReact rm = head <$> interpretReact' rm
 
 interpretReact' :: ReactM () -> IO [React]
-interpretReact' (ReactM nodes _) = mapM
-    (\node -> case node of
-        Div attrs children -> do
-            children' <- interpretReact' (ReactM children ())
-            element js_React_DOM_div attrs children'
-        Input attrs -> voidElement js_React_DOM_input attrs
-        ReactStr str -> js_React_DOM_text (toJSStr str)
-        Pre attrs str -> do
-            children <- interpretReact' (ReactM [ReactStr str] ())
-            element js_React_DOM_pre attrs children)
-    nodes
+interpretReact' (ReactM _ nodes _) = forM nodes $ \case
+    Div attrs children -> do
+        children' <- interpretReact' (ReactM defaultAttrs children ())
+        element js_React_DOM_div attrs children'
+    Input attrs -> voidElement js_React_DOM_input attrs
+    Text attrs str -> js_React_DOM_text (toJSStr str)
+    Pre attrs children -> do
+        children' <- interpretReact' (ReactM defaultAttrs children ())
+        element js_React_DOM_pre attrs children'
 
 element :: (RawAttrs -> ReactArray -> IO React)
         -> ReactAttrs
@@ -148,17 +188,18 @@ renderComponent elem r = do
 renderComponent' :: Elem -> React -> IO ()
 renderComponent' = ffi (toJSStr "(function(e,r){React.renderComponent(r,e);})")
 
-{-
-onClick :: (RawMouseEvent -> IO ()) -> EventHandler
-onClick = EventHandler . js_set_onClick . toPtr
--}
-
 -- newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 -- EventHandler :: (RawAttrs -> IO (}) -> EventHandler
 -- js_set_onChange :: Ptr (RawChangeEvent -> IO ()) -> RawAttrs -> IO ()
 
-onChange :: (ChangeEvent -> IO ()) -> EventHandler
-onChange cb = EventHandler $ js_set_onChange $ toPtr $
+makeHandler :: EventHandler -> ReactM ()
+makeHandler handler = ReactM (ReactAttrs [] [handler]) [] ()
+
+onChange :: (ChangeEvent -> IO ()) -> ReactM ()
+onChange = makeHandler . onChange'
+
+onChange' :: (ChangeEvent -> IO ()) -> EventHandler
+onChange' cb = EventHandler $ js_set_onChange $ toPtr $
     cb . fromPtr . js_parseChangeEvent
 
 onKeyDown :: (KeyboardEvent -> IO ()) -> EventHandler

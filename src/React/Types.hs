@@ -1,5 +1,5 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, CPP #-}
-module Rascal.Types where
+{-# LANGUAGE GeneralizedNewtypeDeriving, CPP, ForeignFunctionInterface #-}
+module React.Types where
 
 import Data.String
 

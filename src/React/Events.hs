@@ -1,10 +1,10 @@
 {-# LANGUAGE CPP #-}
-module Rascal.Events where
+module React.Events where
 
 #ifdef __HASTE__
 import Haste
 #else
-import Rascal.Types
+import React.Types
 #endif
 
 data EventProperties e =

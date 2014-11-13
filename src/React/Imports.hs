@@ -1,8 +1,8 @@
-{-# LANGUAGE CPP #-}
-module Rascal.Imports where
+{-# LANGUAGE CPP, ForeignFunctionInterface #-}
+module React.Imports where
 
-import Rascal.Types
-import Rascal.Events
+import React.Types
+import React.Events
 
 #ifdef __HASTE__
 import Haste
@@ -256,6 +256,7 @@ js_React_DOM_div = undefined
 -- js_React_DOM_output :: RawAttrs -> ReactArray -> IO React
 -- js_React_DOM_p :: RawAttrs -> ReactArray -> IO React
 js_React_DOM_pre :: RawAttrs -> ReactArray -> IO React
+js_React_DOM_pre = undefined
 -- js_React_DOM_progress :: RawAttrs -> ReactArray -> IO React
 -- js_React_DOM_q :: RawAttrs -> ReactArray -> IO React
 -- js_React_DOM_rp :: RawAttrs -> ReactArray -> IO React
