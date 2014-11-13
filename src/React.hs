@@ -3,8 +3,6 @@
 
 module React
     ( module X
-    , ReactAttrs(..)
-    , defaultAttrs
     , ReactNode(..)
     , ReactM(..)
 
@@ -62,41 +60,33 @@ instance MonadReact ReactWithChildren where
 
 class ReactAttr a where
 -}
-data ReactAttrs = ReactAttrs
-    { attrs :: [(JSString, JSON)]
-    , handlers :: [EventHandler]
-    }
 
-instance Monoid ReactAttrs where
-    mempty = ReactAttrs [] []
-    (ReactAttrs a1 h1) `mappend` (ReactAttrs a2 h2) =
-        ReactAttrs (a1 <> a2) (h1 <> h2)
+type Attrs = [(JSString, JSON)]
+type Handlers = [EventHandler]
 
-defaultAttrs :: ReactAttrs
-defaultAttrs = ReactAttrs [] []
+data ReactNode = Div Attrs Handlers [ReactNode]
+               | Input Attrs Handlers
+               | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
+               | Text Attrs Handlers String
 
-data ReactNode = Div ReactAttrs [ReactNode]
-               | Input ReactAttrs
-               | Pre ReactAttrs [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
-               | Text ReactAttrs String
-
-data ReactM a = ReactM ReactAttrs [ReactNode] a
+data ReactM a = ReactM Attrs Handlers [ReactNode] a
 
 instance Functor ReactM where
-    f `fmap` (ReactM attrs nodes a) = ReactM attrs nodes (f a)
+    f `fmap` (ReactM attrs handlers nodes a) = ReactM attrs handlers nodes (f a)
 
 instance Applicative ReactM where
-    pure = ReactM defaultAttrs []
-    (ReactM af nf f) <*> (ReactM aa na a) = ReactM (af <> aa) (nf <> na) (f a)
+    pure = ReactM [] [] []
+    (ReactM af hf nf f) <*> (ReactM aa ha na a) =
+        ReactM (af <> aa) (hf <> ha) (nf <> na) (f a)
 
 instance Monad ReactM where
     return = pure
-    (ReactM aa na a) >>= nf =
-        let ReactM as ns a' = nf a
-        in ReactM (aa <> as) (na <> ns) a'
+    (ReactM aa ha na a) >>= nf =
+        let ReactM as hs ns a' = nf a
+        in ReactM (aa <> as) (ha <> hs) (na <> ns) a'
 
 instance IsString (ReactM a) where
-    fromString str = ReactM defaultAttrs [Text defaultAttrs str] undefined
+    fromString str = ReactM [] [] [Text [] [] str] undefined
 
 class Attributable h a where
     (<!) :: h -> a -> h
@@ -106,12 +96,10 @@ h <!? (True, a) = h <! a
 h <!? (False, _) = h
 
 instance Attributable (ReactM b) (JSString, JSON) where
-    (ReactM (ReactAttrs as hs) cs x) <! attr =
-        ReactM (ReactAttrs (attr:as) hs) cs x
+    (ReactM as hs ns x) <! attr = ReactM (attr:as) hs ns x
 
 instance Attributable (ReactM b) EventHandler where
-    (ReactM (ReactAttrs as hs) cs x) <! hndl =
-        ReactM (ReactAttrs as (hndl:hs)) cs x
+    (ReactM as hs ns x) <! hndl = ReactM as (hndl:hs) ns x
 
 instance Attributable (ReactM c) a =>
          Attributable (ReactM b -> ReactM c) a where
@@ -121,13 +109,13 @@ className :: JSString -> (JSString, JSON)
 className str = ("className", Str str)
 
 div :: ReactM () -> ReactM ()
-div (ReactM attrs children _) = ReactM defaultAttrs [Div attrs children] ()
+div (ReactM as hs children _) = ReactM [] [] [Div as hs children] ()
 
 pre :: ReactM () -> ReactM ()
-pre (ReactM attrs children _) = ReactM defaultAttrs [Pre attrs children] ()
+pre (ReactM as hs children _) = ReactM [] [] [Pre as hs children] ()
 
 input :: ReactM () -> ReactM ()
-input (ReactM attrs children _) = ReactM defaultAttrs [Input attrs] ()
+input (ReactM as hs children _) = ReactM [] [] [Input as hs] ()
 
 getDomNode :: React -> IO (Maybe Elem)
 getDomNode r = fmap fromPtr (js_React_getDomNode r)
@@ -138,21 +126,22 @@ interpretReact :: ReactM () -> IO React
 interpretReact rm = head <$> interpretReact' rm
 
 interpretReact' :: ReactM () -> IO [React]
-interpretReact' (ReactM _ nodes _) = forM nodes $ \case
-    Div attrs children -> do
-        children' <- interpretReact' (ReactM defaultAttrs children ())
-        element js_React_DOM_div attrs children'
-    Input attrs -> voidElement js_React_DOM_input attrs
-    Text attrs str -> js_React_DOM_text (toJSStr str)
-    Pre attrs children -> do
-        children' <- interpretReact' (ReactM defaultAttrs children ())
-        element js_React_DOM_pre attrs children'
+interpretReact' (ReactM as' hs' nodes _) = forM nodes $ \case
+    Div as hs children -> do
+        children' <- interpretReact' (ReactM [] [] children ())
+        element js_React_DOM_div (as<>as') (hs<>hs') children'
+    Input as hs -> voidElement js_React_DOM_input as hs
+    Text as hs str -> js_React_DOM_text (toJSStr str)
+    Pre as hs children -> do
+        children' <- interpretReact' (ReactM [] [] children ())
+        element js_React_DOM_pre (as<>as') (hs<>hs') children'
 
 element :: (RawAttrs -> ReactArray -> IO React)
-        -> ReactAttrs
+        -> Attrs
+        -> Handlers
         -> [React]
         -> IO React
-element constructor (ReactAttrs attrs handlers) content = do
+element constructor attrs handlers content = do
     attr <- js_empty_object
     mapM_ (setField attr) attrs
     mapM_ (($ attr) . unEventHandler) handlers
@@ -162,10 +151,11 @@ element constructor (ReactAttrs attrs handlers) content = do
     constructor attr children
 
 voidElement :: (RawAttrs -> IO React)
-            -> ReactAttrs
+            -> Attrs
+            -> Handlers
             -> IO React
-voidElement constructor reactAttrs =
-    element (\a c -> constructor a) reactAttrs []
+voidElement constructor attrs handlers =
+    element (\a c -> constructor a) attrs handlers []
 
 setField :: RawAttrs -> (JSString, JSON) -> IO ()
 setField attr (fld, Str v) = js_set_field_String attr fld v
@@ -193,7 +183,7 @@ renderComponent' = ffi (toJSStr "(function(e,r){React.renderComponent(r,e);})")
 -- js_set_onChange :: Ptr (RawChangeEvent -> IO ()) -> RawAttrs -> IO ()
 
 makeHandler :: EventHandler -> ReactM ()
-makeHandler handler = ReactM (ReactAttrs [] [handler]) [] ()
+makeHandler handler = ReactM [] [handler] [] ()
 
 onChange :: (ChangeEvent -> IO ()) -> ReactM ()
 onChange = makeHandler . onChange'
