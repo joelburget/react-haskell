@@ -1,4 +1,4 @@
-# Rascal
+# React-Haskell
 
 Bindings for React under Haste.
 
