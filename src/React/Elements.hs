@@ -1,9 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Elements where
 
+-- special cases: data, main, div, span
+
 import Haste.Prim
 
 import React.Types
+
+import Prelude hiding (div, span)
 
 mkParent :: JSString -> React -> React
 mkParent str (ReactM _ _ children _) = ReactM [] [] [Parent str [] [] children] ()
@@ -29,13 +33,14 @@ caption = mkParent "caption"
 cite = mkParent "cite"
 code = mkParent "code"
 colgroup = mkParent "colgroup"
--- data = mkParent "data"
+data_ = mkParent "data" -- *
 datalist = mkParent "datalist"
 dd = mkParent "dd"
 del = mkParent "del"
 details = mkParent "details"
 dfn = mkParent "dfn"
 div = mkParent "div"
+div_ = div -- *
 dl = mkParent "dl"
 dt = mkParent "dt"
 em = mkParent "em"
@@ -60,7 +65,7 @@ kbd = mkParent "kbd"
 label = mkParent "label"
 legend = mkParent "legend"
 li = mkParent "li"
--- main = mkParent "main"
+main_ = mkParent "main" -- *
 map = mkParent "map"
 mark = mkParent "mark"
 menu = mkParent "menu"
@@ -86,6 +91,7 @@ section = mkParent "section"
 select = mkParent "select"
 small = mkParent "small"
 span = mkParent "span"
+span_ = span -- *
 strong = mkParent "strong"
 sub = mkParent "sub"
 summary = mkParent "summary"
