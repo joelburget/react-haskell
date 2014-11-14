@@ -50,6 +50,7 @@ import React.Imports as X
 -- * store state in monad / provide better help
 -- * provide alternative names for div, span, others?
 -- * helpers for e.g. className
+-- * rename away from "ReactM ()"
 
 {-
 class MonadReact m where
@@ -166,10 +167,10 @@ span (ReactM _ _ children _) = ReactM [] [] [Span [] [] children] ()
 input :: ReactM ()
 input = ReactM [] [] [Input [] []] ()
 
-interpret :: ReactM () -> IO React
+interpret :: ReactM () -> IO ForeignNode
 interpret (ReactM _ _ (node:_) _) = interpret' node
 
-interpret' :: ReactNode -> IO React
+interpret' :: ReactNode -> IO ForeignNode
 interpret' = \case
     Div as hs children -> element js_React_DOM_div as hs =<< forM children interpret'
     Input as hs -> voidElement js_React_DOM_input as hs
@@ -177,11 +178,11 @@ interpret' = \case
     Span as hs children -> element js_React_DOM_span as hs =<< forM children interpret'
     Text str -> js_React_DOM_text (toJSStr str)
 
-element :: (RawAttrs -> ReactArray -> IO React)
+element :: (RawAttrs -> ReactArray -> IO ForeignNode)
         -> Attrs
         -> Handlers
-        -> [React]
-        -> IO React
+        -> [ForeignNode]
+        -> IO ForeignNode
 element constructor attrs handlers content = do
     attr <- js_empty_object
     mapM_ (setField attr) attrs
@@ -191,10 +192,10 @@ element constructor attrs handlers content = do
     mapM_ (js_ReactArray_push children) content
     constructor attr children
 
-voidElement :: (RawAttrs -> IO React)
+voidElement :: (RawAttrs -> IO ForeignNode)
             -> Attrs
             -> Handlers
-            -> IO React
+            -> IO ForeignNode
 voidElement constructor attrs handlers =
     element (\a c -> constructor a) attrs handlers []
 
@@ -211,7 +212,7 @@ setField attr (fld, Bool False) = js_set_field_False attr fld
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
-getDomNode :: React -> IO (Maybe Elem)
+getDomNode :: ForeignNode -> IO (Maybe Elem)
 getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 render :: Elem -> ReactM () -> IO ()
@@ -219,7 +220,7 @@ render elem r = do
     r' <- interpret r
     render' elem r'
 
-render' :: Elem -> React -> IO ()
+render' :: Elem -> ForeignNode -> IO ()
 render' = ffi (toJSStr "(function(e,r){React.render(r,e);})")
 
 -- newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)

@@ -27,125 +27,125 @@ foreign import ccall js_set_onKeyPress    :: Ptr (RawKeyboardEvent -> IO ()) -> 
 foreign import ccall js_set_onKeyDown     :: Ptr (RawKeyboardEvent -> IO ()) -> RawAttrs -> IO ()
 foreign import ccall js_set_onBlur        :: Ptr (RawFocusEvent -> IO ()) -> RawAttrs -> IO ()
 
-foreign import ccall js_React_getDomNode :: React -> IO (Ptr (Maybe Elem))
+foreign import ccall js_React_getDomNode :: ForeignNode -> IO (Ptr (Maybe Elem))
 
 foreign import ccall "js_empty" js_ReactArray_empty :: IO ReactArray
-foreign import ccall "js_push" js_ReactArray_push :: ReactArray -> React -> IO ()
+foreign import ccall "js_push" js_ReactArray_push :: ReactArray -> ForeignNode -> IO ()
 
-foreign import ccall js_React_DOM_a :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_abbr :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_address :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_article :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_aside :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_audio :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_b :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_bdi :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_bdo :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_big :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_blockquote :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_body :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_button :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_canvas :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_caption :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_cite :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_code :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_colgroup :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_data :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_datalist :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_dd :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_del :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_details :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_dfn :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_div :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_dl :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_dt :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_em :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_fieldset :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_figcaption :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_figure :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_footer :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_form :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h1 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h2 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h3 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h4 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h5 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_h6 :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_head :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_header :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_html :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_i :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_iframe :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_ins :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_kbd :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_label :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_legend :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_li :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_main :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_map :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_mark :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_menu :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_menuitem :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_meter :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_nav :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_noscript :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_object :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_ol :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_optgroup :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_option :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_output :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_p :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_pre :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_progress :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_q :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_rp :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_rt :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_ruby :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_s :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_samp :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_section :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_select :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_small :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_span :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_strong :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_sub :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_summary :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_sup :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_table :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_tbody :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_td :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_tfoot :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_th :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_thead :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_time :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_tr :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_u :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_ul :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_var :: RawAttrs -> ReactArray -> IO React
-foreign import ccall js_React_DOM_video :: RawAttrs -> ReactArray -> IO React
+foreign import ccall js_React_DOM_a :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_abbr :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_address :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_article :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_aside :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_audio :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_b :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_bdi :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_bdo :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_big :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_blockquote :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_body :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_button :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_canvas :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_caption :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_cite :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_code :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_colgroup :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_data :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_datalist :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_dd :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_del :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_details :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_dfn :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_div :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_dl :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_dt :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_em :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_fieldset :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_figcaption :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_figure :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_footer :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_form :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h1 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h2 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h3 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h4 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h5 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_h6 :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_head :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_header :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_html :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_i :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_iframe :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_ins :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_kbd :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_label :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_legend :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_li :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_main :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_map :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_mark :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_menu :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_menuitem :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_meter :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_nav :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_noscript :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_object :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_ol :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_optgroup :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_option :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_output :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_p :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_pre :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_progress :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_q :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_rp :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_rt :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_ruby :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_s :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_samp :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_section :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_select :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_small :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_span :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_strong :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_sub :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_summary :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_sup :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_table :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_tbody :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_td :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_tfoot :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_th :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_thead :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_time :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_tr :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_u :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_ul :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_var :: RawAttrs -> ReactArray -> IO ForeignNode
+foreign import ccall js_React_DOM_video :: RawAttrs -> ReactArray -> IO ForeignNode
 
-foreign import ccall js_React_DOM_area :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_base :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_br :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_col :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_embed :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_hr :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_img :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_input :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_keygen :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_link :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_meta :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_param :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_source :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_track :: RawAttrs -> IO React
-foreign import ccall js_React_DOM_wbr :: RawAttrs -> IO React
+foreign import ccall js_React_DOM_area :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_base :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_br :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_col :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_embed :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_hr :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_img :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_input :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_keygen :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_link :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_meta :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_param :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_source :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_track :: RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_wbr :: RawAttrs -> IO ForeignNode
 
-foreign import ccall js_React_DOM_script :: RawAttrs -> JSString -> IO React
-foreign import ccall js_React_DOM_style :: RawAttrs -> JSString -> IO React
-foreign import ccall js_React_DOM_textarea :: RawAttrs -> JSString -> IO React
-foreign import ccall js_React_DOM_title :: RawAttrs -> JSString -> IO React
+foreign import ccall js_React_DOM_script :: RawAttrs -> JSString -> IO ForeignNode
+foreign import ccall js_React_DOM_style :: RawAttrs -> JSString -> IO ForeignNode
+foreign import ccall js_React_DOM_textarea :: RawAttrs -> JSString -> IO ForeignNode
+foreign import ccall js_React_DOM_title :: RawAttrs -> JSString -> IO ForeignNode
 
-foreign import ccall "js_id" js_React_DOM_text :: JSString -> IO React
+foreign import ccall "js_id" js_React_DOM_text :: JSString -> IO ForeignNode
 
 foreign import ccall js_parseChangeEvent :: RawChangeEvent -> Ptr ChangeEvent
 foreign import ccall js_parseKeyboardEvent :: RawKeyboardEvent -> Ptr KeyboardEvent
@@ -183,131 +183,131 @@ js_set_onKeyDown = undefined
 js_set_onBlur        :: Ptr (RawFocusEvent -> IO ()) -> RawAttrs -> IO ()
 js_set_onBlur = undefined
 
-js_React_getDomNode :: React -> IO (Ptr (Maybe Elem))
+js_React_getDomNode :: ForeignNode -> IO (Ptr (Maybe Elem))
 js_React_getDomNode = undefined
 
 js_ReactArray_empty :: IO ReactArray
 js_ReactArray_empty = undefined
-js_ReactArray_push :: ReactArray -> React -> IO ()
+js_ReactArray_push :: ReactArray -> ForeignNode -> IO ()
 js_ReactArray_push = undefined
 
--- js_React_DOM_a :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_abbr :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_address :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_article :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_aside :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_audio :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_b :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_bdi :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_bdo :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_big :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_blockquote :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_body :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_button :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_canvas :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_caption :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_cite :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_code :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_colgroup :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_data :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_datalist :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_dd :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_del :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_details :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_dfn :: RawAttrs -> ReactArray -> IO React
-js_React_DOM_div :: RawAttrs -> ReactArray -> IO React
+-- js_React_DOM_a :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_abbr :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_address :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_article :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_aside :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_audio :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_b :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_bdi :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_bdo :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_big :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_blockquote :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_body :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_button :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_canvas :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_caption :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_cite :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_code :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_colgroup :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_data :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_datalist :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_dd :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_del :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_details :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_dfn :: RawAttrs -> ReactArray -> IO ForeignNode
+js_React_DOM_div :: RawAttrs -> ReactArray -> IO ForeignNode
 js_React_DOM_div = undefined
--- js_React_DOM_dl :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_dt :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_em :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_fieldset :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_figcaption :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_figure :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_footer :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_form :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h1 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h2 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h3 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h4 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h5 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_h6 :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_head :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_header :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_html :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_i :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_iframe :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_ins :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_kbd :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_label :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_legend :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_li :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_main :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_map :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_mark :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_menu :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_menuitem :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_meter :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_nav :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_noscript :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_object :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_ol :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_optgroup :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_option :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_output :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_p :: RawAttrs -> ReactArray -> IO React
-js_React_DOM_pre :: RawAttrs -> ReactArray -> IO React
+-- js_React_DOM_dl :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_dt :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_em :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_fieldset :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_figcaption :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_figure :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_footer :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_form :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h1 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h2 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h3 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h4 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h5 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_h6 :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_head :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_header :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_html :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_i :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_iframe :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_ins :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_kbd :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_label :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_legend :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_li :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_main :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_map :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_mark :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_menu :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_menuitem :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_meter :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_nav :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_noscript :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_object :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_ol :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_optgroup :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_option :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_output :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_p :: RawAttrs -> ReactArray -> IO ForeignNode
+js_React_DOM_pre :: RawAttrs -> ReactArray -> IO ForeignNode
 js_React_DOM_pre = undefined
--- js_React_DOM_progress :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_q :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_rp :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_rt :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_ruby :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_s :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_samp :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_section :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_select :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_small :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_span :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_strong :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_sub :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_summary :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_sup :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_table :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_tbody :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_td :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_tfoot :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_th :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_thead :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_time :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_tr :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_u :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_ul :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_var :: RawAttrs -> ReactArray -> IO React
--- js_React_DOM_video :: RawAttrs -> ReactArray -> IO React
+-- js_React_DOM_progress :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_q :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_rp :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_rt :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_ruby :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_s :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_samp :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_section :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_select :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_small :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_span :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_strong :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_sub :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_summary :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_sup :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_table :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_tbody :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_td :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_tfoot :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_th :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_thead :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_time :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_tr :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_u :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_ul :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_var :: RawAttrs -> ReactArray -> IO ForeignNode
+-- js_React_DOM_video :: RawAttrs -> ReactArray -> IO ForeignNode
 --
--- js_React_DOM_area :: RawAttrs -> IO React
--- js_React_DOM_base :: RawAttrs -> IO React
--- js_React_DOM_br :: RawAttrs -> IO React
--- js_React_DOM_col :: RawAttrs -> IO React
--- js_React_DOM_embed :: RawAttrs -> IO React
--- js_React_DOM_hr :: RawAttrs -> IO React
--- js_React_DOM_img :: RawAttrs -> IO React
-js_React_DOM_input :: RawAttrs -> IO React
+-- js_React_DOM_area :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_base :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_br :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_col :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_embed :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_hr :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_img :: RawAttrs -> IO ForeignNode
+js_React_DOM_input :: RawAttrs -> IO ForeignNode
 js_React_DOM_input = undefined
--- js_React_DOM_keygen :: RawAttrs -> IO React
--- js_React_DOM_link :: RawAttrs -> IO React
--- js_React_DOM_meta :: RawAttrs -> IO React
--- js_React_DOM_param :: RawAttrs -> IO React
--- js_React_DOM_source :: RawAttrs -> IO React
--- js_React_DOM_track :: RawAttrs -> IO React
--- js_React_DOM_wbr :: RawAttrs -> IO React
+-- js_React_DOM_keygen :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_link :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_meta :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_param :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_source :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_track :: RawAttrs -> IO ForeignNode
+-- js_React_DOM_wbr :: RawAttrs -> IO ForeignNode
 --
--- js_React_DOM_script :: RawAttrs -> JSString -> IO React
--- js_React_DOM_style :: RawAttrs -> JSString -> IO React
--- js_React_DOM_textarea :: RawAttrs -> JSString -> IO React
--- js_React_DOM_title :: RawAttrs -> JSString -> IO React
+-- js_React_DOM_script :: RawAttrs -> JSString -> IO ForeignNode
+-- js_React_DOM_style :: RawAttrs -> JSString -> IO ForeignNode
+-- js_React_DOM_textarea :: RawAttrs -> JSString -> IO ForeignNode
+-- js_React_DOM_title :: RawAttrs -> JSString -> IO ForeignNode
 
-js_React_DOM_text :: JSString -> IO React
+js_React_DOM_text :: JSString -> IO ForeignNode
 js_React_DOM_text = undefined
 
 js_parseChangeEvent :: RawChangeEvent -> Ptr ChangeEvent

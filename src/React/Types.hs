@@ -9,7 +9,8 @@ import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 
-foreign import ccall "js_id" jsText :: JSString -> React
+-- TODO(joel) - move to imports?
+foreign import ccall "js_id" jsText :: JSString -> ForeignNode
 #else
 data Unpacked
 data JSString = JSSTring deriving Show
@@ -44,7 +45,7 @@ instance Unpack Elem where
 instance IsString JSString where
     fromString = undefined
 
-jsText :: JSString -> React
+jsText :: JSString -> ForeignNode
 jsText = undefined
 
 toJSStr :: String -> JSString
@@ -69,12 +70,12 @@ withElem :: String -> (Elem -> m a) -> m a
 withElem = undefined
 #endif
 
-newtype React = React JSAny deriving (Pack, Unpack)
+newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
 newtype EventHandler = EventHandler {unEventHandler :: RawAttrs -> IO ()}
 
-instance IsString React where
+instance IsString ForeignNode where
     fromString = jsText . toJSStr
 
 newtype RawMouseEvent = RawMouseEvent JSAny deriving (Pack, Unpack)
