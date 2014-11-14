@@ -28,7 +28,13 @@ library
     React.Events,
     React.Imports,
     React.Types
-  other-extensions:    OverloadedStrings, FlexibleInstances, CPP, GeneralizedNewtypeDeriving
+  other-extensions:
+    FlexibleInstances,
+    FlexibleContexts,
+    ForeignFunctionInterface,
+    GeneralizedNewtypeDeriving,
+    MultiParamTypeClasses,
+    OverloadedStrings
   build-depends:
       base,
       transformers,
