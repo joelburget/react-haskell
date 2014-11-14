@@ -65,11 +65,10 @@ class ReactAttr a where
 type Attrs = [(JSString, JSON)]
 type Handlers = [EventHandler]
 
-data ReactNode = Div Attrs Handlers [ReactNode]
-               | Input Attrs Handlers
-               | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
-               | Span Attrs Handlers [ReactNode]
-               | Text String
+data ReactNode = Parent JSString Attrs Handlers [ReactNode]
+               | Leaf JSString Attrs Handlers
+               -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
+               | Text String -- TODO(joel) JSString?
 
 {-
 instance Show ReactNode where
@@ -114,19 +113,15 @@ h <!? (False, _) = h
 
 (<!>) :: [ReactNode] -> (JSString, JSON) -> [ReactNode]
 [elem] <!> attr = [go elem] where
-    go (Div as hs cs)  = Div (attr:as) hs cs
-    go (Input as hs)   = Input (attr:as) hs
-    go (Pre as hs cs)  = Pre (attr:as) hs cs
-    go (Span as hs cs) = Span (attr:as) hs cs
+    go (Parent name as hs cs)  = Parent name (attr:as) hs cs
+    go (Leaf name as hs)   = Leaf name (attr:as) hs
     go (Text str)      = Text str
 _ <!> _ = error "attr applied to multiple elems!"
 
 (<!<) :: [ReactNode] -> EventHandler -> [ReactNode]
 [elem] <!< hndl = [go elem] where
-    go (Div as hs cs)  = Div as (hndl:hs) cs
-    go (Input as hs)   = Input as (hndl:hs)
-    go (Pre as hs cs)  = Pre as (hndl:hs) cs
-    go (Span as hs cs) = Span as (hndl:hs) cs
+    go (Parent name as hs cs)  = Parent name as (hndl:hs) cs
+    go (Leaf name as hs)   = Leaf name as (hndl:hs)
     go (Text str)      = Text str
 
 instance Attributable (ReactM b) (JSString, JSON) where
@@ -157,49 +152,49 @@ instance Attributable (ReactM c) a =>
 className :: JSString -> (JSString, JSON)
 className str = ("className", Str str)
 
-div :: React -> React
-div (ReactM _ _ children _) = ReactM [] [] [Div [] [] children] ()
+mkParent :: JSString -> React -> React
+mkParent str (ReactM _ _ children _) = ReactM [] [] [Parent str [] [] children] ()
 
-pre :: React -> React
-pre (ReactM _ _ children _) = ReactM [] [] [Pre [] [] children] ()
+mkLeaf :: JSString -> React
+mkLeaf str = ReactM [] [] [Leaf str [] []] ()
 
-span :: React -> React
-span (ReactM _ _ children _) = ReactM [] [] [Span [] [] children] ()
+div = mkParent "div"
+pre = mkParent "pre"
+span = mkParent "span"
 
-input :: React
-input = ReactM [] [] [Input [] []] ()
+input = mkLeaf "input"
 
 interpret :: React -> IO ForeignNode
 interpret (ReactM _ _ (node:_) _) = interpret' node
 
 interpret' :: ReactNode -> IO ForeignNode
 interpret' = \case
-    Div as hs children -> element js_React_DOM_div as hs =<< forM children interpret'
-    Input as hs -> voidElement js_React_DOM_input as hs
-    Pre as hs children -> element js_React_DOM_pre as hs =<< forM children interpret'
-    Span as hs children -> element js_React_DOM_span as hs =<< forM children interpret'
+    Parent name as hs children -> element js_React_DOM_parent name as hs =<< forM children interpret'
+    Leaf name as hs -> voidElement js_React_DOM_leaf name as hs
     Text str -> js_React_DOM_text (toJSStr str)
 
-element :: (RawAttrs -> ReactArray -> IO ForeignNode)
+element :: (JSString -> RawAttrs -> ReactArray -> IO ForeignNode)
+        -> JSString
         -> Attrs
         -> Handlers
         -> [ForeignNode]
         -> IO ForeignNode
-element constructor attrs handlers content = do
+element constructor name attrs handlers content = do
     attr <- js_empty_object
     mapM_ (setField attr) attrs
     mapM_ (($ attr) . unEventHandler) handlers
 
     children <- js_ReactArray_empty
     mapM_ (js_ReactArray_push children) content
-    constructor attr children
+    constructor name attr children
 
-voidElement :: (RawAttrs -> IO ForeignNode)
+voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
+            -> JSString
             -> Attrs
             -> Handlers
             -> IO ForeignNode
-voidElement constructor attrs handlers =
-    element (\a c -> constructor a) attrs handlers []
+voidElement constructor name attrs handlers =
+    element (\n a c -> constructor n a) name attrs handlers []
 
 setField :: RawAttrs -> (JSString, JSON) -> IO ()
 setField attr (fld, Str v) = js_set_field_String attr fld v

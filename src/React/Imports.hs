@@ -10,6 +10,9 @@ import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 
+foreign import ccall js_React_DOM_leaf :: JSString -> RawAttrs -> IO ForeignNode
+foreign import ccall js_React_DOM_parent :: JSString -> RawAttrs -> ReactArray -> IO ForeignNode
+
 foreign import ccall js_empty_object :: IO RawAttrs
 foreign import ccall "js_set_field" js_set_field_String :: RawAttrs -> JSString -> JSString -> IO ()
 foreign import ccall "js_set_field" js_set_field_Double :: RawAttrs -> JSString -> Double -> IO ()
@@ -306,6 +309,12 @@ js_React_DOM_input = undefined
 -- js_React_DOM_style :: RawAttrs -> JSString -> IO ForeignNode
 -- js_React_DOM_textarea :: RawAttrs -> JSString -> IO ForeignNode
 -- js_React_DOM_title :: RawAttrs -> JSString -> IO ForeignNode
+
+js_React_DOM_leaf :: JSString -> RawAttrs -> IO ForeignNode
+js_React_DOM_leaf = undefined
+
+js_React_DOM_parent :: JSString -> RawAttrs -> ReactArray -> IO ForeignNode
+js_React_DOM_parent = undefined
 
 js_React_DOM_text :: JSString -> IO ForeignNode
 js_React_DOM_text = undefined
