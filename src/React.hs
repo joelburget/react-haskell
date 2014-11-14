@@ -11,7 +11,7 @@ module React
     , pre
 
     , getDomNode
-    , renderComponent
+    , render
 
     , (<!)
     , (<!?)
@@ -67,12 +67,26 @@ type Handlers = [EventHandler]
 data ReactNode = Div Attrs Handlers [ReactNode]
                | Input Attrs Handlers
                | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
-               | Text Attrs Handlers String
+               | Span Attrs Handlers [ReactNode]
+               | Text String
 
-data ReactM a = ReactM Attrs Handlers [ReactNode] a
+{-
+instance Show ReactNode where
+    show (Div as _ children) = "(Div " ++ show as ++ " " ++ show children ++ ")"
+    show (Input as _) = "(Input " ++ show as ++ ")"
+    show (Pre as _ children) = "(Pre " ++ show as ++ " " ++ show children ++ ")"
+    show (Text str) = str
+-}
+
+data ReactM a = ReactM
+    { attrs :: Attrs
+    , handlers :: Handlers
+    , children :: [ReactNode]
+    , other :: a
+    }
 
 instance Functor ReactM where
-    f `fmap` (ReactM attrs handlers nodes a) = ReactM attrs handlers nodes (f a)
+    f `fmap` react@ReactM{other=a} = react{other=f a}
 
 instance Applicative ReactM where
     pure = ReactM [] [] []
@@ -86,7 +100,7 @@ instance Monad ReactM where
         in ReactM (aa <> as) (ha <> hs) (na <> ns) a'
 
 instance IsString (ReactM a) where
-    fromString str = ReactM [] [] [Text [] [] str] undefined
+    fromString str = ReactM [] [] [Text str] (error "this shouldn't be accessed")
 
 class Attributable h a where
     (<!) :: h -> a -> h
@@ -95,11 +109,43 @@ class Attributable h a where
 h <!? (True, a) = h <! a
 h <!? (False, _) = h
 
-instance Attributable (ReactM b) (JSString, JSON) where
-    (ReactM as hs ns x) <! attr = ReactM (attr:as) hs ns x
+(<!>) :: [ReactNode] -> (JSString, JSON) -> [ReactNode]
+[elem] <!> attr = [go elem] where
+    go (Div as hs cs)  = Div (attr:as) hs cs
+    go (Input as hs)   = Input (attr:as) hs
+    go (Pre as hs cs)  = Pre (attr:as) hs cs
+    go (Span as hs cs) = Span (attr:as) hs cs
+    go (Text str)      = Text str
+_ <!> _ = error "attr applied to multiple elems!"
 
+(<!<) :: [ReactNode] -> EventHandler -> [ReactNode]
+[elem] <!< hndl = [go elem] where
+    go (Div as hs cs)  = Div as (hndl:hs) cs
+    go (Input as hs)   = Input as (hndl:hs)
+    go (Pre as hs cs)  = Pre as (hndl:hs) cs
+    go (Span as hs cs) = Span as (hndl:hs) cs
+    go (Text str)      = Text str
+
+instance Attributable (ReactM b) (JSString, JSON) where
+    (ReactM as hs ns x) <! attr = ReactM as hs (ns <!> attr) x
+
+-- TODO thinking there should be some notion of single / multiple?
+-- We should only ever apply an attribute / handler to one element here.
+--
+-- div <! attr $ ...
+--
+-- vs
+--
+-- (div >> div) <! attr
+--
+-- in fact, I think we should only ever apply attrs to
+-- `ReactM () -> ReactM ()`
+--
+-- except things with no children?
+--
+-- input <! attr
 instance Attributable (ReactM b) EventHandler where
-    (ReactM as hs ns x) <! hndl = ReactM as (hndl:hs) ns x
+    (ReactM as hs ns x) <! hndl = ReactM as hs (ns <!< hndl) x
 
 instance Attributable (ReactM c) a =>
          Attributable (ReactM b -> ReactM c) a where
@@ -109,32 +155,27 @@ className :: JSString -> (JSString, JSON)
 className str = ("className", Str str)
 
 div :: ReactM () -> ReactM ()
-div (ReactM as hs children _) = ReactM [] [] [Div as hs children] ()
+div (ReactM _ _ children _) = ReactM [] [] [Div [] [] children] ()
 
 pre :: ReactM () -> ReactM ()
-pre (ReactM as hs children _) = ReactM [] [] [Pre as hs children] ()
+pre (ReactM _ _ children _) = ReactM [] [] [Pre [] [] children] ()
 
-input :: ReactM () -> ReactM ()
-input (ReactM as hs children _) = ReactM [] [] [Input as hs] ()
+span :: ReactM () -> ReactM ()
+span (ReactM _ _ children _) = ReactM [] [] [Span [] [] children] ()
 
-getDomNode :: React -> IO (Maybe Elem)
-getDomNode r = fmap fromPtr (js_React_getDomNode r)
+input :: ReactM ()
+input = ReactM [] [] [Input [] []] ()
 
-interpretReact :: ReactM () -> IO React
--- TODO we really shouldn't just take the first element here - invariants
--- must be maintained
-interpretReact rm = head <$> interpretReact' rm
+interpret :: ReactM () -> IO React
+interpret (ReactM _ _ (node:_) _) = interpret' node
 
-interpretReact' :: ReactM () -> IO [React]
-interpretReact' (ReactM as' hs' nodes _) = forM nodes $ \case
-    Div as hs children -> do
-        children' <- interpretReact' (ReactM [] [] children ())
-        element js_React_DOM_div (as<>as') (hs<>hs') children'
+interpret' :: ReactNode -> IO React
+interpret' = \case
+    Div as hs children -> element js_React_DOM_div as hs =<< forM children interpret'
     Input as hs -> voidElement js_React_DOM_input as hs
-    Text as hs str -> js_React_DOM_text (toJSStr str)
-    Pre as hs children -> do
-        children' <- interpretReact' (ReactM [] [] children ())
-        element js_React_DOM_pre (as<>as') (hs<>hs') children'
+    Pre as hs children -> element js_React_DOM_pre as hs =<< forM children interpret'
+    Span as hs children -> element js_React_DOM_span as hs =<< forM children interpret'
+    Text str -> js_React_DOM_text (toJSStr str)
 
 element :: (RawAttrs -> ReactArray -> IO React)
         -> Attrs
@@ -170,13 +211,16 @@ setField attr (fld, Bool False) = js_set_field_False attr fld
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
-renderComponent :: Elem -> ReactM () -> IO ()
-renderComponent elem r = do
-    r' <- interpretReact r
-    renderComponent' elem r'
+getDomNode :: React -> IO (Maybe Elem)
+getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
-renderComponent' :: Elem -> React -> IO ()
-renderComponent' = ffi (toJSStr "(function(e,r){React.renderComponent(r,e);})")
+render :: Elem -> ReactM () -> IO ()
+render elem r = do
+    r' <- interpret r
+    render' elem r'
+
+render' :: Elem -> React -> IO ()
+render' = ffi (toJSStr "(function(e,r){React.render(r,e);})")
 
 -- newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 -- EventHandler :: (RawAttrs -> IO (}) -> EventHandler

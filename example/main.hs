@@ -9,7 +9,7 @@ import Haste.JSON
 
 main = do
     Just elem <- elemById "inject"
-    renderComponent elem $ div <! className "foo" $ do
+    render elem $ div <! className "foo" $ do
         "some string"
 
         div <! className "bar" $ return ()
@@ -21,7 +21,7 @@ main = do
 {-
 main = do
     Just elem <- elemById "inject"
-    renderComponent elem $ ReactM [] [] [
+    render elem $ ReactM [] [] [
         Div [("className", Str "foo")] []
             [ Text [] [] "some string"
             , Div [("className", Str "bar")] [] []
