@@ -22,8 +22,12 @@ data-files:
   stubs.js
 
 library
-  exposed-modules:     React, React.Events, React.Imports, React.Types
-  -- other-modules:
+  exposed-modules: React
+  other-modules:
+    React.Elements,
+    React.Events,
+    React.Imports,
+    React.Types
   other-extensions:    OverloadedStrings, FlexibleInstances, CPP, GeneralizedNewtypeDeriving
   build-depends:
       base,

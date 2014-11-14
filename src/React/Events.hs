@@ -1,11 +1,6 @@
-{-# LANGUAGE CPP #-}
 module React.Events where
 
-#ifdef __HASTE__
 import Haste
-#else
-import React.Types
-#endif
 
 data EventProperties e =
   EventProperties { bubbles :: !Bool
