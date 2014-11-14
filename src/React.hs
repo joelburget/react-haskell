@@ -50,7 +50,7 @@ import React.Imports as X
 -- * store state in monad / provide better help
 -- * provide alternative names for div, span, others?
 -- * helpers for e.g. className
--- * rename away from "ReactM ()"
+-- * rename away from "React"
 
 {-
 class MonadReact m where
@@ -85,6 +85,8 @@ data ReactM a = ReactM
     , children :: [ReactNode]
     , other :: a
     }
+
+type React = ReactM ()
 
 instance Functor ReactM where
     f `fmap` react@ReactM{other=a} = react{other=f a}
@@ -140,7 +142,7 @@ instance Attributable (ReactM b) (JSString, JSON) where
 -- (div >> div) <! attr
 --
 -- in fact, I think we should only ever apply attrs to
--- `ReactM () -> ReactM ()`
+-- `React -> React`
 --
 -- except things with no children?
 --
@@ -155,19 +157,19 @@ instance Attributable (ReactM c) a =>
 className :: JSString -> (JSString, JSON)
 className str = ("className", Str str)
 
-div :: ReactM () -> ReactM ()
+div :: React -> React
 div (ReactM _ _ children _) = ReactM [] [] [Div [] [] children] ()
 
-pre :: ReactM () -> ReactM ()
+pre :: React -> React
 pre (ReactM _ _ children _) = ReactM [] [] [Pre [] [] children] ()
 
-span :: ReactM () -> ReactM ()
+span :: React -> React
 span (ReactM _ _ children _) = ReactM [] [] [Span [] [] children] ()
 
-input :: ReactM ()
+input :: React
 input = ReactM [] [] [Input [] []] ()
 
-interpret :: ReactM () -> IO ForeignNode
+interpret :: React -> IO ForeignNode
 interpret (ReactM _ _ (node:_) _) = interpret' node
 
 interpret' :: ReactNode -> IO ForeignNode
@@ -215,7 +217,7 @@ setField attr (fld, Null) = return ()
 getDomNode :: ForeignNode -> IO (Maybe Elem)
 getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
-render :: Elem -> ReactM () -> IO ()
+render :: Elem -> React -> IO ()
 render elem r = do
     r' <- interpret r
     render' elem r'
@@ -227,10 +229,10 @@ render' = ffi (toJSStr "(function(e,r){React.render(r,e);})")
 -- EventHandler :: (RawAttrs -> IO (}) -> EventHandler
 -- js_set_onChange :: Ptr (RawChangeEvent -> IO ()) -> RawAttrs -> IO ()
 
-makeHandler :: EventHandler -> ReactM ()
+makeHandler :: EventHandler -> React
 makeHandler handler = ReactM [] [handler] [] ()
 
-onChange :: (ChangeEvent -> IO ()) -> ReactM ()
+onChange :: (ChangeEvent -> IO ()) -> React
 onChange = makeHandler . onChange'
 
 onChange' :: (ChangeEvent -> IO ()) -> EventHandler
