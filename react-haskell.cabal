@@ -24,6 +24,7 @@ data-files:
 library
   exposed-modules: React
   other-modules:
+    React.Attrs,
     React.Elements,
     React.Events,
     React.Imports,

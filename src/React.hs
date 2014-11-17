@@ -31,6 +31,7 @@ import Haste.Prim
 
 import Prelude hiding (div)
 
+import React.Attrs as X
 import React.Elements as X
 import React.Events as X
 import React.Imports as X
@@ -53,9 +54,6 @@ instance MonadReact ReactWithChildren where
 
 class ReactAttr a where
 -}
-
-className :: JSString -> (JSString, JSON)
-className str = ("className", Str str)
 
 interpret :: React -> IO ForeignNode
 interpret (ReactM _ _ (node:_) _) = interpret' node
