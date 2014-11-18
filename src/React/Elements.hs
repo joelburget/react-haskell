@@ -15,6 +15,9 @@ mkParent str (ReactM _ _ children _) = ReactM [] [] [Parent str [] [] children] 
 mkLeaf :: JSString -> React
 mkLeaf str = ReactM [] [] [Leaf str [] []] ()
 
+text :: JSString -> React
+text str = ReactM [] [] [Text (fromJSStr str)] ()
+
 a = mkParent "a"
 abbr = mkParent "abbr"
 address = mkParent "address"

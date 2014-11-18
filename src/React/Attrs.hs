@@ -4,6 +4,8 @@ module React.Attrs where
 import Haste.JSON
 import Haste.Prim
 
+-- class ReactAttr a where
+
 type Attr = (JSString, JSON)
 
 mkAttr :: JSString -> (a -> JSON) -> a -> Attr

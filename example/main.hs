@@ -7,16 +7,18 @@ import Prelude hiding (div)
 
 import Haste.JSON
 
+main :: IO ()
 main = do
     Just elem <- elemById "inject"
-    render elem $ div <! className "foo" $ do
-        "some string"
+    view elem ""
 
-        div <! className "bar" $ return ()
+view :: Elem -> JSString -> IO ()
+view elem str = render elem $
+    div <! className "foo" $ do
+        text str
 
-        pre "this thing should be in a pre"
+        input <! onChange (view elem . targetValue)
 
-        "some other string"
 
 {-
 main = do

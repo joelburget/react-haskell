@@ -6,14 +6,8 @@ import Haste.Prim
 import React.Imports
 import React.Types
 
-mkHandler :: EventHandler -> React
-mkHandler handler = ReactM [] [handler] [] ()
-
-onChange :: (ChangeEvent -> IO ()) -> React
-onChange = mkHandler . onChange'
-
-onChange' :: (ChangeEvent -> IO ()) -> EventHandler
-onChange' cb = EventHandler $ js_set_onChange $ toPtr $
+onChange :: (ChangeEvent -> IO ()) -> EventHandler
+onChange cb = EventHandler $ js_set_onChange $ toPtr $
     cb . fromPtr . js_parseChangeEvent
 
 onKeyDown :: (KeyboardEvent -> IO ()) -> EventHandler

@@ -31,16 +31,6 @@ import React.Types as X
 -- * store elem in monad
 -- * store state in monad / provide better help
 
-{-
-class MonadReact m where
-
-instance MonadReact ReactSansChildren where
-
-instance MonadReact ReactWithChildren where
-
-class ReactAttr a where
--}
-
 interpret :: React -> IO ForeignNode
 interpret (ReactM _ _ (node:_) _) = interpret' node
 
