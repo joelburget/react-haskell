@@ -2,7 +2,6 @@
 module React.Imports where
 
 import React.Types
-import React.Events
 
 import Haste
 import Haste.Foreign

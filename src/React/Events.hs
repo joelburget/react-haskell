@@ -1,59 +1,33 @@
 module React.Events where
 
 import Haste
+import Haste.Prim
 
-data EventProperties e =
-  EventProperties { bubbles :: !Bool
-                  , cancelable :: !Bool
-                  , currentTarget :: !e -- NativeElem
-                  , defaultPrevented :: !Bool
-                  , eventPhase :: !Int
-                  , isTrusted :: !Bool
-                    -- ,  nativeEvent :: DOMEvent
-                    -- , preventDefault :: IO ()
-                    -- ,  stopPropagation :: IO ()
-                  , evtTarget :: !e -- NativeElem
-                    --, timeStamp :: Date
-                  , eventType :: !JSString -- type
-                  }
+import React.Imports
+import React.Types
 
-data ModifierKeys =
-  ModifierKeys { altKey :: !Bool
-               , ctrlKey :: !Bool
-               , metaKey :: !Bool
-               , shiftKey :: !Bool
-               } deriving (Eq, Show)
+mkHandler :: EventHandler -> React
+mkHandler handler = ReactM [] [handler] [] ()
 
-data MouseEvent =
-  MouseEvent { -- mouseEventProperties :: !(EventProperties e)
-               mouseModifierKeys :: !ModifierKeys
-             , buttonNum :: !Int -- "button"
-               -- , buttons :: Int
-             , clientX :: !Double
-             , clientY :: !Double
-             , pageX :: !Double
-             , pageY :: !Double
-               -- , relatedTarget :: Unpacked
-             , screenX :: !Double
-             , screenY :: !Double
-             } deriving Show
+onChange :: (ChangeEvent -> IO ()) -> React
+onChange = mkHandler . onChange'
 
-data KeyboardEvent =
-  KeyboardEvent { -- keyboardEventProperties :: ! (EventProperties e)
-                  keyboardModifierKeys :: !ModifierKeys
-                , charCode :: !Int
-                , key :: !JSString
-                , keyCode :: !Int
-                , locale :: !JSString
-                , location :: !Int
-                , repeat :: !Bool
-                , which :: !Int
-                } deriving Show
+onChange' :: (ChangeEvent -> IO ()) -> EventHandler
+onChange' cb = EventHandler $ js_set_onChange $ toPtr $
+    cb . fromPtr . js_parseChangeEvent
 
-newtype ChangeEvent = ChangeEvent { targetValue :: JSString }
+onKeyDown :: (KeyboardEvent -> IO ()) -> EventHandler
+onKeyDown cb = EventHandler $ js_set_onKeyDown $ toPtr $
+    cb . fromPtr . js_parseKeyboardEvent
 
-data FocusEvent e =
-  FocusEvent { -- focusEventProperties :: ! (EventProperties e)
-               domEventTarget :: !e -- NativeElem
-             , relatedTarget :: !e -- NativeElem
-             }
+onKeyPress :: (KeyboardEvent -> IO ()) -> EventHandler
+onKeyPress cb = EventHandler $ js_set_onKeyPress $ toPtr $
+    cb . fromPtr . js_parseKeyboardEvent
+
+onKeyUp :: (KeyboardEvent -> IO ()) -> EventHandler
+onKeyUp cb = EventHandler $ js_set_onKeyUp $ toPtr $
+    cb . fromPtr . js_parseKeyboardEvent
+
+onClick :: (MouseEvent -> IO ()) -> EventHandler
+onClick cb = EventHandler $ js_set_onClick $ toPtr $
+    cb . fromPtr . js_parseMouseEvent

@@ -3,19 +3,8 @@
 
 module React
     ( module X
-    , ReactNode(..)
-    , ReactM(..)
-
     , getDomNode
     , render
-
-    , className
-
-    , onChange
-    , onKeyDown
-    , onKeyPress
-    , onKeyUp
-    , onClick
     ) where
 
 import Control.Applicative
@@ -41,9 +30,6 @@ import React.Types as X
 -- * restricted monads
 -- * store elem in monad
 -- * store state in monad / provide better help
--- * provide alternative names for div, span, others?
--- * helpers for e.g. className
--- * rename away from "React"
 
 {-
 class MonadReact m where
@@ -60,7 +46,8 @@ interpret (ReactM _ _ (node:_) _) = interpret' node
 
 interpret' :: ReactNode -> IO ForeignNode
 interpret' = \case
-    Parent name as hs children -> element js_React_DOM_parent name as hs =<< forM children interpret'
+    Parent name as hs children -> forM children interpret' >>=
+        element js_React_DOM_parent name as hs
     Leaf name as hs -> voidElement js_React_DOM_leaf name as hs
     Text str -> js_React_DOM_text (toJSStr str)
 
@@ -110,37 +97,3 @@ render elem r = do
 
 render' :: Elem -> ForeignNode -> IO ()
 render' = ffi (toJSStr "(function(e,r){React.render(r,e);})")
-
--- newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
--- EventHandler :: (RawAttrs -> IO (}) -> EventHandler
--- js_set_onChange :: Ptr (RawChangeEvent -> IO ()) -> RawAttrs -> IO ()
-
-makeHandler :: EventHandler -> React
-makeHandler handler = ReactM [] [handler] [] ()
-
-onChange :: (ChangeEvent -> IO ()) -> React
-onChange = makeHandler . onChange'
-
-onChange' :: (ChangeEvent -> IO ()) -> EventHandler
-onChange' cb = EventHandler $ js_set_onChange $ toPtr $
-    cb . fromPtr . js_parseChangeEvent
-
-onKeyDown :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyDown cb = EventHandler $ js_set_onKeyDown $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
-
-onKeyPress :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyPress cb = EventHandler $ js_set_onKeyPress $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
-
-onKeyUp :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyUp cb = EventHandler $ js_set_onKeyUp $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
-
-onClick :: (MouseEvent -> IO ()) -> EventHandler
-onClick cb = EventHandler $ js_set_onClick $ toPtr $
-    cb . fromPtr . js_parseMouseEvent
-
-
--- targetValue :: RawChangeEvent -> IO JSString
--- targetValue = ffi "(function(event) { return event.target.value; })"
