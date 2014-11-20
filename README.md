@@ -2,15 +2,50 @@
 
 Bindings for React under Haste.
 
-## Example
+## Examples
+
+Let's put a simple paragraph on the page:
 
 ```haskell
-render elem $ div $ do
-    span <! className "im-a-span" $ "some string"
+sample :: React
+sample = p <! className "style" $ em "andy warhol"
 
-    pre "this thing should be in a pre"
+main :: IO ()
+main = do
+    Just elem <- elemById "id"
+    render elem sample
+```
 
-    "some other string"
+That creates a dom node on the page that looks like:
+
+```html
+<p class="style">
+    <em>andy warhol</em>
+</p>
+```
+
+We can make that a little more complicated with some more child nodes.
+
+```haskell
+sample :: React
+sample = div <! className "beautify" $ do
+    "velvet underground"
+
+    input
+
+    "lou reed"
+```
+
+But of course that input doesn't do anything. Let's change that.
+
+```haskell
+sample :: StatefulReact JSString
+sample = div $ do
+    "favorite artist:"
+
+    input <! onChange (updateState . targetValue)
+
+    text <$> getState
 ```
 
 ## Getting Started
