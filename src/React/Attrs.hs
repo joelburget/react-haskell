@@ -11,20 +11,24 @@ type Attr = (JSString, JSON)
 mkAttr :: JSString -> (a -> JSON) -> a -> Attr
 mkAttr name f a = (name, f a)
 
+-- exception
 className :: JSString -> Attr
 className = mkAttr "className" Str
 
-href :: JSString -> Attr
-href = mkAttr "href" Str
+class_ :: JSString -> Attr
+class_ = mkAttr "className" Str
+
+href_ :: JSString -> Attr
+href_ = mkAttr "href" Str
 
 id_ :: JSString -> Attr
 id_ = mkAttr "id" Str
 
-src :: JSString -> Attr
-src = mkAttr "src" Str
+src_ :: JSString -> Attr
+src_ = mkAttr "src" Str
 
-style :: JSON -> Attr
-style = mkAttr "style" id
+style_ :: JSON -> Attr
+style_ = mkAttr "style" id
 
-value :: JSString -> Attr
-value = mkAttr "value" Str
+value_ :: JSString -> Attr
+value_ = mkAttr "value" Str

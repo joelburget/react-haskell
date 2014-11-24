@@ -28,7 +28,7 @@ statefulView = div_ $ do
     PageState fst snd cur <- getState
 
     input_
-        <! value cur
+        <! value_ cur
 
         -- change the input value as the user types
         <! onChange (\state evt -> state{_cur=targetValue evt})

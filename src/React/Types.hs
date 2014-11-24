@@ -114,16 +114,17 @@ h <!? (False, _) = h
 
 (<!>) :: [ReactNode s] -> (JSString, JSON) -> [ReactNode s]
 [elem] <!> attr = [go elem] where
-    go (Parent name as hs cs)  = Parent name (attr:as) hs cs
-    go (Leaf name as hs)   = Leaf name (attr:as) hs
-    go (Text str)      = Text str
+    go (Parent name as hs cs) = Parent name (attr:as) hs cs
+    go (Leaf name as hs)      = Leaf name (attr:as) hs
+    go (Text str)             = Text str
 _ <!> _ = error "attr applied to multiple elems!"
 
 (<!<) :: [ReactNode s] -> StatefulEventHandler s -> [ReactNode s]
 [elem] <!< hndl = [go elem] where
-    go (Parent name as hs cs)  = Parent name as (hndl:hs) cs
-    go (Leaf name as hs)   = Leaf name as (hndl:hs)
-    go (Text str)      = Text str
+    go (Parent name as hs cs) = Parent name as (hndl:hs) cs
+    go (Leaf name as hs)      = Leaf name as (hndl:hs)
+    go (Text str)             = Text str
+_ <!< _ = error "handler applied to multiple elems!"
 
 data EventProperties e =
   EventProperties { bubbles :: !Bool
