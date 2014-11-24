@@ -25,3 +25,6 @@ src = mkAttr "src" Str
 
 style :: JSON -> Attr
 style = mkAttr "style" id
+
+value :: JSString -> Attr
+value = mkAttr "value" Str

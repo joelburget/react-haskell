@@ -18,15 +18,15 @@ foreign import ccall "js_set_field" js_set_field_Int :: RawAttrs -> JSString -> 
 foreign import ccall "js_set_field" js_set_field_Obj :: RawAttrs -> JSString -> RawAttrs -> IO ()
 foreign import ccall js_set_field_True :: RawAttrs -> JSString -> IO ()
 foreign import ccall js_set_field_False :: RawAttrs -> JSString -> IO ()
-foreign import ccall js_targetValue :: RawChangeEvent -> JSString
+foreign import ccall js_targetValue :: RawEvent -> JSString
 
-foreign import ccall js_set_onClick       :: Ptr (RawMouseEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onDoubleClick :: Ptr (RawMouseEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onChange      :: Ptr (RawChangeEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onKeyUp       :: Ptr (RawKeyboardEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onKeyPress    :: Ptr (RawKeyboardEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onKeyDown     :: Ptr (RawKeyboardEvent -> IO ()) -> RawAttrs -> IO ()
-foreign import ccall js_set_onBlur        :: Ptr (RawFocusEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onClick       :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onDoubleClick :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onChange      :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onKeyUp       :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onKeyPress    :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onKeyDown     :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onBlur        :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
 
 foreign import ccall js_React_getDomNode :: ForeignNode -> IO (Ptr (Maybe Elem))
 
@@ -35,6 +35,6 @@ foreign import ccall "js_push" js_ReactArray_push :: ReactArray -> ForeignNode -
 
 foreign import ccall "js_id" js_React_DOM_text :: JSString -> IO ForeignNode
 
-foreign import ccall js_parseChangeEvent :: RawChangeEvent -> Ptr ChangeEvent
-foreign import ccall js_parseKeyboardEvent :: RawKeyboardEvent -> Ptr KeyboardEvent
-foreign import ccall js_parseMouseEvent :: RawMouseEvent -> Ptr MouseEvent
+foreign import ccall js_parseChangeEvent :: RawEvent -> Ptr ChangeEvent
+foreign import ccall js_parseKeyboardEvent :: RawEvent -> Ptr KeyboardEvent
+foreign import ccall js_parseMouseEvent :: RawEvent -> Ptr MouseEvent

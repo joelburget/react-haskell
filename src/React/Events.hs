@@ -6,22 +6,27 @@ import Haste.Prim
 import React.Imports
 import React.Types
 
-onChange :: (ChangeEvent -> IO ()) -> EventHandler
-onChange cb = EventHandler $ js_set_onChange $ toPtr $
-    cb . fromPtr . js_parseChangeEvent
+onChange :: (s -> ChangeEvent -> s) -> StatefulEventHandler s
+onChange handler = StatefulEventHandler
+    (\s evt -> handler s (fromPtr (js_parseChangeEvent evt)))
+    ChangeEvt
 
-onKeyDown :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyDown cb = EventHandler $ js_set_onKeyDown $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
+onKeyDown :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
+onKeyDown handler = StatefulEventHandler
+    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+    KeyDownEvt
 
-onKeyPress :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyPress cb = EventHandler $ js_set_onKeyPress $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
+onKeyPress :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
+onKeyPress handler = StatefulEventHandler
+    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+    KeyPressEvt
 
-onKeyUp :: (KeyboardEvent -> IO ()) -> EventHandler
-onKeyUp cb = EventHandler $ js_set_onKeyUp $ toPtr $
-    cb . fromPtr . js_parseKeyboardEvent
+onKeyUp :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
+onKeyUp handler = StatefulEventHandler
+    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+    KeyUpEvt
 
-onClick :: (MouseEvent -> IO ()) -> EventHandler
-onClick cb = EventHandler $ js_set_onClick $ toPtr $
-    cb . fromPtr . js_parseMouseEvent
+onClick :: (s -> MouseEvent -> s) -> StatefulEventHandler s
+onClick handler = StatefulEventHandler
+    (\s evt -> handler s (fromPtr (js_parseMouseEvent evt)))
+    ClickEvt

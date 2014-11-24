@@ -1,8 +1,10 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, ForeignFunctionInterface,
-    MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+    FlexibleInstances, FlexibleContexts #-}
 module React.Types where
 
 import Control.Applicative
+import Control.Monad
+import Data.Functor.Identity
 import Data.Monoid
 import Data.String
 
@@ -11,86 +13,66 @@ import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 
--- TODO(joel) - move to imports?
-foreign import ccall "js_id" jsText :: JSString -> ForeignNode
-
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
-newtype EventHandler = EventHandler {unEventHandler :: RawAttrs -> IO ()}
 
-instance IsString ForeignNode where
-    fromString = jsText . toJSStr
+data EvtType
+    = ChangeEvt
+    | KeyDownEvt
+    | KeyPressEvt
+    | KeyUpEvt
+    | ClickEvt
 
-newtype RawMouseEvent = RawMouseEvent JSAny deriving (Pack, Unpack)
-newtype RawChangeEvent = RawChangeEvent JSAny deriving (Pack, Unpack)
-newtype RawKeyboardEvent = RawKeyboardEvent JSAny deriving (Pack, Unpack)
-newtype RawFocusEvent = RawFocusEvent JSAny deriving (Pack, Unpack)
-
-type Attrs = [(JSString, JSON)]
-type Handlers = [EventHandler]
-
-data ReactNode = Parent JSString Attrs Handlers [ReactNode]
-               | Leaf JSString Attrs Handlers
-               -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
-               | Text String -- TODO(joel) JSString?
-
-{-
-instance Show ReactNode where
-    show (Div as _ children) = "(Div " ++ show as ++ " " ++ show children ++ ")"
-    show (Input as _) = "(Input " ++ show as ++ ")"
-    show (Pre as _ children) = "(Pre " ++ show as ++ " " ++ show children ++ ")"
-    show (Text str) = str
--}
-
-data ReactM a = ReactM
-    { attrs :: Attrs
-    , handlers :: Handlers
-    , children :: [ReactNode]
-    , other :: a
+data StatefulEventHandler s = StatefulEventHandler
+    { handler :: s -> RawEvent -> s
+    , evtType :: EvtType
     }
 
-type React = ReactM ()
+newtype RawEvent = RawEvent JSAny deriving (Pack, Unpack)
 
-instance Functor ReactM where
-    f `fmap` react@ReactM{other=a} = react{other=f a}
+type Attrs = [(JSString, JSON)]
 
-instance Applicative ReactM where
-    pure = ReactM [] [] []
-    (ReactM af hf nf f) <*> (ReactM aa ha na a) =
-        ReactM (af <> aa) (hf <> ha) (nf <> na) (f a)
+data ReactNode s = Parent JSString Attrs [StatefulEventHandler s] [ReactNode s]
+                 | Leaf JSString Attrs [StatefulEventHandler s]
+                 -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
+                 | Text String -- TODO(joel) JSString?
 
-instance Monad ReactM where
-    return = pure
-    (ReactM aa ha na a) >>= nf =
-        let ReactM as hs ns a' = nf a
-        in ReactM (aa <> as) (ha <> hs) (na <> ns) a'
 
-instance IsString (ReactM a) where
-    fromString str = ReactM [] [] [Text str] (error "this shouldn't be accessed")
+getState :: StatefulReact s s
+getState = StatefulReactT $ \s -> return ([], s, s)
 
-class Attributable h a where
-    (<!) :: h -> a -> h
+newtype StatefulReactT s m a = StatefulReactT
+    { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
 
-(<!?) :: Attributable h a => h -> (Bool, a) -> h
-h <!? (True, a) = h <! a
-h <!? (False, _) = h
+type StatefulReact s = StatefulReactT s Identity
 
-(<!>) :: [ReactNode] -> (JSString, JSON) -> [ReactNode]
-[elem] <!> attr = [go elem] where
-    go (Parent name as hs cs)  = Parent name (attr:as) hs cs
-    go (Leaf name as hs)   = Leaf name (attr:as) hs
-    go (Text str)      = Text str
-_ <!> _ = error "attr applied to multiple elems!"
+-- runStatefulReact :: StatefulReactT s a -> s -> ([ReactNode s], s, a)
+-- runStatefulReact react s = runIdentity $ runStatefulReact react s
 
-(<!<) :: [ReactNode] -> EventHandler -> [ReactNode]
-[elem] <!< hndl = [go elem] where
-    go (Parent name as hs cs)  = Parent name as (hndl:hs) cs
-    go (Leaf name as hs)   = Leaf name as (hndl:hs)
-    go (Text str)      = Text str
+instance Monoid a => Monoid (StatefulReact s a) where
+    mempty = StatefulReactT $ \s -> return ([], s, mempty)
+    mappend f1 f2 = StatefulReactT $ \s -> do
+        ~(c1, s1, a) <- runStatefulReactT f1 s
+        ~(c2, s2, b) <- runStatefulReactT f2 s1
+        return (c1 <> c2, s2, a <> b)
 
-instance Attributable (ReactM b) (JSString, JSON) where
-    (ReactM as hs ns x) <! attr = ReactM as hs (ns <!> attr) x
+instance Monad m => Functor (StatefulReactT s m) where
+    fmap = liftM
+
+instance Monad m => Applicative (StatefulReactT s m) where
+    pure = return
+    (<*>) = ap
+
+instance Monad m => IsString (StatefulReactT s m a) where
+    fromString str = StatefulReactT $ \s -> return ([Text str], s, undefined)
+
+instance Monad m => Monad (StatefulReactT s m) where
+    return a = StatefulReactT $ \s -> return ([], s, a)
+    m >>= f = StatefulReactT $ \s -> do
+        ~(c1, s1, a) <- runStatefulReactT m s
+        ~(c2, s2, b) <- runStatefulReactT (f a) s1
+        return (c1 <> c2, s2, b)
 
 -- TODO thinking there should be some notion of single / multiple?
 -- We should only ever apply an attribute / handler to one element here.
@@ -107,12 +89,41 @@ instance Attributable (ReactM b) (JSString, JSON) where
 -- except things with no children?
 --
 -- input <! attr
-instance Attributable (ReactM b) EventHandler where
-    (ReactM as hs ns x) <! hndl = ReactM as hs (ns <!< hndl) x
 
-instance Attributable (ReactM c) a =>
-         Attributable (ReactM b -> ReactM c) a where
+instance Monad m => Attributable (StatefulReactT s m a) (JSString, JSON) where
+    react <! attr = StatefulReactT $ \s -> do
+        ~(children, s', a) <- runStatefulReactT react s
+        return (children <!> attr, s', a)
+
+instance Monad m =>
+         Attributable (StatefulReactT s m a) (StatefulEventHandler s) where
+    react <! attr = StatefulReactT $ \s -> do
+        ~(children, s', a) <- runStatefulReactT react s
+        return (children <!< attr, s', a)
+
+instance Attributable (StatefulReactT s m a) x =>
+         Attributable (StatefulReactT s m a -> StatefulReactT s m a) x where
     f <! attr = (<! attr) . f
+
+class Attributable h a where
+    (<!) :: h -> a -> h
+
+(<!?) :: Attributable h a => h -> (Bool, a) -> h
+h <!? (True, a) = h <! a
+h <!? (False, _) = h
+
+(<!>) :: [ReactNode s] -> (JSString, JSON) -> [ReactNode s]
+[elem] <!> attr = [go elem] where
+    go (Parent name as hs cs)  = Parent name (attr:as) hs cs
+    go (Leaf name as hs)   = Leaf name (attr:as) hs
+    go (Text str)      = Text str
+_ <!> _ = error "attr applied to multiple elems!"
+
+(<!<) :: [ReactNode s] -> StatefulEventHandler s -> [ReactNode s]
+[elem] <!< hndl = [go elem] where
+    go (Parent name as hs cs)  = Parent name as (hndl:hs) cs
+    go (Leaf name as hs)   = Leaf name as (hndl:hs)
+    go (Text str)      = Text str
 
 data EventProperties e =
   EventProperties { bubbles :: !Bool
