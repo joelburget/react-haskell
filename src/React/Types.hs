@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts #-}
+    FlexibleInstances, FlexibleContexts, GADTs #-}
 module React.Types where
 
 import Control.Applicative
@@ -64,8 +64,8 @@ instance Monad m => Applicative (StatefulReactT s m) where
     pure = return
     (<*>) = ap
 
-instance Monad m => IsString (StatefulReactT s m a) where
-    fromString str = StatefulReactT $ \s -> return ([Text str], s, undefined)
+instance (Monad m, a ~ ()) => IsString (StatefulReactT s m a) where
+    fromString str = StatefulReactT $ \s -> return ([Text str], s, ())
 
 instance Monad m => Monad (StatefulReactT s m) where
     return a = StatefulReactT $ \s -> return ([], s, a)
