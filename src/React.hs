@@ -31,7 +31,6 @@ import React.Types as X
 -- TODO
 -- * restricted monads
 -- * store elem in monad
--- * store state in monad / provide better help
 -- * escaping / dangerouslySetInnerHTML
 -- * http://chrisdone.com/posts/lucid
 

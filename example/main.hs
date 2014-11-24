@@ -1,16 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
--- import Control.Monad.Reader
--- import Control.Monad.State
-
 import Haste
 import React
 import Prelude hiding (div)
 
 import Haste.JSON
-
-import Data.Monoid
 
 onEnter :: (s -> s) -> StatefulEventHandler s
 onEnter f = onKeyPress handler where
