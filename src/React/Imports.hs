@@ -27,7 +27,8 @@ foreign import ccall js_set_onKeyUp       :: Ptr (RawEvent -> IO ()) -> RawAttrs
 foreign import ccall js_set_onKeyPress    :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
 foreign import ccall js_set_onKeyDown     :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
 foreign import ccall js_set_onBlur        :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
-
+foreign import ccall js_set_onMouseEnter :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
+foreign import ccall js_set_onMouseLeave :: Ptr (RawEvent -> IO ()) -> RawAttrs -> IO ()
 foreign import ccall js_React_getDomNode :: ForeignNode -> IO (Ptr (Maybe Elem))
 
 foreign import ccall "js_empty" js_ReactArray_empty :: IO ReactArray

@@ -23,6 +23,9 @@ data EvtType
     | KeyPressEvt
     | KeyUpEvt
     | ClickEvt
+    | DoubleClickEvt
+    | MouseEnterEvt
+    | MouseLeaveEvt
 
 data StatefulEventHandler s = StatefulEventHandler
     { handler :: s -> RawEvent -> s

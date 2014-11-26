@@ -84,6 +84,9 @@ makeHandler obj (handle, KeyDownEvt) = js_set_onKeyDown (toPtr handle) obj
 makeHandler obj (handle, KeyPressEvt) = js_set_onKeyPress (toPtr handle) obj
 makeHandler obj (handle, KeyUpEvt) = js_set_onKeyUp (toPtr handle) obj
 makeHandler obj (handle, ClickEvt) = js_set_onClick (toPtr handle) obj
+makeHandler obj (handle, DoubleClickEvt) = js_set_onDoubleClick (toPtr handle) obj
+makeHandler obj (handle, MouseEnterEvt) = js_set_onMouseEnter (toPtr handle) obj
+makeHandler obj (handle, MouseLeaveEvt) = js_set_onMouseLeave (toPtr handle) obj
 
 voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
             -> JSString

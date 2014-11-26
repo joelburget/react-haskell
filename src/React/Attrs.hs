@@ -32,3 +32,19 @@ style_ = mkAttr "style" id
 
 value_ :: JSString -> Attr
 value_ = mkAttr "value" Str
+
+placeholder_ :: JSString -> Attr
+placeholder_ = mkAttr "placeholder" Str
+
+for_ :: JSString -> Attr
+for_ = mkAttr "htmlFor" Str
+
+type_ :: JSString -> Attr
+type_ = mkAttr "type" Str
+
+checked_ :: Bool -> Attr
+checked_ = mkAttr "checked" Bool
+
+-- TODO think about supporting autoFocus / other camel-cased react names
+autofocus_ :: Bool -> Attr
+autofocus_ = mkAttr "autoFocus" Bool
