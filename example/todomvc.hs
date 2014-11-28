@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types #-}
 module Main where
+-- TODO:
+-- * persistence
+-- * routing
 
 import Control.Applicative
 import Control.Monad
@@ -77,6 +80,17 @@ handleEnter oldState@PageState{_todos, _typingValue} =
            then oldState
            else PageState (_todos ++ [Todo trimmed Active]) ""
 
+-- TODO exit editing
+-- "If escape is pressed during the edit, the edit state should be left and
+-- any changes be discarded."
+handleEsc :: PageState -> PageState
+handleEsc state = state & typingValue .~ ""
+
+handleHeaderKey :: PageState -> KeyboardEvent -> PageState
+handleHeaderKey state KeyboardEvent{key="Enter"} = handleEnter state
+handleHeaderKey state KeyboardEvent{key="Escape"} = handleEsc state
+handleHeaderKey state _ = state
+
 handleTyping :: PageState -> ChangeEvent -> PageState
 handleTyping state (ChangeEvent _typingValue) = state{_typingValue}
 
@@ -120,9 +134,7 @@ header = header_ <! id_ "header" $ do
            <! autofocus_ True
            <! value_ _typingValue
            <! onChange handleTyping
-           <! onEnter handleEnter
-           -- TODO "If escape is pressed during the edit, the edit state
-           -- should be left and any changes be discarded."
+           <! onKeyDown handleHeaderKey
 
 todoView :: Int -> StatefulReact PageState ()
 todoView i = do
@@ -153,7 +165,7 @@ mainBody = do
                <! onClick handleToggleAll $
             "Mark all as complete"
 
-        ul_ <! id_ "todo-list" $ forM_ [0..length _todos - 1] todoView
+        ul_ <! id_ "todo-list" $ forM_ [0 .. length _todos - 1] todoView
 
 innerFooter :: StatefulReact PageState ()
 innerFooter = footer_ <! id_ "footer" $ do
