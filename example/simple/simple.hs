@@ -37,16 +37,3 @@ main :: IO ()
 main = do
     Just elem <- elemById "inject"
     render (PageState "little mac!" "pit" "") elem statefulView
-
-{-
-main = do
-    Just elem <- elemById "inject"
-    render elem $ ReactM [] [] [
-        Div [("className", Str "foo")] []
-            [ Text [] [] "some string"
-            , Div [("className", Str "bar")] [] []
-            , Pre [] [] [ Text [] [] "this thing should be in a pre" ]
-            , Text [] [] "some other string"
-            ]
-        ] ()
--}
