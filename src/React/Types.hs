@@ -47,10 +47,10 @@ newtype StatefulReactT s m a = StatefulReactT
 
 type StatefulReact s = StatefulReactT s Identity
 
-getState :: StatefulReact s s
+getState :: Monad m => StatefulReactT s m s
 getState = StatefulReactT $ \s -> return ([], s, s)
 
-instance Monoid a => Monoid (StatefulReact s a) where
+instance (Monad m, Monoid a) => Monoid (StatefulReactT s m a) where
     mempty = StatefulReactT $ \s -> return ([], s, mempty)
     mappend f1 f2 = StatefulReactT $ \s -> do
         ~(c1, s1, a) <- runStatefulReactT f1 s
