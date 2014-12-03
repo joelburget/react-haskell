@@ -18,7 +18,7 @@ import React
 
 import System.IO.Unsafe
 
--- model
+-- MODEL
 
 data Status = Active | Completed
     deriving Eq
@@ -39,8 +39,10 @@ initialPageState = PageState
      Todo "sjdfk" Active, Todo "ksljl" Completed]
     ""
 
--- utility
+-- UTILITY
 
+-- we have to define these lenses manually since template haskell isn't yet
+-- supported in haste
 text :: Functor f => LensLike' f Todo JSString
 text f (Todo t s) = (`Todo` s) <$> f t
 
@@ -60,6 +62,8 @@ toggleStatus Completed = Active
 trim :: JSString -> JSString
 trim = unsafePerformIO . ffi "(function(str) { return str.trim(); })"
 
+-- this traversal is in lens but lens-family has a weird ix which isn't
+-- what we want. definition just copied from lens.
 ix' :: Int -> Traversal' [a] a
 ix' k f xs0 | k < 0     = pure xs0
             | otherwise = go xs0 k where
@@ -67,11 +71,12 @@ ix' k f xs0 | k < 0     = pure xs0
     go (a:as) 0 = (:as) <$> f a
     go (a:as) i = (a:) <$> (go as $! i - 1)
 
+-- remove an item from the list by index
 iFilter :: Int -> [a] -> [a]
 iFilter 0 (a:as) = as
 iFilter n (a:as) = a : iFilter (n-1) as
 
--- controller
+-- CONTROLLER
 
 handleEnter :: PageState -> PageState
 handleEnter oldState@PageState{_todos, _typingValue} =
@@ -118,7 +123,7 @@ handleDestroy todoNum state _ = state & todos %~ iFilter todoNum
 clearCompleted :: PageState -> MouseEvent -> PageState
 clearCompleted state _ = state & todos %~ todosWithStatus Active
 
--- view
+-- VIEW
 
 -- "New todos are entered in the input at the top of the app. The input
 -- element should be focused when the page is loaded preferably using the
