@@ -49,7 +49,7 @@ library
     MultiParamTypeClasses,
     OverloadedStrings
   build-depends:
-    base == 4.7.*,
+    base == 4.6.*,
     transformers,
     haste-lib >= 0.4 && <0.5,
     monads-tf
