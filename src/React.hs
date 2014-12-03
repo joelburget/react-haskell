@@ -10,7 +10,6 @@ module React
 import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class
--- import Control.Monad.Writer
 import Data.Functor.Identity
 import Data.Monoid
 import Data.String
@@ -32,7 +31,6 @@ import React.Types as X
 -- * restricted monads
 -- * store elem in monad
 -- * escaping / dangerouslySetInnerHTML
--- * http://chrisdone.com/posts/lucid
 
 interpret :: Monad m
           => StatefulReactT s m ()

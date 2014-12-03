@@ -42,16 +42,13 @@ data ReactNode s = Parent JSString Attrs [StatefulEventHandler s] [ReactNode s]
                  | Text String -- TODO(joel) JSString?
 
 
-getState :: StatefulReact s s
-getState = StatefulReactT $ \s -> return ([], s, s)
-
 newtype StatefulReactT s m a = StatefulReactT
     { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
 
 type StatefulReact s = StatefulReactT s Identity
 
--- runStatefulReact :: StatefulReactT s a -> s -> ([ReactNode s], s, a)
--- runStatefulReact react s = runIdentity $ runStatefulReact react s
+getState :: StatefulReact s s
+getState = StatefulReactT $ \s -> return ([], s, s)
 
 instance Monoid a => Monoid (StatefulReact s a) where
     mempty = StatefulReactT $ \s -> return ([], s, mempty)
