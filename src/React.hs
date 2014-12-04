@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances, LambdaCase,
-  MultiParamTypeClasses, FlexibleContexts #-}
+  MultiParamTypeClasses, FlexibleContexts, Rank2Types #-}
 
 module React
     ( module X
     , getDomNode
     , render
+    , nest
     ) where
 
 import Control.Applicative
@@ -111,12 +112,10 @@ interpret' s cb = \case
         voidElement js_React_DOM_leaf name as hs'
     Text str -> js_React_DOM_text (toJSStr str)
 
-nest :: Monad m => (a -> b) -> StatefulReactT b m x -> StatefulReactT a m x
--- nest focus nested = StatefulReactT $ runStatefulReactT nested . focus
-nest focus nested = StatefulReactT $ \a -> do
-    (nodes, b, x) <- runStatefulReactT nested (focus a)
-    return (
-    { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
+nest :: Monad m => MockLens a b -> StatefulReactT b m x -> StatefulReactT a m x
+nest lens nested = StatefulReactT $ \a -> do
+    (nodes, b, x) <- runStatefulReactT nested (mockGet lens a)
+    return (map (nodeConvert lens) nodes, mockSet lens b a, x)
 
 render' :: Elem -> ForeignNode -> IO ()
 render' = ffi "(function(e,r){React.render(r,e);})"

@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, GADTs #-}
+    FlexibleInstances, FlexibleContexts, GADTs, Rank2Types #-}
 module React.Types where
 
 import Control.Applicative
@@ -41,14 +41,31 @@ data ReactNode s = Parent JSString Attrs [StatefulEventHandler s] [ReactNode s]
                  -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
                  | Text String -- TODO(joel) JSString?
 
-type Lens s a = Functor f => (a -> f a) -> s -> f s
+type MockLens s a = Functor f => (a -> f a) -> s -> f s
 
-handlerConvert :: Lens a b -> StatefulEventHandler a -> StatefulEventHandler b
-handlerConvert (StatefulEventHandler f ty) = StatefulEventHandler
-    (\s' raw -> f t (
+mockGet :: MockLens s a -> s -> a
+mockGet l = getConst . l Const
 
-nodeConvert :: Lens a b -> ReactNode b -> ReactNode a
+mockMod :: MockLens s a -> (a -> a) -> s -> s
+mockMod l f = runIdentity . l (Identity . f)
+
+mockSet :: MockLens s a -> a -> s -> s
+mockSet l a = mockMod l (const a)
+
+handlerConvert :: MockLens a b
+               -> StatefulEventHandler b
+               -> StatefulEventHandler a
+handlerConvert l (StatefulEventHandler f ty) = StatefulEventHandler
+    (\a raw -> mockSet l (f (mockGet l a) raw) a)
+    ty
+
+nodeConvert :: MockLens a b -> ReactNode b -> ReactNode a
 nodeConvert l (Parent name attrs handlers children) =
+    Parent name attrs (map (handlerConvert l) handlers)
+        (map (nodeConvert l) children)
+nodeConvert l (Leaf name attrs handlers) =
+    Leaf name attrs (map (handlerConvert l) handlers)
+nodeConvert l (Text str) = Text str
 
 newtype StatefulReactT s m a = StatefulReactT
     { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
