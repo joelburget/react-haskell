@@ -116,5 +116,8 @@ render s elem r = do
     foreignNode <- runIdentity $ interpret r s cb
     render' elem foreignNode
 
+renderPureReact :: Elem -> PureReact -> IO ()
+renderPureReact = render ()
+
 render' :: Elem -> ForeignNode -> IO ()
-render' = ffi (toJSStr "(function(e,r){React.render(r,e);})")
+render' = ffi "(function(e,r){React.render(r,e);})"

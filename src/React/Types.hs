@@ -46,6 +46,7 @@ newtype StatefulReactT s m a = StatefulReactT
     { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
 
 type StatefulReact s = StatefulReactT s Identity
+type PureReact = StatefulReact () ()
 
 getState :: Monad m => StatefulReactT s m s
 getState = StatefulReactT $ \s -> return ([], s, s)
