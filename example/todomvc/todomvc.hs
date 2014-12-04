@@ -43,16 +43,16 @@ initialPageState = PageState
 
 -- we have to define these lenses manually since template haskell isn't yet
 -- supported in haste
-text :: Functor f => LensLike' f Todo JSString
+text :: Lens' Todo JSString
 text f (Todo t s) = (`Todo` s) <$> f t
 
-status :: Functor f => LensLike' f Todo Status
+status :: Lens' Todo Status
 status f (Todo t s) = Todo t <$> f s
 
-todos :: Functor f => LensLike' f PageState [Todo]
+todos :: Lens' PageState [Todo]
 todos f (PageState t v) = (`PageState` v) <$> f t
 
-typingValue :: Functor f => LensLike' f PageState JSString
+typingValue :: Lens' PageState JSString
 typingValue f (PageState t v) = PageState t <$> f v
 
 toggleStatus :: Status -> Status
