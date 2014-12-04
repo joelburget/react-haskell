@@ -41,6 +41,14 @@ data ReactNode s = Parent JSString Attrs [StatefulEventHandler s] [ReactNode s]
                  -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
                  | Text String -- TODO(joel) JSString?
 
+type Lens s a = Functor f => (a -> f a) -> s -> f s
+
+handlerConvert :: Lens a b -> StatefulEventHandler a -> StatefulEventHandler b
+handlerConvert (StatefulEventHandler f ty) = StatefulEventHandler
+    (\s' raw -> f t (
+
+nodeConvert :: Lens a b -> ReactNode b -> ReactNode a
+nodeConvert l (Parent name attrs handlers children) =
 
 newtype StatefulReactT s m a = StatefulReactT
     { runStatefulReactT :: s -> m ([ReactNode s], s, a) }

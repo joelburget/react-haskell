@@ -32,35 +32,6 @@ import React.Types as X
 -- * store elem in monad
 -- * escaping / dangerouslySetInnerHTML
 
-interpret :: Monad m
-          => StatefulReactT s m ()
-          -> s
-          -> (s -> IO ())
-          -> m (IO ForeignNode)
-interpret react s cb = do
-    ~(child:_, s', ()) <- runStatefulReactT react s
-    return $ interpret' s' cb child
-
-interpret' :: s
-           -> (s -> IO ())
-           -> ReactNode s
-           -> IO ForeignNode
-interpret' s cb = \case
-    Parent name as hs children -> do
-        children' <- forM children (interpret' s cb)
-        let hs' = map (unStateful s cb) hs
-        element js_React_DOM_parent name as hs' children'
-    Leaf name as hs -> do
-        let hs' = map (unStateful s cb) hs
-        voidElement js_React_DOM_leaf name as hs'
-    Text str -> js_React_DOM_text (toJSStr str)
-
-unStateful :: s
-           -> (s -> IO ())
-           -> StatefulEventHandler s
-           -> (RawEvent -> IO (), EvtType)
-unStateful s act (StatefulEventHandler handle ty) = (act . handle s, ty)
-
 element :: (JSString -> RawAttrs -> ReactArray -> IO ForeignNode)
         -> JSString
         -> Attrs
@@ -107,8 +78,48 @@ setField attr (fld, Bool False) = js_set_field_False attr fld
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
+-- TODO figure out what to do with this
 getDomNode :: ForeignNode -> IO (Maybe Elem)
 getDomNode r = fmap fromPtr (js_React_getDomNode r)
+
+unStateful :: s
+           -> (s -> IO ())
+           -> StatefulEventHandler s
+           -> (RawEvent -> IO (), EvtType)
+unStateful s act (StatefulEventHandler handle ty) = (act . handle s, ty)
+
+interpret :: Monad m
+          => StatefulReactT s m ()
+          -> s
+          -> (s -> IO ())
+          -> m (IO ForeignNode)
+interpret react s cb = do
+    ~(child:_, s', ()) <- runStatefulReactT react s
+    return $ interpret' s' cb child
+
+interpret' :: s
+           -> (s -> IO ())
+           -> ReactNode s
+           -> IO ForeignNode
+interpret' s cb = \case
+    Parent name as hs children -> do
+        children' <- forM children (interpret' s cb)
+        let hs' = map (unStateful s cb) hs
+        element js_React_DOM_parent name as hs' children'
+    Leaf name as hs -> do
+        let hs' = map (unStateful s cb) hs
+        voidElement js_React_DOM_leaf name as hs'
+    Text str -> js_React_DOM_text (toJSStr str)
+
+nest :: Monad m => (a -> b) -> StatefulReactT b m x -> StatefulReactT a m x
+-- nest focus nested = StatefulReactT $ runStatefulReactT nested . focus
+nest focus nested = StatefulReactT $ \a -> do
+    (nodes, b, x) <- runStatefulReactT nested (focus a)
+    return (
+    { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
+
+render' :: Elem -> ForeignNode -> IO ()
+render' = ffi "(function(e,r){React.render(r,e);})"
 
 render :: s -> Elem -> StatefulReact s () -> IO ()
 render s elem r = do
@@ -118,6 +129,3 @@ render s elem r = do
 
 renderPureReact :: Elem -> PureReact -> IO ()
 renderPureReact = render ()
-
-render' :: Elem -> ForeignNode -> IO ()
-render' = ffi "(function(e,r){React.render(r,e);})"
