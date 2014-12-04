@@ -6,6 +6,7 @@ module React
     , getDomNode
     , render
     , nest
+    , pureNest
     ) where
 
 import Control.Applicative
@@ -116,6 +117,13 @@ nest :: Monad m => MockLens a b -> StatefulReactT b m x -> StatefulReactT a m x
 nest lens nested = StatefulReactT $ \a -> do
     (nodes, b, x) <- runStatefulReactT nested (mockGet lens a)
     return (map (nodeConvert lens) nodes, mockSet lens b a, x)
+
+-- TODO - check whether this breaks any laws
+pureLens :: MockLens a ()
+pureLens f a = const a <$> f ()
+
+pureNest :: Monad m => StatefulReactT () m x -> StatefulReactT a m x
+pureNest = nest pureLens
 
 render' :: Elem -> ForeignNode -> IO ()
 render' = ffi "(function(e,r){React.render(r,e);})"

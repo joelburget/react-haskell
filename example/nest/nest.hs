@@ -32,6 +32,9 @@ rightLens f (l, r) = (l,) <$> f r
 
 type PageState = (Maybe Int, JSString)
 
+pureView :: PureReact
+pureView = span_ "type here: "
+
 leftView :: StatefulReact (Maybe Int) ()
 leftView = div_ $ do
     i <- getState
@@ -48,6 +51,7 @@ rightView = div_ $ do
 
 statefulView :: StatefulReact PageState ()
 statefulView = div_ $ do
+    pureNest pureView
     nest leftLens leftView
     nest rightLens rightView
 
