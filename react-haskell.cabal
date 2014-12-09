@@ -1,5 +1,5 @@
 name:                react-haskell
-version:             1.1.0.0
+version:             1.2.0.0
 synopsis:            Haskell React bindings
 description:
   This package provides high level bindings to Facebook's <facebook.github.io/react/ React> library, meant for use with <haste-lang.org Haste>.
@@ -29,9 +29,9 @@ bug-reports: https://github.com/joelburget/react-haskell/issues
 data-dir: lib
 data-files: stubs.js
 
-flag haste-inst 
+flag haste-inst
   description: Built with haste-inst/hastec
-  default: False 
+  default: False
 
 source-repository head
   type: git
