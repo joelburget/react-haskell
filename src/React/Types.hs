@@ -27,78 +27,66 @@ data EvtType
     | MouseEnterEvt
     | MouseLeaveEvt
 
-data StatefulEventHandler s = StatefulEventHandler
-    { handler :: s -> RawEvent -> s
+data EventHandler s = EventHandler
+    { handler :: RawEvent -> Maybe s
     , evtType :: EvtType
     }
+
+handlerConvert :: (local -> general)
+               -> EventHandler local
+               -> EventHandler general
+handlerConvert f (EventHandler handle ty) =
+    EventHandler (\raw -> f <$> handle raw) ty
 
 newtype RawEvent = RawEvent JSAny deriving (Pack, Unpack)
 
 type Attrs = [(JSString, JSON)]
 
-data ReactNode s = Parent JSString Attrs [StatefulEventHandler s] [ReactNode s]
-                 | Leaf JSString Attrs [StatefulEventHandler s]
-                 -- | Pre Attrs Handlers [ReactNode] -- it'd be super cool to restrict this to a string somehow (restrict the underlying monad so it can only set attrs and string?)
+-- it'd be super cool to restrict `Pre` to a string somehow (restrict the
+-- underlying monad so it can only set attrs and string?)
+
+data ReactNode s = Parent JSString Attrs [EventHandler s] [ReactNode s]
+                 | Leaf JSString Attrs [EventHandler s]
+                 -- | Pre Attrs Handlers [ReactNode]
                  | Text String -- TODO(joel) JSString?
 
-type MockLens s a = Functor f => (a -> f a) -> s -> f s
+nodeConvert :: (local -> general) -> ReactNode local -> ReactNode general
+nodeConvert f (Parent name attrs handlers children) =
+    Parent name attrs (map (handlerConvert f) handlers)
+        (map (nodeConvert f) children)
+nodeConvert f (Leaf name attrs handlers) =
+    Leaf name attrs (map (handlerConvert f) handlers)
+nodeConvert f (Text str) = Text str
 
-mockGet :: MockLens s a -> s -> a
-mockGet l = getConst . l Const
+newtype ReactT s m a = ReactT
+    { runReactT :: m ([ReactNode s], a) }
 
-mockMod :: MockLens s a -> (a -> a) -> s -> s
-mockMod l f = runIdentity . l (Identity . f)
+type React s = ReactT s Identity
+type PureReact = React () ()
 
-mockSet :: MockLens s a -> a -> s -> s
-mockSet l a = mockMod l (const a)
+instance (Monad m, Monoid a) => Monoid (ReactT s m a) where
+    mempty = ReactT $ return ([], mempty)
+    mappend f1 f2 = ReactT $ do
+        ~(c1, a) <- runReactT f1
+        ~(c2, b) <- runReactT f2
+        return (c1 <> c2, a <> b)
 
-handlerConvert :: MockLens a b
-               -> StatefulEventHandler b
-               -> StatefulEventHandler a
-handlerConvert l (StatefulEventHandler f ty) = StatefulEventHandler
-    (\a raw -> mockSet l (f (mockGet l a) raw) a)
-    ty
-
-nodeConvert :: MockLens a b -> ReactNode b -> ReactNode a
-nodeConvert l (Parent name attrs handlers children) =
-    Parent name attrs (map (handlerConvert l) handlers)
-        (map (nodeConvert l) children)
-nodeConvert l (Leaf name attrs handlers) =
-    Leaf name attrs (map (handlerConvert l) handlers)
-nodeConvert l (Text str) = Text str
-
-newtype StatefulReactT s m a = StatefulReactT
-    { runStatefulReactT :: s -> m ([ReactNode s], s, a) }
-
-type StatefulReact s = StatefulReactT s Identity
-type PureReact = StatefulReact () ()
-
-getState :: Monad m => StatefulReactT s m s
-getState = StatefulReactT $ \s -> return ([], s, s)
-
-instance (Monad m, Monoid a) => Monoid (StatefulReactT s m a) where
-    mempty = StatefulReactT $ \s -> return ([], s, mempty)
-    mappend f1 f2 = StatefulReactT $ \s -> do
-        ~(c1, s1, a) <- runStatefulReactT f1 s
-        ~(c2, s2, b) <- runStatefulReactT f2 s1
-        return (c1 <> c2, s2, a <> b)
-
-instance Monad m => Functor (StatefulReactT s m) where
+instance Monad m => Functor (ReactT s m) where
     fmap = liftM
 
-instance Monad m => Applicative (StatefulReactT s m) where
+instance Monad m => Applicative (ReactT s m) where
     pure = return
     (<*>) = ap
 
-instance (Monad m, a ~ ()) => IsString (StatefulReactT s m a) where
-    fromString str = StatefulReactT $ \s -> return ([Text str], s, ())
+instance (Monad m, a ~ ()) => IsString (ReactT s m a) where
+    fromString str = ReactT $ return ([Text str], ())
 
-instance Monad m => Monad (StatefulReactT s m) where
-    return a = StatefulReactT $ \s -> return ([], s, a)
-    m >>= f = StatefulReactT $ \s -> do
-        ~(c1, s1, a) <- runStatefulReactT m s
-        ~(c2, s2, b) <- runStatefulReactT (f a) s1
-        return (c1 <> c2, s2, b)
+instance Monad m => Monad (ReactT s m) where
+    return a = ReactT $ return ([], a)
+    m >>= f = ReactT $ do
+        ~(c1, a) <- runReactT m
+        ~(c2, b) <- runReactT (f a)
+        return (c1 <> c2, b)
 
 -- TODO thinking there should be some notion of single / multiple?
 -- We should only ever apply an attribute / handler to one element here.
@@ -116,19 +104,19 @@ instance Monad m => Monad (StatefulReactT s m) where
 --
 -- input <! attr
 
-instance Monad m => Attributable (StatefulReactT s m a) (JSString, JSON) where
-    react <! attr = StatefulReactT $ \s -> do
-        ~(children, s', a) <- runStatefulReactT react s
-        return (children <!> attr, s', a)
+instance Monad m => Attributable (ReactT s m a) (JSString, JSON) where
+    react <! attr = ReactT $ do
+        ~(children, a) <- runReactT react
+        return (children <!> attr, a)
 
 instance Monad m =>
-         Attributable (StatefulReactT s m a) (StatefulEventHandler s) where
-    react <! attr = StatefulReactT $ \s -> do
-        ~(children, s', a) <- runStatefulReactT react s
-        return (children <!< attr, s', a)
+         Attributable (ReactT s m a) (EventHandler s) where
+    react <! attr = ReactT $ do
+        ~(children, a) <- runReactT react
+        return (children <!< attr, a)
 
-instance Attributable (StatefulReactT s m a) x =>
-         Attributable (StatefulReactT s m a -> StatefulReactT s m a) x where
+instance Attributable (ReactT s m a) x =>
+         Attributable (ReactT s m a -> ReactT s m a) x where
     f <! attr = (<! attr) . f
 
 class Attributable h a where
@@ -145,7 +133,7 @@ h <!? (False, _) = h
     go (Text str)             = Text str
 _ <!> _ = error "attr applied to multiple elems!"
 
-(<!<) :: [ReactNode s] -> StatefulEventHandler s -> [ReactNode s]
+(<!<) :: [ReactNode s] -> EventHandler s -> [ReactNode s]
 [elem] <!< hndl = [go elem] where
     go (Parent name as hs cs) = Parent name as (hndl:hs) cs
     go (Leaf name as hs)      = Leaf name as (hndl:hs)

@@ -5,8 +5,8 @@ module React
     ( module X
     , getDomNode
     , render
-    , nest
-    , pureNest
+    -- , nest
+    -- , pureNest
     ) where
 
 import Control.Applicative
@@ -37,7 +37,7 @@ import React.Types as X
 element :: (JSString -> RawAttrs -> ReactArray -> IO ForeignNode)
         -> JSString
         -> Attrs
-        -> [(RawEvent -> IO (), EvtType)]
+        -> [(RawEvent -> Maybe (IO ()), EvtType)]
         -> [ForeignNode]
         -> IO ForeignNode
 element constructor name attrs handlers content = do
@@ -49,20 +49,10 @@ element constructor name attrs handlers content = do
     mapM_ (js_ReactArray_push children) content
     constructor name attr children
 
-makeHandler :: RawAttrs -> (RawEvent -> IO (), EvtType) -> IO ()
-makeHandler obj (handle, ChangeEvt) = js_set_onChange (toPtr handle) obj
-makeHandler obj (handle, KeyDownEvt) = js_set_onKeyDown (toPtr handle) obj
-makeHandler obj (handle, KeyPressEvt) = js_set_onKeyPress (toPtr handle) obj
-makeHandler obj (handle, KeyUpEvt) = js_set_onKeyUp (toPtr handle) obj
-makeHandler obj (handle, ClickEvt) = js_set_onClick (toPtr handle) obj
-makeHandler obj (handle, DoubleClickEvt) = js_set_onDoubleClick (toPtr handle) obj
-makeHandler obj (handle, MouseEnterEvt) = js_set_onMouseEnter (toPtr handle) obj
-makeHandler obj (handle, MouseLeaveEvt) = js_set_onMouseLeave (toPtr handle) obj
-
 voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
             -> JSString
             -> Attrs
-            -> [(RawEvent -> IO (), EvtType)]
+            -> [(RawEvent -> Maybe (IO ()), EvtType)]
             -> IO ForeignNode
 voidElement constructor name attrs handlers =
     element (\n a c -> constructor n a) name attrs handlers []
@@ -81,56 +71,44 @@ setField attr (fld, Bool False) = js_set_field_False attr fld
 setField attr (fld, Null) = return ()
 
 -- TODO figure out what to do with this
-getDomNode :: ForeignNode -> IO (Maybe Elem)
-getDomNode r = fmap fromPtr (js_React_getDomNode r)
-
-unStateful :: s
-           -> (s -> IO ())
-           -> StatefulEventHandler s
-           -> (RawEvent -> IO (), EvtType)
-unStateful s act (StatefulEventHandler handle ty) = (act . handle s, ty)
+-- getDomNode :: ForeignNode -> IO (Maybe Elem)
+-- getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 interpret :: Monad m
-          => StatefulReactT s m ()
-          -> s
+          => ReactT s m ()
           -> (s -> IO ())
           -> m (IO ForeignNode)
-interpret react s cb = do
-    ~(child:_, s', ()) <- runStatefulReactT react s
-    return $ interpret' s' cb child
+interpret react cb = do
+    ~(child:_, ()) <- runReactT react
+    return $ interpret' cb child
 
-interpret' :: s
-           -> (s -> IO ())
+interpret' :: (s -> IO ())
            -> ReactNode s
            -> IO ForeignNode
-interpret' s cb = \case
+interpret' cb = \case
     Parent name as hs children -> do
-        children' <- forM children (interpret' s cb)
-        let hs' = map (unStateful s cb) hs
+        children' <- forM children (interpret' cb)
+        let hs' = map (unHandler cb) hs
         element js_React_DOM_parent name as hs' children'
     Leaf name as hs -> do
-        let hs' = map (unStateful s cb) hs
+        let hs' = map (unHandler cb) hs
         voidElement js_React_DOM_leaf name as hs'
     Text str -> js_React_DOM_text (toJSStr str)
 
-nest :: Monad m => MockLens a b -> StatefulReactT b m x -> StatefulReactT a m x
-nest lens nested = StatefulReactT $ \a -> do
-    (nodes, b, x) <- runStatefulReactT nested (mockGet lens a)
-    return (map (nodeConvert lens) nodes, mockSet lens b a, x)
-
-pureNest :: Monad m => StatefulReactT () m x -> StatefulReactT a m x
-pureNest = nest pureLens where
-    pureLens :: MockLens a ()
-    pureLens f a = const a <$> f ()
+locally :: Monad m
+        => (local -> general)
+        -> ReactT local m x
+        -> ReactT general m x
+locally localize nested = ReactT $ do
+    (nodes, x) <- runReactT nested
+    return (map (nodeConvert localize) nodes, x)
 
 render' :: Elem -> ForeignNode -> IO ()
 render' = ffi "(function(e,r){React.render(r,e);})"
 
-render :: s -> Elem -> StatefulReact s () -> IO ()
-render s elem r = do
-    let cb s' = render s' elem r
-    foreignNode <- runIdentity $ interpret r s cb
+render :: Elem -> (a -> React s ()) -> (a -> s -> a) -> a -> IO ()
+render elem component update state = do
+    let cb s = render elem component update (update state s)
+        component' = component state
+    foreignNode <- runIdentity $ interpret component' cb
     render' elem foreignNode
-
-renderPureReact :: Elem -> PureReact -> IO ()
-renderPureReact = render ()

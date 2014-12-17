@@ -7,47 +7,76 @@ import Haste.Prim
 import React.Imports
 import React.Types
 
-onChange :: (s -> ChangeEvent -> s) -> StatefulEventHandler s
-onChange handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseChangeEvent evt)))
+handlerToJs :: (RawEvent -> Maybe (IO ())) -> Ptr (RawEvent -> IO ())
+handlerToJs handle =
+    let go :: Maybe (IO ()) -> IO ()
+        go = maybe (return ()) id
+    in toPtr (go . handle)
+
+makeHandler :: RawAttrs -> (RawEvent -> Maybe (IO ()), EvtType) -> IO ()
+makeHandler obj (handle, ChangeEvt) =
+    js_set_onChange (handlerToJs handle) obj
+makeHandler obj (handle, KeyDownEvt) =
+    js_set_onKeyDown (handlerToJs handle) obj
+makeHandler obj (handle, KeyPressEvt) =
+    js_set_onKeyPress (handlerToJs handle) obj
+makeHandler obj (handle, KeyUpEvt) =
+    js_set_onKeyUp (handlerToJs handle) obj
+makeHandler obj (handle, ClickEvt) =
+    js_set_onClick (handlerToJs handle) obj
+makeHandler obj (handle, DoubleClickEvt) =
+    js_set_onDoubleClick (handlerToJs handle) obj
+makeHandler obj (handle, MouseEnterEvt) =
+    js_set_onMouseEnter (handlerToJs handle) obj
+makeHandler obj (handle, MouseLeaveEvt) =
+    js_set_onMouseLeave (handlerToJs handle) obj
+
+unHandler :: (s -> IO ())
+           -> EventHandler s
+           -> (RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\e -> act <$> handle e, ty)
+
+onChange :: (ChangeEvent -> Maybe s) -> EventHandler s
+onChange handler = EventHandler
+    (handler . fromPtr . js_parseChangeEvent)
     ChangeEvt
 
-onKeyDown :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
-onKeyDown handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+onKeyDown :: (KeyboardEvent -> Maybe s) -> EventHandler s
+onKeyDown handler = EventHandler
+    (handler . fromPtr . js_parseKeyboardEvent)
     KeyDownEvt
 
-onKeyPress :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
-onKeyPress handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+onKeyPress :: (KeyboardEvent -> Maybe s) -> EventHandler s
+onKeyPress handler = EventHandler
+    (handler . fromPtr . js_parseKeyboardEvent)
     KeyPressEvt
 
-onKeyUp :: (s -> KeyboardEvent -> s) -> StatefulEventHandler s
-onKeyUp handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseKeyboardEvent evt)))
+onKeyUp :: (KeyboardEvent -> Maybe s) -> EventHandler s
+onKeyUp handler = EventHandler
+    (handler . fromPtr . js_parseKeyboardEvent)
     KeyUpEvt
 
-onMouseEnter :: (s -> MouseEvent -> s) -> StatefulEventHandler s
-onMouseEnter handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseMouseEvent evt)))
+onMouseEnter :: (MouseEvent -> Maybe s) -> EventHandler s
+onMouseEnter handler = EventHandler
+    (handler . fromPtr . js_parseMouseEvent)
     MouseEnterEvt
 
-onMouseLeave :: (s -> MouseEvent -> s) -> StatefulEventHandler s
-onMouseLeave handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseMouseEvent evt)))
+onMouseLeave :: (MouseEvent -> Maybe s) -> EventHandler s
+onMouseLeave handler = EventHandler
+    (handler . fromPtr . js_parseMouseEvent)
     MouseLeaveEvt
 
-onDoubleClick :: (s -> MouseEvent -> s) -> StatefulEventHandler s
-onDoubleClick handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseMouseEvent evt)))
+onDoubleClick :: (MouseEvent -> Maybe s) -> EventHandler s
+onDoubleClick handler = EventHandler
+    (handler . fromPtr . js_parseMouseEvent)
     DoubleClickEvt
 
-onClick :: (s -> MouseEvent -> s) -> StatefulEventHandler s
-onClick handler = StatefulEventHandler
-    (\s evt -> handler s (fromPtr (js_parseMouseEvent evt)))
+onClick :: (MouseEvent -> Maybe s) -> EventHandler s
+onClick handler = EventHandler
+    (handler . fromPtr . js_parseMouseEvent)
     ClickEvt
 
-onEnter :: (s -> s) -> StatefulEventHandler s
-onEnter f = onKeyPress handler where
-    handler s KeyboardEvent{key="Enter"} = f s
-    handler s _ = s
+onEnter :: s -> EventHandler s
+onEnter s = onKeyPress handler where
+    handler KeyboardEvent{key="Enter"} = Just s
+    handler _ = Nothing
