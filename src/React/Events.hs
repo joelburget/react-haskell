@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Events where
 
+import Control.Applicative
+
 import Haste
 import Haste.Prim
 

@@ -22,40 +22,54 @@ iToS (Just i) = toJSStr $ show i
 sToI :: JSString -> Maybe Int
 sToI = readMay . fromJSStr
 
-leftLens :: MockLens PageState (Maybe Int)
-leftLens f (l, r) = (,r) <$> f l
-
-rightLens :: MockLens PageState JSString
-rightLens f (l, r) = (l,) <$> f r
-
 --
 
 type PageState = (Maybe Int, JSString)
 
+initialState :: PageState
+initialState = (Just 1, "foo")
+
+--
+
+data LeftTransition = Number (Maybe Int)
+data RightTransition = Typing JSString
+
+data Transition
+    = LeftT (Maybe Int)
+    | RightT JSString
+
+transition :: PageState -> Transition -> PageState
+transition (n, s) (LeftT n') = (n', s)
+transition (n, s) (RightT s') = (n, s')
+
+generalizeLeft :: LeftTransition -> Transition
+generalizeLeft (Number x) = LeftT x
+
+generalizeRight :: RightTransition -> Transition
+generalizeRight (Typing x) = RightT x
+
+--
+
 pureView :: PureReact
 pureView = span_ "type here: "
 
-leftView :: StatefulReact (Maybe Int) ()
-leftView = div_ $ do
-    i <- getState
-
+leftView :: Maybe Int -> React LeftTransition ()
+leftView i = div_ $
     input_ <! value_ (iToS i)
-           <! onChange (\_ evt -> sToI (targetValue evt))
+           <! onChange (Just . Number . sToI . targetValue)
 
-rightView :: StatefulReact JSString ()
-rightView = div_ $ do
-    s <- getState
-
+rightView :: JSString -> React RightTransition ()
+rightView s = div_ $
     input_ <! value_ s
-           <! onChange (\_ evt -> targetValue evt)
+           <! onChange (Just . Typing . targetValue)
 
-statefulView :: StatefulReact PageState ()
-statefulView = div_ $ do
-    pureNest pureView
-    nest leftLens leftView
-    nest rightLens rightView
+view :: PageState -> React Transition ()
+view (n, s) = div_ $ do
+    -- pureNest pureView
+    locally generalizeLeft (leftView n)
+    locally generalizeRight (rightView s)
 
 main :: IO ()
 main = do
     Just elem <- elemById "inject"
-    render (Just 1, "foo") elem statefulView
+    render elem view transition initialState
