@@ -9,6 +9,8 @@ import Haste.Prim
 import React.Imports
 import React.Types
 
+-- TODO: handle (a -> Maybe b) or (a -> b)
+
 handlerToJs :: (RawEvent -> Maybe (IO ())) -> Ptr (RawEvent -> IO ())
 handlerToJs handle =
     let go :: Maybe (IO ()) -> IO ()

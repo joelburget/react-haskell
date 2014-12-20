@@ -38,6 +38,9 @@ handlerConvert :: (local -> general)
 handlerConvert f (EventHandler handle ty) =
     EventHandler (\raw -> f <$> handle raw) ty
 
+handlerConvert' :: EventHandler () -> EventHandler general
+handlerConvert' (EventHandler handle ty) = EventHandler (const Nothing) ty
+
 newtype RawEvent = RawEvent JSAny deriving (Pack, Unpack)
 
 type Attrs = [(JSString, JSON)]
@@ -50,13 +53,21 @@ data ReactNode s = Parent JSString Attrs [EventHandler s] [ReactNode s]
                  -- | Pre Attrs Handlers [ReactNode]
                  | Text String -- TODO(joel) JSString?
 
-nodeConvert :: (local -> general) -> ReactNode local -> ReactNode general
-nodeConvert f (Parent name attrs handlers children) =
+nodeConvert1 :: (local -> general) -> ReactNode local -> ReactNode general
+nodeConvert1 f (Parent name attrs handlers children) =
     Parent name attrs (map (handlerConvert f) handlers)
-        (map (nodeConvert f) children)
-nodeConvert f (Leaf name attrs handlers) =
+        (map (nodeConvert1 f) children)
+nodeConvert1 f (Leaf name attrs handlers) =
     Leaf name attrs (map (handlerConvert f) handlers)
-nodeConvert f (Text str) = Text str
+nodeConvert1 f (Text str) = Text str
+
+nodeConvert2 :: ReactNode () -> ReactNode general
+nodeConvert2 (Parent name attrs handlers children) =
+    Parent name attrs (map handlerConvert' handlers)
+        (map nodeConvert2 children)
+nodeConvert2 (Leaf name attrs handlers) =
+    Leaf name attrs (map handlerConvert' handlers)
+nodeConvert2 (Text str) = Text str
 
 newtype ReactT s m a = ReactT
     { runReactT :: m ([ReactNode s], a) }
