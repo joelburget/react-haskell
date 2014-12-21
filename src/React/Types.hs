@@ -3,6 +3,7 @@
 module React.Types where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad
 import Data.Functor.Identity
 import Data.Monoid
@@ -16,6 +17,9 @@ import Haste.Prim
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
+
+newtype RafHandle = RafHandle Int
+    deriving (Pack, Unpack)
 
 data EvtType
     = ChangeEvt
@@ -166,12 +170,19 @@ data EventProperties e =
                   , eventType :: !JSString -- type
                   }
 
+instance NFData e => NFData (EventProperties e) where
+    rnf (EventProperties a b c d e f g h) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+
 data ModifierKeys =
   ModifierKeys { altKey :: !Bool
                , ctrlKey :: !Bool
                , metaKey :: !Bool
                , shiftKey :: !Bool
                } deriving (Eq, Show)
+
+instance NFData ModifierKeys where
+    rnf (ModifierKeys a b c d) = a `seq` b `seq` c `seq` d `seq` ()
 
 data MouseEvent =
   MouseEvent { -- mouseEventProperties :: !(EventProperties e)
@@ -187,6 +198,10 @@ data MouseEvent =
              , screenY :: !Double
              } deriving Show
 
+instance NFData MouseEvent where
+    rnf (MouseEvent a b c d e f g h) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+
 data KeyboardEvent =
   KeyboardEvent { -- keyboardEventProperties :: ! (EventProperties e)
                   keyboardModifierKeys :: !ModifierKeys
@@ -199,10 +214,20 @@ data KeyboardEvent =
                 , which :: !Int
                 } deriving Show
 
+instance NFData KeyboardEvent where
+    rnf (KeyboardEvent a b c d e f g h) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+
 newtype ChangeEvent = ChangeEvent { targetValue :: JSString }
+
+instance NFData ChangeEvent where
+    rnf e@(ChangeEvent str) = str `seq` ()
 
 data FocusEvent e =
   FocusEvent { -- focusEventProperties :: ! (EventProperties e)
                domEventTarget :: !e -- NativeElem
              , relatedTarget :: !e -- NativeElem
              }
+
+instance NFData e => NFData (FocusEvent e) where
+    rnf (FocusEvent a b) = a `seq` b `seq` ()

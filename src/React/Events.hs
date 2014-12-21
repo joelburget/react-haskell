@@ -2,6 +2,7 @@
 module React.Events where
 
 import Control.Applicative
+import Control.DeepSeq
 
 import Haste
 import Haste.Prim
@@ -34,6 +35,18 @@ makeHandler obj (handle, MouseEnterEvt) =
     js_set_onMouseEnter (handlerToJs handle) obj
 makeHandler obj (handle, MouseLeaveEvt) =
     js_set_onMouseLeave (handlerToJs handle) obj
+makeHandler _ _ = return () -- XXX
+
+mkEventHandler :: NFData s
+               => (RawEvent -> s)
+               -> EvtType
+               -> (s -> Maybe s')
+               -> EventHandler s'
+mkEventHandler unNative ty handle =
+    -- *important* - you must deepseq the event immediately - otherwise
+    -- react's pooling will collect and destroy it.
+    let handle' raw = handle $!! unNative raw
+    in EventHandler handle' ty
 
 unHandler :: (s -> IO ())
            -> EventHandler s
@@ -41,43 +54,43 @@ unHandler :: (s -> IO ())
 unHandler act (EventHandler handle ty) = (\e -> act <$> handle e, ty)
 
 onChange :: (ChangeEvent -> Maybe s) -> EventHandler s
-onChange handler = EventHandler
-    (handler . fromPtr . js_parseChangeEvent)
+onChange = mkEventHandler
+    (fromPtr . js_parseChangeEvent)
     ChangeEvt
 
 onKeyDown :: (KeyboardEvent -> Maybe s) -> EventHandler s
-onKeyDown handler = EventHandler
-    (handler . fromPtr . js_parseKeyboardEvent)
+onKeyDown = mkEventHandler
+    (fromPtr . js_parseKeyboardEvent)
     KeyDownEvt
 
 onKeyPress :: (KeyboardEvent -> Maybe s) -> EventHandler s
-onKeyPress handler = EventHandler
-    (handler . fromPtr . js_parseKeyboardEvent)
+onKeyPress = mkEventHandler
+    (fromPtr . js_parseKeyboardEvent)
     KeyPressEvt
 
 onKeyUp :: (KeyboardEvent -> Maybe s) -> EventHandler s
-onKeyUp handler = EventHandler
-    (handler . fromPtr . js_parseKeyboardEvent)
+onKeyUp = mkEventHandler
+    (fromPtr . js_parseKeyboardEvent)
     KeyUpEvt
 
 onMouseEnter :: (MouseEvent -> Maybe s) -> EventHandler s
-onMouseEnter handler = EventHandler
-    (handler . fromPtr . js_parseMouseEvent)
+onMouseEnter = mkEventHandler
+    (fromPtr . js_parseMouseEvent)
     MouseEnterEvt
 
 onMouseLeave :: (MouseEvent -> Maybe s) -> EventHandler s
-onMouseLeave handler = EventHandler
-    (handler . fromPtr . js_parseMouseEvent)
+onMouseLeave = mkEventHandler
+    (fromPtr . js_parseMouseEvent)
     MouseLeaveEvt
 
 onDoubleClick :: (MouseEvent -> Maybe s) -> EventHandler s
-onDoubleClick handler = EventHandler
-    (handler . fromPtr . js_parseMouseEvent)
+onDoubleClick = mkEventHandler
+    (fromPtr . js_parseMouseEvent)
     DoubleClickEvt
 
 onClick :: (MouseEvent -> Maybe s) -> EventHandler s
-onClick handler = EventHandler
-    (handler . fromPtr . js_parseMouseEvent)
+onClick = mkEventHandler
+    (fromPtr . js_parseMouseEvent)
     ClickEvt
 
 onEnter :: s -> EventHandler s

@@ -9,6 +9,13 @@ import Haste.JSON
 import Haste.Prim
 
 #ifdef __HASTE__
+foreign import ccall js_raf :: Ptr (Double -> IO ()) -> IO RafHandle
+#else
+js_raf :: Ptr (Double -> IO ()) -> IO RafHandle
+js_raf = error "cannot evaluate js_raf in ghc"
+#endif
+
+#ifdef __HASTE__
 foreign import ccall js_React_DOM_leaf :: JSString -> RawAttrs -> IO ForeignNode
 #else
 js_React_DOM_leaf :: JSString -> RawAttrs -> IO ForeignNode

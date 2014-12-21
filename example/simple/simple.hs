@@ -29,7 +29,7 @@ transition PageState{fst, cur} Enter = PageState cur fst ""
 
 -- view
 
-view :: PageState -> StatefulReact Transition ()
+view :: PageState -> React Transition ()
 view (PageState fst snd cur) = div_ $ do
     input_
         <! value_ cur

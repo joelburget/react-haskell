@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances, LambdaCase,
-  MultiParamTypeClasses, FlexibleContexts, Rank2Types, GADTs #-}
+  MultiParamTypeClasses, FlexibleContexts, Rank2Types, GADTs,
+  GeneralizedNewtypeDeriving, ForeignFunctionInterface #-}
 
 module React
     ( module X
@@ -124,47 +125,39 @@ locally2 nested = ReactT $ do
 render' :: Elem -> ForeignNode -> IO ()
 render' = ffi "(function(e,r){React.render(r,e);})"
 
-render :: Elem -> (a -> React s ()) -> (a -> s -> a) -> a -> IO ()
-render elem component update state = do
-    let cb s = render elem component update (update state s)
-        component' = component state
-    foreignNode <- runIdentity $ interpret component' cb
-    render' elem foreignNode
-
 -- om's adding of raf:
 -- https://github.com/swannodette/om/commit/ec5f7890d85295e8ffc942c2c873b55e5080dc96
 -- react-tween-state:
 -- https://github.com/chenglou/react-tween-state/blob/master/index.js
 
-{-
-newtype RafHandle = RafHandle Int
-
-raf :: Ptr (Double -> IO ()) -> IO RafHandle
-raf = ffi "(function(cb) { window.requestAnimationFrame(cb); })"
-
 cancelRaf :: RafHandle -> IO ()
 cancelRaf = ffi "(function(id) { window.cancelAnimationFrame(id); })"
 
+{-
 -- The DOMHighResTimeStamp type is a double representing a number of
 -- milliseconds, accurate to the thousandth of millisecond, that is with
 -- a precision of 1 µs.
-handleRafUpdate :: IORef Bool -> IORef a -> (a -> u -> a) -> u -> IO ()
-handleRafUpdate dirty ref transition update = do
-    modifyIORef ref (\a -> transition a update)
-    writeIORef dirty False
+-}
 
-render :: Elem
-       -> (a -> React u ())
-       -> (a -> u -> a)
-       -> a
-       -> IO ()
-render elem component transition state = do
-    dirtyRef <- newIORef False
+render :: Elem -> (a -> React u ()) -> (a -> u -> a) -> a -> IO ()
+render elem component update state = do
     stateRef <- newIORef state
-    handleRef <- newIORef Nothing
-    let cb = handleRafUpdate dirtyRef stateRef transition
-        cb' timestamp = do
-            foreignNode <- runIdentity $ interpret component' cb
+    transitionRef <- newIORef []
+
+    let updateCb update = modifyIORef transitionRef (update:)
+        renderCb x = do
+            prevState <- readIORef stateRef
+            transitions <- readIORef transitionRef
+
+            let newState = foldl update prevState transitions
+                component' = component newState
+            foreignNode <- runIdentity $ interpret component' updateCb
             render' elem foreignNode
-    handle <- raf cb'
-    -}
+
+            writeIORef stateRef newState
+            writeIORef transitionRef []
+
+            js_raf $ toPtr renderCb
+            return ()
+
+    renderCb 0
