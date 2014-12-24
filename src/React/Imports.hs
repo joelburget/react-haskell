@@ -1,4 +1,8 @@
 {-# LANGUAGE ForeignFunctionInterface, CPP #-}
+
+-- TODO send GHC bug report
+{- ANN module "HLint: ignore Use camelCase" -}
+
 module React.Imports where
 
 import React.Types
@@ -7,6 +11,23 @@ import Haste
 import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
+
+#ifdef __HASTE__
+foreign import ccall js_bezier :: Double -> Double -> Double -> Double -> Double -> Double
+#else
+js_bezier :: Double -> Double -> Double -> Double -> Double -> Double
+js_bezier = error "cannot evaluate js_bezier in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall js_createClass :: Ptr (state -> React anim signal ())
+                                    -> IO ForeignClass
+#else
+js_createClass :: Ptr (state -> React anim signal ())
+               -- -> Ptr (
+               -> IO ForeignClass
+js_createClass = error "cannot evaluate js_createClass in ghc"
+#endif
 
 #ifdef __HASTE__
 foreign import ccall js_raf :: Ptr (Double -> IO ()) -> IO RafHandle

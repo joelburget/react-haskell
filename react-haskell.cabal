@@ -27,7 +27,7 @@ homepage: https://github.com/joelburget/react-haskell
 bug-reports: https://github.com/joelburget/react-haskell/issues
 
 data-dir: lib
-data-files: stubs.js
+data-files: stubs.js, bezier.js
 
 flag haste-inst
   description: Built with haste-inst/hastec
@@ -40,26 +40,35 @@ source-repository head
 library
   exposed-modules: React
   other-modules:
+    React.Anim,
     React.Attrs,
+    React.Class,
     React.Elements,
     React.Events,
     React.Imports,
+    React.Interpret,
+    React.Local,
+    React.Render,
     React.Types
   other-extensions:
+    CPP,
     FlexibleInstances,
     FlexibleContexts,
     ForeignFunctionInterface,
+    GADTs,
     GeneralizedNewtypeDeriving,
+    LambdaCase,
     MultiParamTypeClasses,
+    NamedFieldPuns,
     OverloadedStrings
   build-depends:
-    base >= 4.5 && < 4.7,
+    base >= 4.5,
     transformers,
     monads-tf,
     deepseq
   if flag(haste-inst)
     build-depends:
-      haste-lib >= 0.4 && <0.5
+      haste-lib >= 0.4 && <0.6
   else
     build-depends:
       haste-compiler

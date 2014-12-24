@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, GADTs, Rank2Types #-}
+    FlexibleInstances, FlexibleContexts, GADTs #-}
 module React.Types where
 
 import Control.Applicative
@@ -17,6 +17,7 @@ import Haste.Prim
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
+newtype ForeignClass = ForeignClass JSAny deriving (Pack, Unpack)
 
 newtype RafHandle = RafHandle Int
     deriving (Pack, Unpack)
@@ -31,19 +32,10 @@ data EvtType
     | MouseEnterEvt
     | MouseLeaveEvt
 
-data EventHandler s = EventHandler
-    { handler :: RawEvent -> Maybe s
+data EventHandler signal = EventHandler
+    { handler :: RawEvent -> Maybe signal -- XXX (Maybe signal, Maybe anim)?
     , evtType :: EvtType
     }
-
-handlerConvert :: (local -> general)
-               -> EventHandler local
-               -> EventHandler general
-handlerConvert f (EventHandler handle ty) =
-    EventHandler (\raw -> f <$> handle raw) ty
-
-handlerConvert' :: EventHandler () -> EventHandler general
-handlerConvert' (EventHandler handle ty) = EventHandler (const Nothing) ty
 
 newtype RawEvent = RawEvent JSAny deriving (Pack, Unpack)
 
@@ -52,55 +44,60 @@ type Attrs = [(JSString, JSON)]
 -- it'd be super cool to restrict `Pre` to a string somehow (restrict the
 -- underlying monad so it can only set attrs and string?)
 
-data ReactNode s = Parent JSString Attrs [EventHandler s] [ReactNode s]
-                 | Leaf JSString Attrs [EventHandler s]
-                 -- | Pre Attrs Handlers [ReactNode]
-                 | Text String -- TODO(joel) JSString?
+data ReactNode signal
+    = Parent JSString Attrs [EventHandler signal] [ReactNode signal]
+    | Leaf JSString Attrs [EventHandler signal]
+    -- | Pre Attrs Handlers [ReactNode]
+    | Text String -- TODO(joel) JSString?
 
-nodeConvert1 :: (local -> general) -> ReactNode local -> ReactNode general
-nodeConvert1 f (Parent name attrs handlers children) =
-    Parent name attrs (map (handlerConvert f) handlers)
-        (map (nodeConvert1 f) children)
-nodeConvert1 f (Leaf name attrs handlers) =
-    Leaf name attrs (map (handlerConvert f) handlers)
-nodeConvert1 f (Text str) = Text str
+{-
+-- The DOMHighResTimeStamp type is a double representing a number of
+-- milliseconds, accurate to the thousandth of millisecond, that is with
+-- a precision of 1 µs.
+-}
 
-nodeConvert2 :: ReactNode () -> ReactNode general
-nodeConvert2 (Parent name attrs handlers children) =
-    Parent name attrs (map handlerConvert' handlers)
-        (map nodeConvert2 children)
-nodeConvert2 (Leaf name attrs handlers) =
-    Leaf name attrs (map handlerConvert' handlers)
-nodeConvert2 (Text str) = Text str
+data AnimConfig trans = AnimConfig
+    { duration :: Double -- high res timestamp
+    -- , from :: anim
+    -- , easing :: Easing
+    , animId :: String
+    , onComplete :: Bool -> Maybe trans
+    }
 
-newtype ReactT s m a = ReactT
-    { runReactT :: m ([ReactNode s], a) }
+data RunningAnim trans = RunningAnim
+    { config :: AnimConfig trans
+    , beganAt :: Double
+    , progress :: Double
+    }
 
-type React s = ReactT s Identity
-type PureReact = React () ()
+newtype ReactT anim signal m a = ReactT
+    { runReactT :: [RunningAnim signal] -> m ([ReactNode signal], a) }
 
-instance (Monad m, Monoid a) => Monoid (ReactT s m a) where
-    mempty = ReactT $ return ([], mempty)
-    mappend f1 f2 = ReactT $ do
-        ~(c1, a) <- runReactT f1
-        ~(c2, b) <- runReactT f2
+type React anim signal = ReactT anim signal Identity
+type PureReact anim = React anim () ()
+
+instance (Monad m, Monoid a) => Monoid (ReactT anim signal m a) where
+    mempty = ReactT $ \_ -> return ([], mempty)
+    mappend f1 f2 = ReactT $ \anim -> do
+        ~(c1, a) <- runReactT f1 anim
+        ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
 
-instance Monad m => Functor (ReactT s m) where
+instance Monad m => Functor (ReactT anim signal m) where
     fmap = liftM
 
-instance Monad m => Applicative (ReactT s m) where
+instance Monad m => Applicative (ReactT anim signal m) where
     pure = return
     (<*>) = ap
 
-instance (Monad m, a ~ ()) => IsString (ReactT s m a) where
-    fromString str = ReactT $ return ([Text str], ())
+instance (Monad m, a ~ ()) => IsString (ReactT anim signal m a) where
+    fromString str = ReactT $ \_ -> return ([Text str], ())
 
-instance Monad m => Monad (ReactT s m) where
-    return a = ReactT $ return ([], a)
-    m >>= f = ReactT $ do
-        ~(c1, a) <- runReactT m
-        ~(c2, b) <- runReactT (f a)
+instance Monad m => Monad (ReactT anim signal m) where
+    return a = ReactT $ \_ -> return ([], a)
+    m >>= f = ReactT $ \anim -> do
+        ~(c1, a) <- runReactT m anim
+        ~(c2, b) <- runReactT (f a) anim
         return (c1 <> c2, b)
 
 -- TODO thinking there should be some notion of single / multiple?
@@ -119,19 +116,19 @@ instance Monad m => Monad (ReactT s m) where
 --
 -- input <! attr
 
-instance Monad m => Attributable (ReactT s m a) (JSString, JSON) where
-    react <! attr = ReactT $ do
-        ~(children, a) <- runReactT react
+instance Monad m => Attributable (ReactT anim signal m a) (JSString, JSON) where
+    react <! attr = ReactT $ \anim -> do
+        ~(children, a) <- runReactT react anim
         return (children <!> attr, a)
 
 instance Monad m =>
-         Attributable (ReactT s m a) (EventHandler s) where
-    react <! attr = ReactT $ do
-        ~(children, a) <- runReactT react
+         Attributable (ReactT anim signal m a) (EventHandler signal) where
+    react <! attr = ReactT $ \anim -> do
+        ~(children, a) <- runReactT react anim
         return (children <!< attr, a)
 
-instance Attributable (ReactT s m a) x =>
-         Attributable (ReactT s m a -> ReactT s m a) x where
+instance Attributable (ReactT anim signal m a) x =>
+         Attributable (ReactT anim signal m a -> ReactT anim signal m a) x where
     f <! attr = (<! attr) . f
 
 class Attributable h a where
@@ -141,14 +138,14 @@ class Attributable h a where
 h <!? (True, a) = h <! a
 h <!? (False, _) = h
 
-(<!>) :: [ReactNode s] -> (JSString, JSON) -> [ReactNode s]
+(<!>) :: [ReactNode signal] -> (JSString, JSON) -> [ReactNode signal]
 [elem] <!> attr = [go elem] where
     go (Parent name as hs cs) = Parent name (attr:as) hs cs
     go (Leaf name as hs)      = Leaf name (attr:as) hs
     go (Text str)             = Text str
 _ <!> _ = error "attr applied to multiple elems!"
 
-(<!<) :: [ReactNode s] -> EventHandler s -> [ReactNode s]
+(<!<) :: [ReactNode signal] -> EventHandler signal -> [ReactNode signal]
 [elem] <!< hndl = [go elem] where
     go (Parent name as hs cs) = Parent name as (hndl:hs) cs
     go (Leaf name as hs)      = Leaf name as (hndl:hs)
