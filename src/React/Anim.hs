@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiWayIf #-}
 module React.Anim where
 
 import Control.Applicative
@@ -10,8 +10,7 @@ import Haste
 import React.Imports
 import React.Types
 
--- react-tween-state:
--- https://github.com/chenglou/react-tween-state/blob/master/index.js
+-- TODO support delays
 
 -- TODO look at velocity
 
@@ -51,9 +50,14 @@ data Easing
     | EaseOutElastic
     | EaseInOutElastic
 
+    | EaseInBounce
+    | EaseOutBounce
+    | EaseInOutBounce
+
     | EaseBezier Double Double Double Double
     | EaseInSine
     | EaseOutSine
+    deriving Show
 
 class Animatable a where
     -- TODO is `to` always `animZero`?
@@ -79,11 +83,9 @@ easeOutPow :: Int -> Double -> Double
 easeOutPow pow t = 1 - easeInPow pow (1 - t)
 
 easeInOutPow :: Int -> Double -> Double
-easeInOutPow pow t =
-    let twoPow = 2 ^^ pow
-    in if t < 0.5
-       then easeInPow pow (t * twoPow) / twoPow
-       else easeOutPow pow (t * twoPow) / twoPow
+easeInOutPow pow t = if t < 0.5
+   then easeInPow pow (t * 2) / 2
+   else 1 - easeInPow pow ((1 - t) * 2) / 2
 
 elastic :: Double -> Double
 elastic t =
@@ -95,32 +97,6 @@ elastic t =
 easeDouble :: Easing -> Double -> Double
 easeDouble Linear t = t
 
-{-
--- TODO do a better job of these simple easings, e.g:
-easeDouble EaseInQuad t = easeInPow 2 t
-easeDouble EaseOutQuad t = 1 - easeDouble EaseInQuad (1 - t)
-easeDouble EaseInOutQuad t = if t < 0.5
-    then (easeDouble EaseInQuad (t * 2)) / 2
-    else 1 - (easeDouble EaseInQuad ((1 - t) * 2)) / 2
-
-easeDouble EaseInCubic t = t * t * t
-easeDouble EaseOutCubic t = let t' = (t - 1) in t' * t' * t' + 1
-easeDouble EaseInOutCubic t = if t < 0.5
-    then 4 * t * t * t
-    else (t - 1) * (2 * t - 2) * (2 * t - 2) + 1
-
-easeDouble EaseInQuart t = t * t * t * t
-easeDouble EaseOutQuart t = let t' = (t - 1) in 1 - t' * t' * t' * t'
-easeDouble EaseInOutQuart t = if t < 0.5
-    then 8 * t * t * t * t
-    else let t' = t - 1 in 1 - 8 * t' * t' * t' * t'
-
-easeDouble EaseInQuint t = t * t * t * t * t
-easeDouble EaseOutQuint t = let t' = (t - 1) in 1 + t' * t' * t' * t' * t
-easeDouble EaseInOutQuint t = if t < 0.5
-    then 16 * t * t * t * t * t
-    else let t' = t - 1 in 1 + 16 * t' * t' * t' * t' * t
--}
 easeDouble EaseInQuad t    = easeInPow 2 t
 easeDouble EaseOutQuad t   = easeOutPow 2 t
 easeDouble EaseInOutQuad t = easeInOutPow 2 t
@@ -137,12 +113,27 @@ easeDouble EaseInQuint t    = easeInPow 5 t
 easeDouble EaseOutQuint t   = easeOutPow 5 t
 easeDouble EaseInOutQuint t = easeInOutPow 5 t
 
+easeDouble EaseInBounce t = easeDouble EaseOutBounce (1 - t)
+easeDouble EaseOutBounce t = let c = 7.5625 in
+    if | t < (1 / 2.75) -> c * t * t
+       | t < (2 / 2.75) -> let t' = t - (1.5 / 2.75) in c * t' * t' + 0.75
+       | t < (2.5 / 2.75) -> let t' = t - (2.25 / 2.75) in c * t' * t' + 0.9375
+       | otherwise -> let t' = t - (2.625 / 2.75) in c * t' * t' + 0.984375
+
+-- TODO fix
+easeDouble EaseInOutBounce t =
+    if t < 0.5
+        then easeDouble EaseInBounce (t * 2) / 2
+        else 1 - easeDouble EaseOutBounce ((1 - t) * 2) / 2
+
 easeDouble EaseInElastic t = 1 - elastic (1 - t)
 easeDouble EaseOutElastic t = elastic t
+
+-- TODO fix
 easeDouble EaseInOutElastic t =
     if t < 0.5
-       then (1 - elastic (1 - t * 2)) / 2
-       else elastic (t * 2) / 2
+       then elastic (t * 2) / 2
+       else 1 - elastic ((1 - t) * 2) / 2
 
 easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 
@@ -155,34 +146,22 @@ instance Animatable Double where
     animAdd = (+)
     animZero = 0
 
--- TODO getEasing :: Easing -> ident -> React Double
-
--- why do we use getEasing?
--- because of additive animations?
---
--- without getEasing animations (a t:0.5 easing:Quad) and (b: t:0.5 easing:Quad) go to (c: t:0.5 easing:Quad)
--- with
---
--- bullshit
--- getEasing :: Easing -> ident -> React Double
--- getEasing
-
 getAnimState :: Monad m => ReactT anim signal m [RunningAnim signal]
 getAnimState = ReactT $ \anim -> return ([], anim)
 
-getWithEasing :: Monad m => Easing -> String -> ReactT anim trans m Double
+getWithEasing :: Monad m => Easing -> String -> ReactT anim signal m Double
 getWithEasing easing name = ReactT $ \anims -> do
     let relevant = filter
-            (\(RunningAnim (AnimConfig _ str _) _ _) -> str == name)
+            (\(RunningAnim (AnimConfig _ _ _ key _) _ _) -> key == name)
             anims
         mapped :: [Sum Double]
-        mapped = map (\(RunningAnim _ _ progress) ->
-                     Sum $ interpolate easing 1 0 progress) relevant
+        mapped = map (\(RunningAnim (AnimConfig _ from to _ _) _ progress) ->
+                     Sum $ interpolate easing from to progress) relevant
     return ([], getSum (mconcat mapped))
 
-lerp' :: Double -> RunningAnim trans -> RunningAnim trans
+lerp' :: Double -> RunningAnim signal -> RunningAnim signal
 lerp' time anim = anim{progress=lerp time anim}
 
-lerp :: Double -> RunningAnim trans -> Double
-lerp time (RunningAnim (AnimConfig duration _ _) begin _) =
+lerp :: Double -> RunningAnim signal -> Double
+lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin _) =
     (time - begin) / duration

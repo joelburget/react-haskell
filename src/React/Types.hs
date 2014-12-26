@@ -19,7 +19,7 @@ newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
 newtype ForeignClass = ForeignClass JSAny deriving (Pack, Unpack)
 
-newtype RafHandle = RafHandle Int
+newtype RenderHandle = RenderHandle Int
     deriving (Pack, Unpack)
 
 data EvtType
@@ -56,16 +56,17 @@ data ReactNode signal
 -- a precision of 1 µs.
 -}
 
-data AnimConfig trans = AnimConfig
+data AnimConfig signal = AnimConfig
     { duration :: Double -- high res timestamp
-    -- , from :: anim
+    , from :: Double
+    , to :: Double
     -- , easing :: Easing
     , animId :: String
-    , onComplete :: Bool -> Maybe trans
+    , onComplete :: Bool -> Maybe signal
     }
 
-data RunningAnim trans = RunningAnim
-    { config :: AnimConfig trans
+data RunningAnim signal = RunningAnim
+    { config :: AnimConfig signal
     , beganAt :: Double
     , progress :: Double
     }

@@ -1,8 +1,10 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings #-}
 module React.Class
-    ( ReactClass(classTransition, classState, classRender)
+    ( ReactClass(..)
     , createClass
     ) where
+
+import Data.IORef
 
 import React.Anim
 import React.Imports
@@ -12,18 +14,35 @@ import Haste
 import Haste.JSON
 import Haste.Prim
 
-data ReactClass state trans anim signal = ReactClass
-    { runningAnims :: [RunningAnim trans]
-    , classRender :: state -> React anim trans ()
-    , classTransition :: state -> trans -> (state, Maybe (AnimConfig trans))
+
+data ReactClass state signal anim = ReactClass
+    { classRender :: state -> React anim signal ()
+    , classTransition :: state -> signal -> (state, [AnimConfig signal])
+
     , foreignClass :: ForeignClass
-    , classState :: state
+
+    , stateRef :: IORef state
+    , animRef :: IORef [RunningAnim signal]
+    , transitionRef :: IORef [signal]
     }
 
-createClass :: (state -> React anim trans ())
-            -> (state -> trans -> (state, Maybe (AnimConfig trans)))
+
+createClass :: (state -> React anim signal ())
+            -> (state -> signal -> (state, [AnimConfig signal]))
             -> state
-            -> IO (ReactClass state trans anim signal)
-createClass render transition initialState = do
-    foreignClass <- js_createClass (toPtr render)
-    return $ ReactClass [] render transition foreignClass initialState
+            -> [signal]
+            -> IO (ReactClass state signal anim)
+createClass render transition initialState initialTrans = do
+    foreignClass <- js_createClass $ toPtr render
+
+    stateRef <- newIORef initialState
+    animRef <- newIORef []
+    transitionRef <- newIORef initialTrans
+
+    return $ ReactClass
+        render
+        transition
+        foreignClass
+        stateRef
+        animRef
+        transitionRef

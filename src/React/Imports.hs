@@ -13,6 +13,13 @@ import Haste.JSON
 import Haste.Prim
 
 #ifdef __HASTE__
+foreign import ccall js_render :: ForeignNode -> Elem -> IO ()
+#else
+js_render :: ForeignNode -> Elem -> IO ()
+js_render = error "cannot evaluate js_render in ghc"
+#endif
+
+#ifdef __HASTE__
 foreign import ccall js_bezier :: Double -> Double -> Double -> Double -> Double -> Double
 #else
 js_bezier :: Double -> Double -> Double -> Double -> Double -> Double
@@ -30,10 +37,17 @@ js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
 
 #ifdef __HASTE__
-foreign import ccall js_raf :: Ptr (Double -> IO ()) -> IO RafHandle
+foreign import ccall js_raf :: Ptr (Double -> IO ()) -> IO RenderHandle
 #else
-js_raf :: Ptr (Double -> IO ()) -> IO RafHandle
+js_raf :: Ptr (Double -> IO ()) -> IO RenderHandle
 js_raf = error "cannot evaluate js_raf in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall js_cancelRaf :: RenderHandle -> IO ()
+#else
+js_cancelRaf :: RenderHandle -> IO ()
+js_cancelRaf = error "cannot evaluate js_cancelRaf in ghc"
 #endif
 
 #ifdef __HASTE__

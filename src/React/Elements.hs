@@ -241,3 +241,56 @@ wbr_ = makeLeaf "wbr"
 -- style :: RawAttrs -> JSString -> IO ForeignNode
 -- textarea :: RawAttrs -> JSString -> IO ForeignNode
 -- title :: RawAttrs -> JSString -> IO ForeignNode
+
+-- svg!
+
+svg_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+svg_ = makeParent "svg"
+
+defs_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+defs_ = makeParent "defs"
+
+g_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+g_ = makeParent "g"
+
+linearGradient_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+linearGradient_ = makeParent "linearGradient"
+
+mask_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+mask_ = makeParent "mask"
+
+pattern_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+pattern_ = makeParent "pattern"
+
+radialGradient_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+radialGradient_ = makeParent "radialGradient"
+
+stop_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+stop_ = makeParent "stop"
+
+-- text_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+-- text_ = makeParent "text"
+
+tspan_ :: Monad m => ReactT anim signal m a -> ReactT anim signal m ()
+tspan_ = makeParent "tspan"
+
+circle_ :: Monad m => ReactT anim signal m ()
+circle_ = makeLeaf "circle"
+
+ellipse_ :: Monad m => ReactT anim signal m ()
+ellipse_ = makeLeaf "ellipse"
+
+line_ :: Monad m => ReactT anim signal m ()
+line_ = makeLeaf "line"
+
+path_ :: Monad m => ReactT anim signal m ()
+path_ = makeLeaf "path"
+
+polygon_ :: Monad m => ReactT anim signal m ()
+polygon_ = makeLeaf "polygon"
+
+polyline_ :: Monad m => ReactT anim signal m ()
+polyline_ = makeLeaf "polyline"
+
+rect_ :: Monad m => ReactT anim signal m ()
+rect_ = makeLeaf "rect"

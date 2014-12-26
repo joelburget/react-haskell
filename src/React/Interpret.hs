@@ -73,6 +73,3 @@ interpret' cb = \case
         let hs' = map (unHandler cb) hs
         voidElement js_React_DOM_leaf name as hs'
     Text str -> js_React_DOM_text (toJSStr str)
-
-render' :: Elem -> ForeignNode -> IO ()
-render' = ffi "(function(e,r){React.render(r,e);})"

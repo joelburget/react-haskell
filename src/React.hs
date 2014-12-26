@@ -12,7 +12,7 @@ module React
     , getWithEasing
 
     -- React.Render
-    , cancelRaf
+    , cancelRender
     , render
     ) where
 

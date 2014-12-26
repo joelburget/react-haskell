@@ -29,8 +29,8 @@ transition :: PageState
            -> (PageState, Maybe (AnimConfig Transition))
 transition state (Typing str) = (state{cur=str}, Nothing)
 transition PageState{fst, cur} Enter =
-    (PageState cur fst ""
-    ,Just (AnimConfig 1000 "Anim" {-(-18) EaseInCubic-} (const Nothing))
+    ( PageState cur fst ""
+    , Just (AnimConfig 1000 "Anim" {-(-18) EaseInCubic-} (const Nothing))
     )
 
 -- view
