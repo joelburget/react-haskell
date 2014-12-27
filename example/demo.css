@@ -1,0 +1,36 @@
+.demo {
+    overflow: hidden;
+}
+.demo, .demo input {
+    font-family: monospace;
+    font-size: 16px;
+}
+.box {
+    float: left;
+    margin: 10px;
+    padding: 10px;
+    border: 1px dashed rgb(155, 155, 155);
+}
+.caption span {
+    display: flex;
+    justify-content: center;
+}
+.table {
+    display: table;
+}
+.row {
+    display: table-row;
+}
+.cell {
+    display: table-cell;
+}
+.relative-cell {
+    padding-left: 4px;
+    display: table-cell;
+    position: relative;
+}
+.slider {
+    background-color: gray;
+    border-right: 10px solid black;
+    height: 200px;
+}

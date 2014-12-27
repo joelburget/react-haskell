@@ -15,28 +15,31 @@ import Haste.JSON
 import Haste.Prim
 
 
-data ReactClass state signal anim = ReactClass
-    { classRender :: state -> React anim signal ()
-    , classTransition :: state -> signal -> (state, [AnimConfig signal])
+data ReactClass ty = ReactClass
+    { classRender :: PageState ty -> React ty ()
+    , classTransition :: PageState ty -> Signal ty -> (PageState ty, [AnimConfig ty])
 
     , foreignClass :: ForeignClass
 
-    , stateRef :: IORef state
-    , animRef :: IORef [RunningAnim signal]
-    , transitionRef :: IORef [signal]
+    , stateRef :: IORef (PageState ty)
+    , animRef :: IORef (AnimationState ty)
+    , runningAnimRef :: IORef [RunningAnim ty]
+    , transitionRef :: IORef [Signal ty]
     }
 
 
-createClass :: (state -> React anim signal ())
-            -> (state -> signal -> (state, [AnimConfig signal]))
-            -> state
-            -> [signal]
-            -> IO (ReactClass state signal anim)
-createClass render transition initialState initialTrans = do
+createClass :: (PageState ty -> React ty ())
+            -> (PageState ty -> Signal ty -> (PageState ty, [AnimConfig ty]))
+            -> PageState ty
+            -> AnimationState ty
+            -> [Signal ty]
+            -> IO (ReactClass ty)
+createClass render transition initialState initialAnim initialTrans = do
     foreignClass <- js_createClass $ toPtr render
 
     stateRef <- newIORef initialState
-    animRef <- newIORef []
+    animRef <- newIORef initialAnim
+    runningAnimRef <- newIORef []
     transitionRef <- newIORef initialTrans
 
     return $ ReactClass
@@ -45,4 +48,5 @@ createClass render transition initialState initialTrans = do
         foreignClass
         stateRef
         animRef
+        runningAnimRef
         transitionRef

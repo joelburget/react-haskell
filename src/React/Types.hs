@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, GADTs #-}
+    FlexibleInstances, FlexibleContexts, TypeFamilies, ExistentialQuantification, ImpredicativeTypes #-}
 module React.Types where
 
 import Control.Applicative
@@ -13,6 +13,7 @@ import Haste
 import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
+import Lens.Family2
 
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
@@ -33,7 +34,7 @@ data EvtType
     | MouseLeaveEvt
 
 data EventHandler signal = EventHandler
-    { handler :: RawEvent -> Maybe signal -- XXX (Maybe signal, Maybe anim)?
+    { handler :: RawEvent -> Maybe signal
     , evtType :: EvtType
     }
 
@@ -50,51 +51,96 @@ data ReactNode signal
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
 
+data Easing
+    = Linear
+
+    | EaseInQuad
+    | EaseOutQuad
+    | EaseInOutQuad
+
+    | EaseInCubic
+    | EaseOutCubic
+    | EaseInOutCubic
+
+    | EaseInQuart
+    | EaseOutQuart
+    | EaseInOutQuart
+
+    | EaseInQuint
+    | EaseOutQuint
+    | EaseInOutQuint
+
+    | EaseInElastic
+    | EaseOutElastic
+    | EaseInOutElastic
+
+    | EaseInBounce
+    | EaseOutBounce
+    | EaseInOutBounce
+
+    | EaseBezier Double Double Double Double
+    | EaseInSine
+    | EaseOutSine
+    deriving (Show, Eq, Ord)
+
+class Animatable a where
+    -- TODO is `to` always `animZero`?
+    interpolate :: Easing -> a -> a -> Double -> a
+    animAdd :: a -> a -> a
+    animSub :: a -> a -> a
+    animZero :: a
+
 {-
 -- The DOMHighResTimeStamp type is a double representing a number of
 -- milliseconds, accurate to the thousandth of millisecond, that is with
 -- a precision of 1 µs.
 -}
 
-data AnimConfig signal = AnimConfig
-    { duration :: Double -- high res timestamp
-    , from :: Double
-    , to :: Double
-    -- , easing :: Easing
-    , animId :: String
-    , onComplete :: Bool -> Maybe signal
+data family PageState ty :: *
+data family AnimationState ty :: *
+data family Signal ty :: *
+
+data instance PageState      () = UnitPageState
+data instance AnimationState () = UnitAnimationState
+data instance Signal         () = UnitSignal
+
+data AnimConfig ty = forall a. (Animatable a, Show a) => AnimConfig
+    { duration :: Double
+    , from :: a
+    -- , lens :: Lens' anim a XXX
+    , lens :: Traversal' (AnimationState ty) a
+    , easing :: Easing
+    , onComplete :: Bool -> Maybe (Signal ty)
     }
 
-data RunningAnim signal = RunningAnim
-    { config :: AnimConfig signal
+data RunningAnim ty = RunningAnim
+    { config :: AnimConfig ty
     , beganAt :: Double
-    , progress :: Double
     }
 
-newtype ReactT anim signal m a = ReactT
-    { runReactT :: [RunningAnim signal] -> m ([ReactNode signal], a) }
+newtype ReactT ty m a = ReactT
+    { runReactT :: AnimationState ty -> m ([ReactNode (Signal ty)], a) }
 
-type React anim signal = ReactT anim signal Identity
-type PureReact anim = React anim () ()
+type React ty = ReactT ty Identity
 
-instance (Monad m, Monoid a) => Monoid (ReactT anim signal m a) where
+instance (Monad m, Monoid a) => Monoid (ReactT ty m a) where
     mempty = ReactT $ \_ -> return ([], mempty)
     mappend f1 f2 = ReactT $ \anim -> do
         ~(c1, a) <- runReactT f1 anim
         ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
 
-instance Monad m => Functor (ReactT anim signal m) where
+instance Monad m => Functor (ReactT ty m) where
     fmap = liftM
 
-instance Monad m => Applicative (ReactT anim signal m) where
+instance Monad m => Applicative (ReactT ty m) where
     pure = return
     (<*>) = ap
 
-instance (Monad m, a ~ ()) => IsString (ReactT anim signal m a) where
+instance (Monad m, a ~ ()) => IsString (ReactT ty m a) where
     fromString str = ReactT $ \_ -> return ([Text str], ())
 
-instance Monad m => Monad (ReactT anim signal m) where
+instance Monad m => Monad (ReactT ty m) where
     return a = ReactT $ \_ -> return ([], a)
     m >>= f = ReactT $ \anim -> do
         ~(c1, a) <- runReactT m anim
@@ -117,19 +163,19 @@ instance Monad m => Monad (ReactT anim signal m) where
 --
 -- input <! attr
 
-instance Monad m => Attributable (ReactT anim signal m a) (JSString, JSON) where
+instance Monad m => Attributable (ReactT ty m a) (JSString, JSON) where
     react <! attr = ReactT $ \anim -> do
         ~(children, a) <- runReactT react anim
         return (children <!> attr, a)
 
-instance Monad m =>
-         Attributable (ReactT anim signal m a) (EventHandler signal) where
+instance (Monad m, sig ~ Signal ty) =>
+         Attributable (ReactT ty m a) (EventHandler sig) where
     react <! attr = ReactT $ \anim -> do
         ~(children, a) <- runReactT react anim
         return (children <!< attr, a)
 
-instance Attributable (ReactT anim signal m a) x =>
-         Attributable (ReactT anim signal m a -> ReactT anim signal m a) x where
+instance Attributable (ReactT ty m a) x =>
+         Attributable (ReactT ty m a -> ReactT ty m a) x where
     f <! attr = (<! attr) . f
 
 class Attributable h a where

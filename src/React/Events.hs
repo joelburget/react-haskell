@@ -33,9 +33,8 @@ makeHandler obj (handle, DoubleClickEvt) =
     js_set_onDoubleClick (handlerToJs handle) obj
 makeHandler obj (handle, MouseEnterEvt) =
     js_set_onMouseEnter (handlerToJs handle) obj
-makeHandler obj (handle, MouseLeaveEvt) = return ()
-    -- js_set_onMouseLeave (handlerToJs handle) obj
-makeHandler _ _ = return () -- XXX
+makeHandler obj (handle, MouseLeaveEvt) =
+    js_set_onMouseLeave (handlerToJs handle) obj
 
 mkEventHandler :: NFData s
                => (RawEvent -> s)

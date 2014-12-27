@@ -7,9 +7,10 @@ module React
 
     -- React.Anim
     , Easing(..)
+    , Color(..)
     , interpolate
-    , getAnimState
-    , getWithEasing
+    , getAnimationState
+    , Animatable(..) -- XXX
 
     -- React.Render
     , cancelRender

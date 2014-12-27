@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiWayIf,
+  FlexibleContexts #-}
 module React.Anim where
 
 import Control.Applicative
@@ -6,9 +7,12 @@ import Data.IORef
 import Data.Monoid
 
 import Haste
+import Lens.Family2
 
 import React.Imports
 import React.Types
+
+import Debug.Trace
 
 -- TODO support delays
 
@@ -27,54 +31,65 @@ easingFunc EaseInQuad from to t = from .+^ ((t*t) *^ (to .-. from))
 easingFunc _ _ _ _ = error "that easing function has not been defined yet"
 -}
 
-data Easing
-    = Linear
+instance Animatable Double where
+    interpolate ease from to t =
+        if | t <= 0 -> from
+           | t >= 1 -> to
+           | otherwise -> from + easeDouble ease t * (to - from)
+    animAdd = (+)
+    animSub = (-)
+    animZero = 0
 
-    | EaseInQuad
-    | EaseOutQuad
-    | EaseInOutQuad
+-- I think this could become Functor if we limit `to` to `animZero`
+-- instance (Applicative f, Animatable a) => Animatable (f a) where
+--     interpolate ease from to t = interpolate ease <$> from <*> to <*> pure t
+--     animAdd = liftA2 animAdd
+--     animZero = pure animZero
 
-    | EaseInCubic
-    | EaseOutCubic
-    | EaseInOutCubic
-
-    | EaseInQuart
-    | EaseOutQuart
-    | EaseInOutQuart
-
-    | EaseInQuint
-    | EaseOutQuint
-    | EaseInOutQuint
-
-    | EaseInElastic
-    | EaseOutElastic
-    | EaseInOutElastic
-
-    | EaseInBounce
-    | EaseOutBounce
-    | EaseInOutBounce
-
-    | EaseBezier Double Double Double Double
-    | EaseInSine
-    | EaseOutSine
-    deriving Show
-
-class Animatable a where
-    -- TODO is `to` always `animZero`?
-    interpolate :: Easing -> a -> a -> Double -> a
-    animAdd :: a -> a -> a
-    animZero :: a
-
+-- TODO use generics for all tuple instances
 instance Animatable () where
     interpolate _ _ _ _ = ()
     animAdd _ _ = ()
+    animSub _ _ = ()
     animZero = ()
 
--- I think this could become Functor if we limit `to` to `animZero`
-instance (Applicative f, Animatable a) => Animatable (f a) where
-    interpolate ease from to t = interpolate ease <$> from <*> to <*> pure t
-    animAdd = liftA2 animAdd
-    animZero = pure animZero
+instance (Animatable a, Animatable b) => Animatable (a, b) where
+    interpolate ease (x0, y0) (x1, y1) t =
+        (interpolate ease x0 x1 t, interpolate ease y0 y1 t)
+    animAdd (x0, y0) (x1, y1) = (x0 `animAdd` x1, y0 `animAdd` y1)
+    animSub (x0, y0) (x1, y1) = (x0 `animSub` x1, y0 `animSub` y1)
+    animZero = (animZero, animZero)
+
+instance (Animatable a, Animatable b, Animatable c) => Animatable (a, b, c) where
+    interpolate ease (x0, y0, z0) (x1, y1, z1) t =
+        (interpolate ease x0 x1 t,
+         interpolate ease y0 y1 t,
+         interpolate ease z0 z1 t)
+    animAdd (x0, y0, z0) (x1, y1, z1) =
+        (x0 `animAdd` x1,
+         y0 `animAdd` y1,
+         z0 `animAdd` z1)
+    animSub (x0, y0, z0) (x1, y1, z1) =
+        (x0 `animSub` x1,
+         y0 `animSub` y1,
+         z0 `animSub` z1)
+    animZero = (animZero, animZero, animZero)
+
+-- TODO use color package
+data Color = Color Int Int Int
+
+instance Animatable Color where
+    interpolate ease c1@(Color r0 g0 b0) c2@(Color r1 g1 b1) t =
+        let t' = interpolate ease 0 1 t
+        in Color (intLerp r0 r1 t') (intLerp g0 g1 t') (intLerp b0 b1 t')
+    animAdd (Color r0 g0 b0) (Color r1 g1 b1) =
+        Color (r0 + r1) (g0 + g1) (b0 + b1)
+    animSub (Color r0 g0 b0) (Color r1 g1 b1) =
+        Color (r0 - r1) (g0 - g1) (b0 - b1)
+    animZero = (Color 0 0 0)
+
+instance Show Color where
+    show (Color r g b) = "rgb" ++ show (r, g, b)
 
 easeInPow :: Int -> Double -> Double
 easeInPow pow t = t ^^ pow
@@ -91,7 +106,7 @@ elastic :: Double -> Double
 elastic t =
     let p = 0.3
         powFactor = 2 ** (-10 * t)
-        sinFactor = sin ( (t - p / 4) * (2 * pi / p))
+        sinFactor = sin $ (t - p / 4) * (2 * pi / p)
     in powFactor * sinFactor + 1
 
 easeDouble :: Easing -> Double -> Double
@@ -141,27 +156,24 @@ easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 easeDouble EaseInSine t = js_bezier 0.47 0 0.745 0.715 t
 easeDouble EaseOutSine t = js_bezier 0.39 0.575 0.565 1 t
 
-instance Animatable Double where
-    interpolate ease from to t = from + easeDouble ease t * (to - from)
-    animAdd = (+)
-    animZero = 0
+getAnimationState :: Monad m => ReactT ty m (AnimationState ty)
+getAnimationState = ReactT $ \anim -> return ([], anim)
 
-getAnimState :: Monad m => ReactT anim signal m [RunningAnim signal]
-getAnimState = ReactT $ \anim -> return ([], anim)
+stepRunningAnims :: AnimationState ty -> [(RunningAnim ty, Double)] -> AnimationState ty
+stepRunningAnims anim running =
+    let start = foldr
+            ( \(RunningAnim AnimConfig{lens=lens} _, _) anim' ->
+                anim' & lens .~ animZero
+            )
+            anim running
+    in foldr
+        ( \(RunningAnim (AnimConfig _ from lens easing _) _, progress) anim' ->
+            anim' & lens %~ (`animAdd` interpolate easing from animZero progress)
+        ) start running
 
-getWithEasing :: Monad m => Easing -> String -> ReactT anim signal m Double
-getWithEasing easing name = ReactT $ \anims -> do
-    let relevant = filter
-            (\(RunningAnim (AnimConfig _ _ _ key _) _ _) -> key == name)
-            anims
-        mapped :: [Sum Double]
-        mapped = map (\(RunningAnim (AnimConfig _ from to _ _) _ progress) ->
-                     Sum $ interpolate easing from to progress) relevant
-    return ([], getSum (mconcat mapped))
-
-lerp' :: Double -> RunningAnim signal -> RunningAnim signal
-lerp' time anim = anim{progress=lerp time anim}
-
-lerp :: Double -> RunningAnim signal -> Double
-lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin _) =
+lerp :: Double -> RunningAnim ty -> Double
+lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin) =
     (time - begin) / duration
+
+intLerp :: Int -> Int -> Double -> Int
+intLerp a b t = floor $ (fromIntegral a) + (fromIntegral $ b - a) * t

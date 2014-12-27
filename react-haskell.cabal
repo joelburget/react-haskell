@@ -2,7 +2,7 @@ name:                react-haskell
 version:             1.2.0.0
 synopsis:            Haskell React bindings
 description:
-  This package provides high level bindings to Facebook's <facebook.github.io/react/ React> library, meant for use with <haste-lang.org Haste>.
+  This package provides high level bindings to Facebook's <http://facebook.github.io/react/ React> library, meant for use with <http://haste-lang.org Haste>.
   .
   React is a JavaScript library for building user interfaces. React (and React-Haskell) is focused on just UI - it's not a framework.
   .
@@ -65,7 +65,8 @@ library
     base >= 4.5,
     transformers,
     monads-tf,
-    deepseq
+    deepseq,
+    lens-family
   if flag(haste-inst)
     build-depends:
       haste-lib >= 0.4 && <0.6
