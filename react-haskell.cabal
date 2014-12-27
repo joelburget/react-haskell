@@ -65,7 +65,8 @@ library
     base >= 4.5,
     transformers,
     monads-tf,
-    deepseq
+    deepseq,
+    lens-family
   if flag(haste-inst)
     build-depends:
       haste-lib >= 0.4 && <0.6

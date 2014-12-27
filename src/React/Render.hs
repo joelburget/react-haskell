@@ -46,14 +46,14 @@ doRender elem time ReactClass{ classRender,
             mapAccumL classTransition prevState transitions
 
         newAnims' = concat newAnims
-        newRunningAnims = map (\conf -> RunningAnim conf time 0) newAnims'
+        newRunningAnims = map (\conf -> RunningAnim conf time) newAnims'
 
         (runningAnims', endingAnims) = partition
-            (\(RunningAnim (AnimConfig duration _ _ _ _) beganAt progress) ->
+            (\(RunningAnim AnimConfig{duration} beganAt) ->
                 beganAt + duration > time)
             (runningAnims <> newRunningAnims)
 
-        runningAnims'' = fmap (lerp' time) runningAnims'
+        runningAnims'' = zip runningAnims' (map (lerp time) runningAnims')
 
         -- TODO should this run before or after rendering?
         -- TODO expose a way to cancel / pass False in that case

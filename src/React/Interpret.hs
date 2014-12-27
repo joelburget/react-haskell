@@ -12,6 +12,7 @@ import React.Events
 import React.Imports
 import React.Types
 
+
 element :: (JSString -> RawAttrs -> ReactArray -> IO ForeignNode)
         -> JSString
         -> Attrs
@@ -27,6 +28,7 @@ element constructor name attrs handlers content = do
     mapM_ (js_ReactArray_push children) content
     constructor name attr children
 
+
 voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
             -> JSString
             -> Attrs
@@ -34,6 +36,7 @@ voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
             -> IO ForeignNode
 voidElement constructor name attrs handlers =
     element (\n a c -> constructor n a) name attrs handlers []
+
 
 setField :: RawAttrs -> (JSString, JSON) -> IO ()
 setField attr (fld, Str v) = js_set_field_String attr fld v
@@ -48,18 +51,20 @@ setField attr (fld, Bool False) = js_set_field_False attr fld
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
+
 -- TODO figure out what to do with this
 -- getDomNode :: ForeignNode -> IO (Maybe Elem)
 -- getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 interpret :: Monad m
           => ReactT anim signal m ()
-          -> [RunningAnim signal]
+          -> [(RunningAnim signal anim, Double)]
           -> (signal -> IO ())
           -> m (IO ForeignNode)
-interpret react anim cb = do
-    ~(child:_, ()) <- runReactT react anim
+interpret react anims cb = do
+    ~(child:_, ()) <- runReactT react anims
     return $ interpret' cb child
+
 
 interpret' :: (signal -> IO ())
            -> ReactNode signal

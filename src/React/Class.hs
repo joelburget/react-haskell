@@ -17,18 +17,18 @@ import Haste.Prim
 
 data ReactClass state signal anim = ReactClass
     { classRender :: state -> React anim signal ()
-    , classTransition :: state -> signal -> (state, [AnimConfig signal])
+    , classTransition :: state -> signal -> (state, [AnimConfig signal anim])
 
     , foreignClass :: ForeignClass
 
     , stateRef :: IORef state
-    , animRef :: IORef [RunningAnim signal]
+    , animRef :: IORef [RunningAnim signal anim]
     , transitionRef :: IORef [signal]
     }
 
 
 createClass :: (state -> React anim signal ())
-            -> (state -> signal -> (state, [AnimConfig signal]))
+            -> (state -> signal -> (state, [AnimConfig signal anim]))
             -> state
             -> [signal]
             -> IO (ReactClass state signal anim)

@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, GADTs #-}
+    FlexibleInstances, FlexibleContexts, TypeFamilies #-}
 module React.Types where
 
 import Control.Applicative
@@ -33,7 +33,7 @@ data EvtType
     | MouseLeaveEvt
 
 data EventHandler signal = EventHandler
-    { handler :: RawEvent -> Maybe signal -- XXX (Maybe signal, Maybe anim)?
+    { handler :: RawEvent -> Maybe signal
     , evtType :: EvtType
     }
 
@@ -50,38 +50,90 @@ data ReactNode signal
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
 
+data Easing
+    = Linear
+
+    | EaseInQuad
+    | EaseOutQuad
+    | EaseInOutQuad
+
+    | EaseInCubic
+    | EaseOutCubic
+    | EaseInOutCubic
+
+    | EaseInQuart
+    | EaseOutQuart
+    | EaseInOutQuart
+
+    | EaseInQuint
+    | EaseOutQuint
+    | EaseInOutQuint
+
+    | EaseInElastic
+    | EaseOutElastic
+    | EaseInOutElastic
+
+    | EaseInBounce
+    | EaseOutBounce
+    | EaseInOutBounce
+
+    | EaseBezier Double Double Double Double
+    | EaseInSine
+    | EaseOutSine
+    deriving Show
+
 {-
 -- The DOMHighResTimeStamp type is a double representing a number of
 -- milliseconds, accurate to the thousandth of millisecond, that is with
 -- a precision of 1 µs.
 -}
 
-data AnimConfig signal = AnimConfig
-    { duration :: Double -- high res timestamp
-    , from :: Double
-    , to :: Double
-    -- , easing :: Easing
-    , animId :: String
+-- class Animatable anim => AnimConfig conf anim ident signal where
+--     duration :: conf -> Double
+--     to :: conf -> anim
+--     easing :: conf -> Easing
+--     animId :: conf -> ident
+--     onComplete :: Bool -> Maybe signal
+
+-- TODO param order here doesn't match ReactT
+data AnimConfig signal animKey = AnimConfig
+    { duration :: Double
+    -- , from :: AnimTy animKey
+    , mod :: [AnimTy animKey -> AnimTy animKey]
+    , easing :: Easing
+    , animId :: animKey
     , onComplete :: Bool -> Maybe signal
     }
 
-data RunningAnim signal = RunningAnim
-    { config :: AnimConfig signal
+data RunningAnim signal animKey = RunningAnim
+    { config :: AnimConfig signal animKey
     , beganAt :: Double
-    , progress :: Double
     }
 
-newtype ReactT anim signal m a = ReactT
-    { runReactT :: [RunningAnim signal] -> m ([ReactNode signal], a) }
+type family AnimTy anim :: *
+
+-- associate:
+-- * key and easing / animation type
+-- * key and signal?
+
+-- type family Signal anim :: *
+--
+-- -- What type of animations does this key produce
+-- type family Anim anim :: *
+
+newtype ReactT anim signal m a = ReactT {
+        runReactT :: [(RunningAnim signal anim, Double)]
+                  -> m ([ReactNode signal], a)
+    }
 
 type React anim signal = ReactT anim signal Identity
 type PureReact anim = React anim () ()
 
 instance (Monad m, Monoid a) => Monoid (ReactT anim signal m a) where
     mempty = ReactT $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT f1 anim
-        ~(c2, b) <- runReactT f2 anim
+    mappend f1 f2 = ReactT $ \anims -> do
+        ~(c1, a) <- runReactT f1 anims
+        ~(c2, b) <- runReactT f2 anims
         return (c1 <> c2, a <> b)
 
 instance Monad m => Functor (ReactT anim signal m) where
@@ -96,9 +148,9 @@ instance (Monad m, a ~ ()) => IsString (ReactT anim signal m a) where
 
 instance Monad m => Monad (ReactT anim signal m) where
     return a = ReactT $ \_ -> return ([], a)
-    m >>= f = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT m anim
-        ~(c2, b) <- runReactT (f a) anim
+    m >>= f = ReactT $ \anims -> do
+        ~(c1, a) <- runReactT m anims
+        ~(c2, b) <- runReactT (f a) anims
         return (c1 <> c2, b)
 
 -- TODO thinking there should be some notion of single / multiple?
@@ -118,14 +170,14 @@ instance Monad m => Monad (ReactT anim signal m) where
 -- input <! attr
 
 instance Monad m => Attributable (ReactT anim signal m a) (JSString, JSON) where
-    react <! attr = ReactT $ \anim -> do
-        ~(children, a) <- runReactT react anim
+    react <! attr = ReactT $ \anims -> do
+        ~(children, a) <- runReactT react anims
         return (children <!> attr, a)
 
 instance Monad m =>
          Attributable (ReactT anim signal m a) (EventHandler signal) where
-    react <! attr = ReactT $ \anim -> do
-        ~(children, a) <- runReactT react anim
+    react <! attr = ReactT $ \anims -> do
+        ~(children, a) <- runReactT react anims
         return (children <!< attr, a)
 
 instance Attributable (ReactT anim signal m a) x =>
