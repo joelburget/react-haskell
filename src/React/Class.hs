@@ -22,7 +22,8 @@ data ReactClass state signal anim = ReactClass
     , foreignClass :: ForeignClass
 
     , stateRef :: IORef state
-    , animRef :: IORef [RunningAnim signal anim]
+    , animRef :: IORef anim
+    , runningAnimRef :: IORef [RunningAnim signal anim]
     , transitionRef :: IORef [signal]
     }
 
@@ -30,13 +31,15 @@ data ReactClass state signal anim = ReactClass
 createClass :: (state -> React anim signal ())
             -> (state -> signal -> (state, [AnimConfig signal anim]))
             -> state
+            -> anim
             -> [signal]
             -> IO (ReactClass state signal anim)
-createClass render transition initialState initialTrans = do
+createClass render transition initialState initialAnim initialTrans = do
     foreignClass <- js_createClass $ toPtr render
 
     stateRef <- newIORef initialState
-    animRef <- newIORef []
+    animRef <- newIORef initialAnim
+    runningAnimRef <- newIORef []
     transitionRef <- newIORef initialTrans
 
     return $ ReactClass
@@ -45,4 +48,5 @@ createClass render transition initialState initialTrans = do
         foreignClass
         stateRef
         animRef
+        runningAnimRef
         transitionRef

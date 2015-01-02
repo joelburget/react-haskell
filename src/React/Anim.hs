@@ -7,6 +7,7 @@ import Data.IORef
 import Data.Monoid
 
 import Haste
+import Lens.Family2
 
 import React.Imports
 import React.Types
@@ -28,15 +29,11 @@ easingFunc EaseInQuad from to t = from .+^ ((t*t) *^ (to .-. from))
 easingFunc _ _ _ _ = error "that easing function has not been defined yet"
 -}
 
-class Animatable a where
-    -- TODO is `to` always `animZero`?
-    interpolate :: Easing -> a -> a -> Double -> a
-    animAdd :: a -> a -> a
-    animSub :: a -> a -> a
-    animZero :: a
-
 instance Animatable Double where
-    interpolate ease from to t = from + easeDouble ease t * (to - from)
+    interpolate ease from to t =
+        if | t <= 0 -> 0
+           | t >= 1 -> 1
+           | otherwise -> from + easeDouble ease t * (to - from)
     animAdd = (+)
     animSub = (-)
     animZero = 0
@@ -76,19 +73,17 @@ instance (Animatable a, Animatable b, Animatable c) => Animatable (a, b, c) wher
          z0 `animSub` z1)
     animZero = (animZero, animZero, animZero)
 
+-- TODO use color package
 data Color = Color Int Int Int
 
-intLerp :: Int -> Int -> Double -> Int
-intLerp a b t = floor $ (fromIntegral a) + (fromIntegral $ b - a) * t
-
 instance Animatable Color where
-    interpolate ease (Color r0 g0 b0) (Color r1 g1 b1) t =
+    interpolate ease c1@(Color r0 g0 b0) c2@(Color r1 g1 b1) t =
         let t' = interpolate ease 0 1 t
         in Color (intLerp r0 r1 t') (intLerp g0 g1 t') (intLerp b0 b1 t')
     animAdd (Color r0 g0 b0) (Color r1 g1 b1) =
-        (Color (r0 + r1) (g0 + g1) (b0 + b1))
+        Color (r0 + r1) (g0 + g1) (b0 + b1)
     animSub (Color r0 g0 b0) (Color r1 g1 b1) =
-        (Color (r0 - r1) (g0 - g1) (b0 - b1))
+        Color (r0 - r1) (g0 - g1) (b0 - b1)
     animZero = (Color 0 0 0)
 
 instance Show Color where
@@ -159,28 +154,24 @@ easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 easeDouble EaseInSine t = js_bezier 0.47 0 0.745 0.715 t
 easeDouble EaseOutSine t = js_bezier 0.39 0.575 0.565 1 t
 
-getAnimState :: Monad m => ReactT anim signal m [(RunningAnim signal anim, Double)]
+getAnimState :: Monad m => ReactT anim signal m anim
 getAnimState = ReactT $ \anim -> return ([], anim)
 
-interpolate' :: Animatable anim
-             => Easing
-             -> [anim -> anim]
-             -> Double
-             -> anim
-interpolate' easing mods progress =
-    let modded = foldr ($) animZero mods
-    in interpolate easing animZero modded progress
+stepRunningAnims :: anim -> [(RunningAnim signal anim, Double)] -> anim
+stepRunningAnims anim running =
+    let start = foldr
+            ( \(RunningAnim AnimConfig{lens=lens} _, _) anim' ->
+                anim' & lens .~ animZero
+            )
+            anim running
+    in foldr
+        ( \(RunningAnim (AnimConfig _ from lens easing _) _, progress) anim' ->
+            anim' & lens %~ (`animAdd` interpolate easing animZero from progress)
+        ) start running
 
-getWithEasing :: (Monad m, Eq animKey, Animatable (AnimTy animKey)) => animKey -> ReactT animKey signal m (AnimTy animKey)
-getWithEasing name = ReactT $ \anims ->
-    let relevant = filter
-            (\running -> (animId . config . fst) running == name)
-            anims
-        mapped = map (\(RunningAnim (AnimConfig _ mod easing _ _) _, progress) ->
-                     interpolate' easing mod progress) relevant
-        folded = foldr animAdd animZero mapped
-    in return ([], folded)
-
-lerp :: Double -> RunningAnim signal animKey -> Double
+lerp :: Double -> RunningAnim signal anim -> Double
 lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin) =
     (time - begin) / duration
+
+intLerp :: Int -> Int -> Double -> Int
+intLerp a b t = floor $ (fromIntegral a) + (fromIntegral $ b - a) * t

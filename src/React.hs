@@ -10,7 +10,6 @@ module React
     , Color(..)
     , interpolate
     , getAnimState
-    , getWithEasing
     , Animatable(..) -- XXX
 
     -- React.Render

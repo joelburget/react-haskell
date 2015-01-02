@@ -50,12 +50,12 @@ locallyFocus :: Monad m
              -> ReactT anim local m x
              -> ReactT anim general m x
 locallyFocus localize nested = ReactT $ \anim -> do
-    (nodes, x) <- runReactT nested [] -- XXX [] vs anim
+    (nodes, x) <- runReactT nested anim
     return (map (nodeConvert1 localize) nodes, x)
 
 locallyEmpty :: forall anim general m x. Monad m
              => ReactT anim () m x
              -> ReactT anim general m x
 locallyEmpty nested = ReactT $ \anim -> do
-    (nodes, x) <- runReactT nested [] -- XXX [] vs anim
+    (nodes, x) <- runReactT nested anim
     return (map nodeConvert2 nodes, x)

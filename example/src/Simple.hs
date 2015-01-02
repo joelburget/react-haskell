@@ -1,11 +1,10 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
-module Main where
+module Simple (simpleClass) where
 
 import Haste
+import Haste.JSON
 import React
 import Prelude hiding (fst, snd)
-
-import Haste.JSON
 
 -- model
 
@@ -23,13 +22,13 @@ data Transition
     = Typing JSString
     | Enter
 
-transition :: PageState -> Transition -> PageState
-transition state (Typing str) = state{cur=str}
-transition PageState{fst, cur} Enter = PageState cur fst ""
+transition :: PageState -> Transition -> (PageState, [AnimConfig Transition ()])
+transition state (Typing str) = (state{cur=str}, [])
+transition PageState{fst, cur} Enter = (PageState cur fst "", [])
 
 -- view
 
-view :: PageState -> StatefulReact Transition ()
+view :: PageState -> React () Transition ()
 view (PageState fst snd cur) = div_ $ do
     input_
         <! value_ cur
@@ -47,7 +46,5 @@ view (PageState fst snd cur) = div_ $ do
     " snd: "
     text_ snd
 
-main :: IO ()
-main = do
-    Just elem <- elemById "inject"
-    render elem view transition initialState
+simpleClass :: IO (ReactClass PageState Transition ())
+simpleClass = createClass view transition initialState () []

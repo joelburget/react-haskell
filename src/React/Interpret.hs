@@ -58,11 +58,11 @@ setField attr (fld, Null) = return ()
 
 interpret :: Monad m
           => ReactT anim signal m ()
-          -> [(RunningAnim signal anim, Double)]
+          -> anim
           -> (signal -> IO ())
           -> m (IO ForeignNode)
-interpret react anims cb = do
-    ~(child:_, ()) <- runReactT react anims
+interpret react anim cb = do
+    ~(child:_, ()) <- runReactT react anim
     return $ interpret' cb child
 
 

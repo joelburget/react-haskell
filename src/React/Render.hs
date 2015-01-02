@@ -30,17 +30,20 @@ import React.Interpret
 import React.Local
 import React.Types
 
+import Debug.Trace
 
 doRender :: Elem -> Double -> ReactClass state signal anim -> IO ()
 doRender elem time ReactClass{ classRender,
                                classTransition,
                                transitionRef,
+                               runningAnimRef,
                                animRef,
                                stateRef } = do
 
     transitions <- readIORef transitionRef
-    runningAnims <- readIORef animRef
+    runningAnims <- readIORef runningAnimRef
     prevState <- readIORef stateRef
+    prevAnim <- readIORef animRef
 
     let (newState, newAnims) =
             mapAccumL classTransition prevState transitions
@@ -53,7 +56,9 @@ doRender elem time ReactClass{ classRender,
                 beganAt + duration > time)
             (runningAnims <> newRunningAnims)
 
+        endingAnims' = zip endingAnims [1..]
         runningAnims'' = zip runningAnims' (map (lerp time) runningAnims')
+        newAnim = stepRunningAnims prevAnim (endingAnims' ++ runningAnims'')
 
         -- TODO should this run before or after rendering?
         -- TODO expose a way to cancel / pass False in that case
@@ -62,11 +67,12 @@ doRender elem time ReactClass{ classRender,
             endingAnims
 
     foreignNode <- runIdentity $
-        interpret (classRender newState) runningAnims'' (updateCb transitionRef)
+        interpret (classRender newState) newAnim (updateCb transitionRef)
     js_render foreignNode elem
 
     writeIORef stateRef newState
-    writeIORef animRef runningAnims'
+    writeIORef animRef newAnim
+    writeIORef runningAnimRef runningAnims'
     writeIORef transitionRef endAnimTrans
 
 
@@ -77,10 +83,10 @@ updateCb ref update = modifyIORef ref (update:)
 render :: Elem
        -> ReactClass state signal anim
        -> IO RenderHandle
-render elem cls = do
+render elem cls@ReactClass{transitionRef, runningAnimRef} = do
     let renderCb time = do
-            transitions <- readIORef (transitionRef cls)
-            runningAnims <- readIORef (animRef cls)
+            transitions <- readIORef transitionRef
+            runningAnims <- readIORef runningAnimRef
 
             -- only rerender when dirty
             when (length transitions + length runningAnims > 0) $

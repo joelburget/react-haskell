@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
-module Main where
+module SimpleAnim (simpleAnimClass) where
 
 import Haste
 import Haste.JSON
 import React
 import Prelude hiding (fst, snd)
+import Data.Map
+
 
 -- model
 
@@ -14,9 +16,10 @@ data PageState = PageState
     , cur :: JSString
     }
 
-type AnimationState = Double
+type AnimState = Map JSString Double
 
 initialState = PageState "little mac!" "pit" ""
+
 
 -- update
 
@@ -26,19 +29,20 @@ data Transition
 
 transition :: PageState
            -> Transition
-           -> (PageState, Maybe (AnimConfig Transition))
-transition state (Typing str) = (state{cur=str}, Nothing)
+           -> (PageState, [AnimConfig Transition AnimState])
+transition state (Typing str) = (state{cur=str}, [])
 transition PageState{fst, cur} Enter =
     ( PageState cur fst ""
-    , Just (AnimConfig 1000 "Anim" {-(-18) EaseInCubic-} (const Nothing))
+    , [AnimConfig 1000 (-20) id EaseInCubic (const Nothing)]
     )
+
 
 -- view
 
-view :: PageState -> React AnimationState Transition ()
+view :: PageState -> React AnimState Transition ()
 view (PageState fst snd cur) = div_ <! class_ "table" $ do
-    animTop <- getWithEasing EaseInCubic "Anim"
-    let animTop' = -18 * animTop
+    -- animTop <- getAnimState
+    let animTop = 0
 
     div_ <! class_ "row" $ do
         span_ <! class_ "cell" $ "next thing: "
@@ -57,18 +61,15 @@ view (PageState fst snd cur) = div_ <! class_ "table" $ do
     div_ <! class_ "row" $ do
         span_ <! class_ "cell" $ "fst: "
         span_ <! class_ "relative-cell"
-              <! style_ (Dict [("top", Num animTop')]) $
+              <! style_ (Dict [("top", Num animTop)]) $
             text_ fst
 
     div_ <! class_ "row" $ do
         span_ <! class_ "cell" $ " snd: "
         span_ <! class_ "relative-cell"
-              <! style_ (Dict [("top", Num animTop')]) $
+              <! style_ (Dict [("top", Num animTop)]) $
             text_ snd
 
-main :: IO ()
-main = do
-    Just elem <- elemById "inject"
-    cls <- createClass view transition initialState
-    render elem cls initialState
-    return ()
+
+simpleAnimClass :: IO (ReactClass PageState Transition AnimState)
+simpleAnimClass = createClass view transition initialState 0 []
