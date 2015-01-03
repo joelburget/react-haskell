@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, TypeFamilies, ExistentialQuantification, ImpredicativeTypes #-}
+    FlexibleInstances, FlexibleContexts, TypeFamilies,
+    ExistentialQuantification, ImpredicativeTypes #-}
 module React.Types where
 
 import Control.Applicative
@@ -185,57 +186,92 @@ instance Monad m => Monad (ReactT ty m) where
         ~(c2, b) <- runReactT (f a) anim
         return (c1 <> c2, b)
 
--- TODO thinking there should be some notion of single / multiple?
--- We should only ever apply an attribute / handler to one element here.
+
+-- attributes
+
+data AttrOrHandler signal
+    = StaticAttr JSString JSON
+    | Handler (EventHandler signal)
+
+
+mkStaticAttr :: JSString -> (a -> JSON) -> a -> AttrOrHandler signal
+mkStaticAttr name f a = StaticAttr name (f a)
+
+
+mkEventHandler :: NFData signal
+               => (RawEvent -> signal)
+               -> EvtType
+               -> (signal -> Maybe signal')
+               -> AttrOrHandler signal'
+mkEventHandler unNative ty handle =
+    -- important - you must deepseq the event immediately - otherwise
+    -- react's pooling will collect and destroy it.
+    let handle' raw = handle $!! unNative raw
+    in Handler (EventHandler handle' ty)
+
+
+separateAttrs :: [AttrOrHandler signal] -> ([EventHandler signal], Attrs)
+separateAttrs [] = ([], [])
+separateAttrs ((StaticAttr k v):xs) =
+    let (hs, as) = separateAttrs xs in (hs, (k, v):as)
+separateAttrs ((Handler h):xs) =
+    let (hs, as) = separateAttrs xs in (h:hs, as)
+
+
+-- terms
+
+-- | Parent nodes always take children, but can also optionally take a list
+-- of arguments.
 --
--- div <! attr $ ...
+-- Example of the first case, which exercises the simpler instance:
 --
--- vs
+-- @
+-- div_ $ ... children ...
+-- @
 --
--- (div >> div) <! attr
+-- Example of the second, which exercises the more complicated instance:
 --
--- in fact, I think we should only ever apply attrs to
--- `React -> React`
---
--- except things with no children?
---
--- input <! attr
+-- @
+-- span_ [class_ "example"] $ ... children ...
+-- @
+class TermParent result where
+    -- | The argument to a parent term is either:
+    --
+    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
+    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
+    --
+    -- * or children (@ReactT ty m a@), which leads to a result type of
+    --   @ReactT ty m a@.
+    type TermParentArg result :: *
 
-instance Monad m => Attributable (ReactT ty m a) (JSString, JSON) where
-    react <! attr = ReactT $ \anim -> do
-        ~(children, a) <- runReactT react anim
-        return (children <!> attr, a)
+    termParent :: JSString -> TermParentArg result -> result
 
-instance (Monad m, sig ~ Signal ty) =>
-         Attributable (ReactT ty m a) (EventHandler sig) where
-    react <! attr = ReactT $ \anim -> do
-        ~(children, a) <- runReactT react anim
-        return (children <!< attr, a)
 
-instance Attributable (ReactT ty m a) x =>
-         Attributable (ReactT ty m a -> ReactT ty m a) x where
-    f <! attr = (<! attr) . f
+instance (Monad m, f ~ ReactT ty m a) => TermParent (f -> ReactT ty m a) where
+    type TermParentArg (f -> ReactT ty m a) = [AttrOrHandler (Signal ty)]
 
-class Attributable h a where
-    (<!) :: h -> a -> h
+    termParent name attrs children = ReactT $ \anim -> do
+        ~(childNodes, a) <- runReactT children anim
+        let (hs, as) = separateAttrs attrs
+        return ([Parent name as hs childNodes], a)
 
-(<!?) :: Attributable h a => h -> (Bool, a) -> h
-h <!? (True, a) = h <! a
-h <!? (False, _) = h
 
-(<!>) :: [ReactNode signal] -> (JSString, JSON) -> [ReactNode signal]
-[elem] <!> attr = [go elem] where
-    go (Parent name as hs cs) = Parent name (attr:as) hs cs
-    go (Leaf name as hs)      = Leaf name (attr:as) hs
-    go (Text str)             = Text str
-_ <!> _ = error "attr applied to multiple elems!"
+instance Monad m => TermParent (ReactT ty m a) where
+    type TermParentArg (ReactT ty m a) = ReactT ty m a
 
-(<!<) :: [ReactNode signal] -> EventHandler signal -> [ReactNode signal]
-[elem] <!< hndl = [go elem] where
-    go (Parent name as hs cs) = Parent name as (hndl:hs) cs
-    go (Leaf name as hs)      = Leaf name as (hndl:hs)
-    go (Text str)             = Text str
-_ <!< _ = error "handler applied to multiple elems!"
+    termParent name children = ReactT $ \anim -> do
+        ~(childNodes, a) <- runReactT children anim
+        return ([Parent name [] [] childNodes], a)
+
+
+termLeaf :: (Monad m, sig ~ Signal ty)
+         => JSString
+         -> [AttrOrHandler sig]
+         -> ReactT ty m ()
+termLeaf name attrs = ReactT $ \_ -> do
+    let (hs, as) = separateAttrs attrs
+    return ([Leaf name as hs], ())
+
 
 -- | Low level properties common to all events
 data EventProperties e =

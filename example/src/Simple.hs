@@ -9,17 +9,17 @@ import Prelude hiding (fst, snd)
 -- model
 
 data Simple
-data instance PageState Simple = PageState
+data instance ClassState Simple = ClassState
     { fst :: JSString
     , snd :: JSString
     , cur :: JSString -- what the user's currently typing
     }
 
-initialState = PageState "little mac!" "pit" ""
+initialState = ClassState "little mac!" "pit" ""
 
 data instance AnimationState Simple = NoAnimation
 
-type PageState' = PageState Simple
+type ClassState' = ClassState Simple
 
 -- update
 
@@ -27,23 +27,24 @@ data instance Signal Simple
     = Typing JSString
     | Enter
 
-transition :: PageState' -> Signal Simple -> (PageState', [AnimConfig Simple])
+transition :: ClassState' -> Signal Simple -> (ClassState', [AnimConfig Simple])
 transition state (Typing str) = (state{cur=str}, [])
-transition PageState{fst, cur} Enter = (PageState cur fst "", [])
+transition ClassState{fst, cur} Enter = (ClassState cur fst "", [])
 
 -- view
 
-view :: PageState' -> React Simple ()
-view (PageState fst snd cur) = div_ $ do
+view :: ClassState' -> React Simple ()
+view (ClassState fst snd cur) = div_ $ do
     input_
-        <! value_ cur
+        [ value_ cur
 
         -- change the input value as the user types
-        <! onChange (Just . Typing . targetValue)
+        , onChange (Just . Typing . targetValue)
 
         -- then move the user's new value to the fst and fst to snd when
         -- they enter
-        <! onEnter Enter
+        , onEnter Enter
+        ]
 
     "fst: "
     text_ fst

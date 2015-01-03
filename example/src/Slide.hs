@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, ExtendedDefaultRules #-}
 module Slide (slideClass) where
 
 import Control.Applicative
@@ -12,17 +12,17 @@ import React
 -- model
 
 data Slide
-data instance PageState Slide = Open | Closed
+data instance ClassState Slide = Open | Closed
 
-initialPageState :: PageState'
-initialPageState = Closed
+initialClassState :: ClassState'
+initialClassState = Closed
 
 data instance AnimationState Slide = SlidingProgress Double
 
 initialAnimationState :: AnimState
 initialAnimationState = SlidingProgress 0
 
-type PageState' = PageState Slide
+type ClassState' = ClassState Slide
 type AnimState = AnimationState Slide
 type Sig = Signal Slide
 
@@ -44,24 +44,26 @@ slide from easing = AnimConfig
     , onComplete = const Nothing
     }
 
-transition :: PageState' -> Sig -> (PageState', [AnimConfig Slide])
+transition :: ClassState' -> Sig -> (ClassState', [AnimConfig Slide])
 transition Open Toggle = (Closed, [ slide paneWidth EaseInOutQuad ])
 transition Closed Toggle = (Open, [ slide (-paneWidth) EaseInOutQuad ])
 
 
 -- view
 
-view :: PageState' -> React Slide ()
-view slid = div_ <! class_ "slider-container" $ do
+view :: ClassState' -> React Slide ()
+view slid = div_ [ class_ "slider-container" ] $ do
     SlidingProgress animWidth <- getAnimationState
     let inherentWidth = case slid of
             Open -> paneWidth
             Closed -> 0
 
-    div_ $ button_ <! onClick (const (Just Toggle)) $ "toggle"
-    div_ <! class_ "slider"
-         <! style_ (Dict [("width", Num (inherentWidth + animWidth))]) $ ""
+    div_ $ button_ [ onClick (const (Just Toggle)) ] "toggle"
+    div_ [ class_ "slider"
+         , style_ (Dict [("width", Num (inherentWidth + animWidth))])
+         ]
+         ""
 
 slideClass :: IO (ReactClass Slide)
 slideClass =
-    createClass view transition initialPageState initialAnimationState []
+    createClass view transition initialClassState initialAnimationState []

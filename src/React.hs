@@ -55,8 +55,8 @@ import React.Class
 -- import React.Interpret
 import React.Local
 import React.Render
+import React.Types
 
 import React.Attrs as X
 import React.Elements as X
 import React.Events as X
-import React.Types

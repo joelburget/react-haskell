@@ -1,97 +1,87 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Attrs where
 
+import React.Types
+
 import Haste.JSON
 import Haste.Prim
 
--- class ReactAttr a where
+class_ :: JSString -> AttrOrHandler signal
+class_ = mkStaticAttr "className" Str
 
-type Attr = (JSString, JSON)
+href_ :: JSString -> AttrOrHandler signal
+href_ = mkStaticAttr "href" Str
 
-mkAttr :: JSString -> (a -> JSON) -> a -> Attr
-mkAttr name f a = (name, f a)
+id_ :: JSString -> AttrOrHandler signal
+id_ = mkStaticAttr "id" Str
 
--- exception
-className :: JSString -> Attr
-className = mkAttr "className" Str
+src_ :: JSString -> AttrOrHandler signal
+src_ = mkStaticAttr "src" Str
 
-class_ :: JSString -> Attr
-class_ = mkAttr "className" Str
+style_ :: JSON -> AttrOrHandler signal
+style_ = mkStaticAttr "style" id
 
-href_ :: JSString -> Attr
-href_ = mkAttr "href" Str
+value_ :: JSString -> AttrOrHandler signal
+value_ = mkStaticAttr "value" Str
 
-id_ :: JSString -> Attr
-id_ = mkAttr "id" Str
+placeholder_ :: JSString -> AttrOrHandler signal
+placeholder_ = mkStaticAttr "placeholder" Str
 
-src_ :: JSString -> Attr
-src_ = mkAttr "src" Str
+for_ :: JSString -> AttrOrHandler signal
+for_ = mkStaticAttr "htmlFor" Str
 
-style_ :: JSON -> Attr
-style_ = mkAttr "style" id
+type_ :: JSString -> AttrOrHandler signal
+type_ = mkStaticAttr "type" Str
 
-value_ :: JSString -> Attr
-value_ = mkAttr "value" Str
+checked_ :: Bool -> AttrOrHandler signal
+checked_ = mkStaticAttr "checked" Bool
 
-placeholder_ :: JSString -> Attr
-placeholder_ = mkAttr "placeholder" Str
+autofocus_ :: Bool -> AttrOrHandler signal
+autofocus_ = mkStaticAttr "autoFocus" Bool
 
-for_ :: JSString -> Attr
-for_ = mkAttr "htmlFor" Str
+width_ :: Double -> AttrOrHandler signal
+width_ = mkStaticAttr "width" Num
 
-type_ :: JSString -> Attr
-type_ = mkAttr "type" Str
-
-checked_ :: Bool -> Attr
-checked_ = mkAttr "checked" Bool
-
--- TODO think about supporting autoFocus / other camel-cased react names
-autofocus_ :: Bool -> Attr
-autofocus_ = mkAttr "autoFocus" Bool
-
-width_ :: Double -> Attr
-width_ = mkAttr "width" Num
-
-height_ :: Double -> Attr
-height_ = mkAttr "height" Num
+height_ :: Double -> AttrOrHandler signal
+height_ = mkStaticAttr "height" Num
 
 -- svg!
 
-cx_ :: Double -> Attr
-cx_ = mkAttr "cx" Num
+cx_ :: Double -> AttrOrHandler signal
+cx_ = mkStaticAttr "cx" Num
 
-cy_ :: Double -> Attr
-cy_ = mkAttr "cy" Num
+cy_ :: Double -> AttrOrHandler signal
+cy_ = mkStaticAttr "cy" Num
 
-d_ :: Double -> Attr
-d_ = mkAttr "d" Num
+d_ :: Double -> AttrOrHandler signal
+d_ = mkStaticAttr "d" Num
 
-dx_ :: Double -> Attr
-dx_ = mkAttr "dx" Num
+dx_ :: Double -> AttrOrHandler signal
+dx_ = mkStaticAttr "dx" Num
 
-dy_ :: Double -> Attr
-dy_ = mkAttr "dy" Num
+dy_ :: Double -> AttrOrHandler signal
+dy_ = mkStaticAttr "dy" Num
 
-x_ :: Double -> Attr
-x_ = mkAttr "x" Num
+x_ :: Double -> AttrOrHandler signal
+x_ = mkStaticAttr "x" Num
 
-y_ :: Double -> Attr
-y_ = mkAttr "y" Num
+y_ :: Double -> AttrOrHandler signal
+y_ = mkStaticAttr "y" Num
 
-r_ :: Double -> Attr
-r_ = mkAttr "r" Num
+r_ :: Double -> AttrOrHandler signal
+r_ = mkStaticAttr "r" Num
 
-fill_ :: JSString -> Attr
-fill_ = mkAttr "fill" Str
+fill_ :: JSString -> AttrOrHandler signal
+fill_ = mkStaticAttr "fill" Str
 
-viewBox_ :: JSString -> Attr
-viewBox_ = mkAttr "viewBox" Str
+viewBox_ :: JSString -> AttrOrHandler signal
+viewBox_ = mkStaticAttr "viewBox" Str
 
-points_ :: JSString -> Attr
-points_ = mkAttr "points" Str
+points_ :: JSString -> AttrOrHandler signal
+points_ = mkStaticAttr "points" Str
 
-transform_ :: JSString -> Attr
-transform_ = mkAttr "transform" Str
+transform_ :: JSString -> AttrOrHandler signal
+transform_ = mkStaticAttr "transform" Str
 
 -- fillOpacity fontFamily fontSize fx fy gradientTransform
 -- gradientUnits markerEnd markerMid markerStart offset opacity

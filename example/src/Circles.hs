@@ -16,10 +16,10 @@ import React
 data Circles
 
 data Circ = C1 | C2 | C3 | C4 deriving (Eq, Show)
-data instance PageState Circles = CirclePageState Circ [Circ]
+data instance ClassState Circles = CircleClassState Circ [Circ]
 data instance AnimationState Circles = CircleAnimations Color Color Color Color (Double, Double)
 
-type PageState' = PageState Circles
+type ClassState' = ClassState Circles
 type AnimState = AnimationState Circles
 
 
@@ -34,8 +34,8 @@ circOrder :: [Circ]
 circOrder = cycle [C1, C3, C2, C4]
 
 
-initialState :: PageState'
-initialState = CirclePageState C1 (tail circOrder)
+initialState :: ClassState'
+initialState = CircleClassState C1 (tail circOrder)
 
 
 initialAnimationState :: AnimState
@@ -64,13 +64,13 @@ ptL f (CircleAnimations c1 c2 c3 c4 pt) =
 data instance Signal Circles = Flash
 type Transition = Signal Circles
 
-transition :: PageState'
+transition :: ClassState'
            -> Transition
-           -> (PageState' , [AnimConfig Circles])
-transition (CirclePageState c' (c:cs)) Flash =
+           -> (ClassState' , [AnimConfig Circles])
+transition (CircleClassState c' (c:cs)) Flash =
     let coordTrans = coord c `animSub` coord c'
         colorTrans = fillorange `animSub` fillblue
-    in ( CirclePageState c cs
+    in ( CircleClassState c cs
        , [ AnimConfig 800 colorTrans (colorL c) EaseInQuad (const (Just Flash))
          , AnimConfig 2000 coordTrans ptL EaseInOutQuad (const Nothing)
          ]
@@ -89,19 +89,21 @@ fill_' = fill_ . fromString . show
 
 -- PureReact ()
 circ :: (Double, Double) -> Color -> React Circles ()
-circ (x, y) color = circle_ <! cx_ x
-                            <! cy_ y
-                            <! r_ 0.15
-                            <! fill_' color
+circ (x, y) color = circle_ [ cx_ x
+                            , cy_ y
+                            , r_ 0.15
+                            , fill_' color
+                            ]
 
 
-mainView :: PageState' -> React Circles ()
-mainView (CirclePageState c _) = div_ $ do
+mainView :: ClassState' -> React Circles ()
+mainView (CircleClassState c _) = div_ $ do
     CircleAnimations c1 c2 c3 c4 trans <- getAnimationState
 
-    svg_ <! width_ 800
-         <! height_ 800
-         <! viewBox_ "-2 -2 4 4" $ do
+    svg_ [ width_ 800
+         , height_ 800
+         , viewBox_ "-2 -2 4 4"
+         ] $ do
         circ (coord C1) (fillblue `animAdd` c1)
         circ (coord C2) (fillblue `animAdd` c2)
         circ (coord C3) (fillblue `animAdd` c3)
