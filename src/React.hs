@@ -22,6 +22,7 @@ module React
 
     -- React.Local
     , locally
+    , GeneralizeClass(..)
 
     -- React.Render
     , cancelRender

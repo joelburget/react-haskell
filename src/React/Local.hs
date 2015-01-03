@@ -1,43 +1,34 @@
 {-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses #-}
-module React.Local (locally) where
+module React.Local (locally, GeneralizeClass(..)) where
 
 import Control.Applicative
 
 import React.Types
 
-class GeneralizePage local general where
+class GeneralizeClass local general where
     localizeClassState :: ClassState general -> ClassState local
     localizeAnimationState :: AnimationState general -> AnimationState local
 
     generalizeSignal :: Signal local -> Signal general
 
-instance GeneralizePage () general where
+instance GeneralizeClass () general where
     localizeClassState _ = UnitClassState
     localizeAnimationState _ = UnitAnimationState
 
-    generalizeSignal _ = undefined
+    generalizeSignal = error "this cannot be called"
 
-class ReactLocal local general where
-    locally :: local -> general
+locally :: (Monad m, GeneralizeClass local general)
+        => ReactT local m x
+        -> ReactT general m x
+locally = locallyFocus
 
--- instance (Monad m, GeneralizePage local general, local ~ local', general ~ general') =>
-instance (Monad m, GeneralizePage local general) =>
-    ReactLocal (ReactT local m x) (ReactT general m x) where
-
-    locally = locallyFocus
-
--- instance (Monad m, m ~ m', x ~ x') =>
---     ReactLocal (ReactT anim () m x) (ReactT anim general m' x') where
---
---     locally = locallyEmpty
-
-handlerConvert :: GeneralizePage local general
+handlerConvert :: GeneralizeClass local general
                => EventHandler (Signal local)
                -> EventHandler (Signal general)
 handlerConvert (EventHandler handle ty) =
     EventHandler (\raw -> generalizeSignal <$> handle raw) ty
 
-nodeConvert1 :: GeneralizePage local general
+nodeConvert1 :: GeneralizeClass local general
              => ReactNode (Signal local)
              -> ReactNode (Signal general)
 nodeConvert1 (Parent name attrs handlers children) =
@@ -47,7 +38,7 @@ nodeConvert1 (Leaf name attrs handlers) =
     Leaf name attrs (map handlerConvert handlers)
 nodeConvert1 (Text str) = Text str
 
-locallyFocus :: (Monad m, GeneralizePage local general)
+locallyFocus :: (Monad m, GeneralizeClass local general)
              => ReactT local m x
              -> ReactT general m x
 locallyFocus nested = ReactT $ \anim -> do

@@ -18,6 +18,8 @@ import Haste.Prim
 -- | A 'ReactClass' is a standalone component of a user interface which
 -- contains the state necessary to render and animate itself. Classes are
 -- a tool for scoping.
+--
+-- Use 'createClass' to construct.
 data ReactClass ty = ReactClass
     { classRender :: ClassState ty -> React ty ()
     , classTransition :: ClassState ty

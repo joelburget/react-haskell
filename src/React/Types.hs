@@ -134,9 +134,11 @@ data family AnimationState ty :: *
 -- @
 data family Signal ty :: *
 
-data instance ClassState      () = UnitClassState
+-- Unit's ClassState and AnimationState are uninteresting. Its Signal is
+-- entirely uninhabited.
+data instance ClassState     () = UnitClassState
 data instance AnimationState () = UnitAnimationState
-data instance Signal         () = UnitSignal
+data instance Signal         ()
 
 data AnimConfig ty = forall a. (Animatable a, Show a) => AnimConfig {
       -- | How long this animation lasts in milliseconds
