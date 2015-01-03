@@ -6,13 +6,13 @@ import Control.Applicative
 import React.Types
 
 class GeneralizePage local general where
-    localizePageState :: PageState general -> PageState local
+    localizeClassState :: ClassState general -> ClassState local
     localizeAnimationState :: AnimationState general -> AnimationState local
 
     generalizeSignal :: Signal local -> Signal general
 
 instance GeneralizePage () general where
-    localizePageState _ = UnitPageState
+    localizeClassState _ = UnitClassState
     localizeAnimationState _ = UnitAnimationState
 
     generalizeSignal _ = undefined

@@ -76,6 +76,7 @@ instance (Animatable a, Animatable b, Animatable c) => Animatable (a, b, c) wher
     animZero = (animZero, animZero, animZero)
 
 -- TODO use color package
+-- | 24-bit colors which can be interpolated.
 data Color = Color Int Int Int
 
 instance Animatable Color where

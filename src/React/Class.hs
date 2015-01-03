@@ -15,24 +15,31 @@ import Haste.JSON
 import Haste.Prim
 
 
+-- | A 'ReactClass' is a standalone component of a user interface which
+-- contains the state necessary to render and animate itself. Classes are
+-- a tool for scoping.
 data ReactClass ty = ReactClass
-    { classRender :: PageState ty -> React ty ()
-    , classTransition :: PageState ty -> Signal ty -> (PageState ty, [AnimConfig ty])
+    { classRender :: ClassState ty -> React ty ()
+    , classTransition :: ClassState ty
+                      -> Signal ty
+                      -> (ClassState ty, [AnimConfig ty])
 
     , foreignClass :: ForeignClass
 
-    , stateRef :: IORef (PageState ty)
+    , stateRef :: IORef (ClassState ty)
     , animRef :: IORef (AnimationState ty)
     , runningAnimRef :: IORef [RunningAnim ty]
     , transitionRef :: IORef [Signal ty]
     }
 
 
-createClass :: (PageState ty -> React ty ())
-            -> (PageState ty -> Signal ty -> (PageState ty, [AnimConfig ty]))
-            -> PageState ty
-            -> AnimationState ty
-            -> [Signal ty]
+-- | 'ReactClass' smart contstructor.
+createClass :: (ClassState ty -> React ty ()) -- ^ render function
+            -> (ClassState ty -> Signal ty -> (ClassState ty, [AnimConfig ty]))
+            -- ^ transition function
+            -> ClassState ty -- ^ initial state
+            -> AnimationState ty -- ^ initial animation state
+            -> [Signal ty] -- signals to send on startup
             -> IO (ReactClass ty)
 createClass render transition initialState initialAnim initialTrans = do
     foreignClass <- js_createClass $ toPtr render

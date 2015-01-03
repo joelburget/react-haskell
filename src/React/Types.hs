@@ -51,6 +51,10 @@ data ReactNode signal
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
 
+
+-- | Standard easing functions. These are used to 'interpolate' smoothly.
+--
+-- See <http://joelburget.com/react-haskell/ here> for visualizations.
 data Easing
     = Linear
 
@@ -83,33 +87,67 @@ data Easing
     | EaseOutSine
     deriving (Show, Eq, Ord)
 
+-- | Properties that can animate.
+--
+-- Numeric values like 'width' and 'height', as well as colors.
 class Animatable a where
     -- TODO is `to` always `animZero`?
-    interpolate :: Easing -> a -> a -> Double -> a
+    -- | Use an easing function to interpolate between two values
+    interpolate :: Easing -- ^ easing function
+                -> a -- ^ from
+                -> a -- ^ to
+                -> Double -- ^ [0..1] ratio of /time/ elapsed
+                -> a
+
+    -- | Add two animations
     animAdd :: a -> a -> a
+
+    -- | Subtract two animations
     animSub :: a -> a -> a
     animZero :: a
 
-{-
--- The DOMHighResTimeStamp type is a double representing a number of
--- milliseconds, accurate to the thousandth of millisecond, that is with
--- a precision of 1 µs.
--}
+-- | The state needed to render a class (ignoring animation)
+--
+-- Example:
+--
+-- @
+-- data instance ClassState Slider = Open | Closed
+-- @
+data family ClassState ty :: *
 
-data family PageState ty :: *
+-- | The state needed to animate a class
+--
+-- Example:
+--
+-- @
+-- data instance ClassState Slider = SlidingProgress Double
+-- @
 data family AnimationState ty :: *
+
+-- | The type of signals a class can send
+--
+-- Example:
+--
+-- @
+-- data instance Signal Slider = SlideOpen | SlideClosed
+-- @
 data family Signal ty :: *
 
-data instance PageState      () = UnitPageState
+data instance ClassState      () = UnitClassState
 data instance AnimationState () = UnitAnimationState
 data instance Signal         () = UnitSignal
 
-data AnimConfig ty = forall a. (Animatable a, Show a) => AnimConfig
-    { duration :: Double
+data AnimConfig ty = forall a. (Animatable a, Show a) => AnimConfig {
+      -- | How long this animation lasts in milliseconds
+      duration :: Double
+      -- | Where does this animation start (it goes to 'animZero')
     , from :: a
     -- , lens :: Lens' anim a XXX
+      -- | Pointer to this field within 'AnimationState'
     , lens :: Traversal' (AnimationState ty) a
+      -- | How is the animation eased?
     , easing :: Easing
+      -- | Do something when it's finished?
     , onComplete :: Bool -> Maybe (Signal ty)
     }
 
@@ -199,6 +237,7 @@ _ <!> _ = error "attr applied to multiple elems!"
     go (Text str)             = Text str
 _ <!< _ = error "handler applied to multiple elems!"
 
+-- | Low level properties common to all events
 data EventProperties e =
   EventProperties { bubbles :: !Bool
                   , cancelable :: !Bool

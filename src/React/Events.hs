@@ -42,7 +42,7 @@ mkEventHandler :: NFData s
                -> (s -> Maybe s')
                -> EventHandler s'
 mkEventHandler unNative ty handle =
-    -- *important* - you must deepseq the event immediately - otherwise
+    -- important - you must deepseq the event immediately - otherwise
     -- react's pooling will collect and destroy it.
     let handle' raw = handle $!! unNative raw
     in EventHandler handle' ty
