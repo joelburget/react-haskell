@@ -1,4 +1,4 @@
-# React-Haskell
+# React-Haskell [![Hackage](https://img.shields.io/hackage/v/react-haskell.svg?style=flat-square)](https://hackage.haskell.org/package/react-haskell)
 
 As crazy as it seems, using React and Haskell together just *may* be a good idea.
 
