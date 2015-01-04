@@ -155,11 +155,26 @@ instance ReactKey () where
     type Signal         () = Void
 
 
+-- things you might want to control about an animation:
+-- * duration
+-- * from
+-- * to
+-- * lens
+-- * easing
+-- * oncomplete
+-- * chaining
+-- * delay
+
+-- possible configurations:
+-- * set new state, animate from old to new at same time
+--   - need to connect ClassState and AnimationState somehow
+-- * animate manually from -> to
+
 data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
       -- | How long this animation lasts in milliseconds
       duration :: Double
-      -- | Where does this animation start (it goes to 'animZero')
-    , from :: a
+      -- | Where does this animation start and end?
+    , endpoints :: (a, a)
     -- , lens :: Lens' anim a XXX
       -- | Pointer to this field within 'AnimationState'
     , lens :: Traversal' (AnimationState ty) a

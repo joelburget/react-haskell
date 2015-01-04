@@ -30,18 +30,18 @@ initialAnimationState = 0
 
 paneWidth = 200
 
-slide :: Double -> Easing -> AnimConfig Slide
-slide from easing = AnimConfig
+slide :: Double -> AnimConfig Slide
+slide from = AnimConfig
     { duration = 1000
     , lens = id
-    , from = from
-    , easing = easing
+    , endpoints = (from, 0)
+    , easing = EaseInOutQuad
     , onComplete = const Nothing
     }
 
 transition :: SlideState -> Toggle -> (SlideState, [AnimConfig Slide])
-transition Open Toggle = (Closed, [ slide paneWidth EaseInOutQuad ])
-transition Closed Toggle = (Open, [ slide (-paneWidth) EaseInOutQuad ])
+transition Open Toggle = (Closed, [ slide paneWidth ])
+transition Closed Toggle = (Open, [ slide (-paneWidth) ])
 
 
 -- view

@@ -167,8 +167,9 @@ stepRunningAnims anim running =
             )
             anim running
     in foldr
-        ( \(RunningAnim (AnimConfig _ from lens easing _) _, progress) anim' ->
-            anim' & lens %~ (`animAdd` interpolate easing from animZero progress)
+        ( \(RunningAnim (AnimConfig _ (from, to) lens easing _) _, progress)
+           anim' ->
+            anim' & lens %~ (`animAdd` interpolate easing from to progress)
         ) start running
 
 lerp :: Double -> RunningAnim ty -> Double

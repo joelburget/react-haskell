@@ -76,7 +76,7 @@ transition :: EasingState
            -> (EasingState, [AnimConfig EasingDemo])
 transition (Easings easings) Restart =
     ( Easings easings
-    , [ AnimConfig 1000 1 (animIx easing) easing (const Nothing)
+    , [ AnimConfig 1000 (0, 1) (animIx easing) easing (const Nothing)
       | easing <- easings
       ]
     )

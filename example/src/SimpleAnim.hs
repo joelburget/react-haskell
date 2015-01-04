@@ -33,7 +33,7 @@ transition :: ClassState
 transition state (Typing str) = (state{cur=str}, [])
 transition ClassState{fst, cur} Enter =
     ( ClassState cur fst ""
-    , [AnimConfig 1000 (-20) id EaseInCubic (const Nothing)]
+    , [AnimConfig 1000 (-20, 0) id EaseInCubic (const Nothing)]
     )
 
 

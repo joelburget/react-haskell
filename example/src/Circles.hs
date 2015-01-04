@@ -71,8 +71,8 @@ transition (CircState c' (c:cs)) Flash =
     let coordTrans = coord c `animSub` coord c'
         colorTrans = fillorange `animSub` fillblue
     in ( CircState c cs
-       , [ AnimConfig 800 colorTrans (colorL c) EaseInQuad (const (Just Flash))
-         , AnimConfig 2000 coordTrans ptL EaseInOutQuad (const Nothing)
+       , [ AnimConfig 800 (colorTrans, animZero) (colorL c) EaseInQuad (const (Just Flash))
+         , AnimConfig 2000 (coordTrans, animZero) ptL EaseInOutQuad (const Nothing)
          ]
        )
 
