@@ -1,7 +1,7 @@
 .cabal-sandbox
 cabal.sandbox.config
-example/*.hi
-example/*.o
-example/*.js
+example/**/*.hi
+example/**/*.o
+example/**/*.js
 dist/
 main/
