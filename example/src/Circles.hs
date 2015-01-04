@@ -20,9 +20,10 @@ data CircState = CircState Circ [Circ]
 data AnimState = AnimState Color Color Color Color (Double, Double)
 data Transition = Flash
 
-type instance ClassState Circles = CircState
-type instance AnimationState Circles = AnimState
-type instance Signal Circles = Transition
+instance ReactKey Circles where
+    type ClassState Circles = CircState
+    type AnimationState Circles = AnimState
+    type Signal Circles = Transition
 
 
 coord :: Circ -> (Double, Double)

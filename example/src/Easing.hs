@@ -21,9 +21,10 @@ data EasingState = Easings [Easing]
 data AnimState = EasingMap (Map Easing Double)
 data Transition = Restart
 
-type instance ClassState EasingDemo = EasingState
-type instance AnimationState EasingDemo = AnimState
-type instance Signal EasingDemo = Transition
+instance ReactKey EasingDemo where
+    type ClassState EasingDemo = EasingState
+    type AnimationState EasingDemo = AnimState
+    type Signal EasingDemo = Transition
 
 initialClassState :: EasingState
 initialClassState = Easings easings

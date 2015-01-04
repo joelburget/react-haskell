@@ -15,9 +15,10 @@ data Slide
 data SlideState = Open | Closed
 data Toggle = Toggle deriving Show
 
-type instance ClassState Slide = SlideState
-type instance Signal Slide = Toggle
-type instance AnimationState Slide = Double
+instance ReactKey Slide where
+    type ClassState Slide = SlideState
+    type Signal Slide = Toggle
+    type AnimationState Slide = Double
 
 initialClassState :: SlideState
 initialClassState = Closed

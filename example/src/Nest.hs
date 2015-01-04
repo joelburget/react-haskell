@@ -33,19 +33,22 @@ sToI = readMay . fromJSStr
 data NestingBoth
 type Transition = Either (Maybe Int) JSString
 type State = (Maybe Int, JSString)
-type instance ClassState NestingBoth = State
-type instance Signal NestingBoth = Transition
-type instance AnimationState NestingBoth = ()
+instance ReactKey NestingBoth where
+    type ClassState NestingBoth = State
+    type Signal NestingBoth = Transition
+    type AnimationState NestingBoth = ()
 
 data NestingL
-type instance ClassState NestingL = Maybe Int
-type instance Signal NestingL = Maybe Int
-type instance AnimationState NestingL = ()
+instance ReactKey NestingL where
+    type ClassState NestingL = Maybe Int
+    type Signal NestingL = Maybe Int
+    type AnimationState NestingL = ()
 
 data NestingR
-type instance ClassState NestingR = JSString
-type instance Signal NestingR = JSString
-type instance AnimationState NestingR = ()
+instance ReactKey NestingR where
+    type ClassState NestingR = JSString
+    type Signal NestingR = JSString
+    type AnimationState NestingR = ()
 
 narrowL :: Narrowing NestingBoth NestingL
 narrowL = Narrowing id Left

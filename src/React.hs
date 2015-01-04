@@ -28,9 +28,7 @@ module React
     -- React.Types
     , ReactT(..)
     , React
-    , AnimationState
-    , ClassState
-    , Signal
+    , ReactKey(AnimationState, ClassState, Signal)
     , RenderHandle(..)
     , AnimConfig(..)
     , Easing(..)

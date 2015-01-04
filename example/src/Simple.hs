@@ -18,9 +18,10 @@ data SimpleState = SimpleState
     , cur :: JSString -- what the user's currently typing
     }
 
-type instance ClassState Simple = SimpleState
-type instance AnimationState Simple = ()
-type instance Signal Simple = Transition
+instance ReactKey Simple where
+    type ClassState Simple = SimpleState
+    type AnimationState Simple = ()
+    type Signal Simple = Transition
 
 initialState = SimpleState "little mac!" "pit" ""
 

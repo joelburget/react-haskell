@@ -109,40 +109,51 @@ class Animatable a where
     animSub :: a -> a -> a
     animZero :: a
 
--- | The state needed to render a class (ignoring animation)
+
+-- | A 'ReactKey' is a type, which conventionally has no constructors,
+-- mapping to the type of state, animation state, and signals associated
+-- with a page fragment or class.
 --
 -- Example:
 --
 -- @
+-- data Slider -- note the key has no constructors
 -- data SliderState = Open | Closed
--- type instance ClassState Slider = SliderState
--- @
-type family ClassState ty :: *
-
--- | The state needed to animate a class
---
--- Example:
---
--- @
--- type instance ClassState Slider = Double
--- @
-type family AnimationState ty :: *
-
--- | The type of signals a class can send
---
--- Example:
---
--- @
 -- data SliderSignal = SlideOpen | SlideClosed
--- type instance Signal Slider = SliderSignal
+--
+-- instance ReactKey Slider where
+--     type ClassState Slider = SliderState
+--     type AnimationState Slider = Double
+--     type Signal Slider = SliderSignal
+--
+-- -- this page fragment has access to the animation state 'Double' and can
+-- -- emit 'SliderSignal's.
+-- pageFragment :: React Slider ()
+-- pageFragment = div_ ...
+--
+-- -- this class stores the class state and animation state. its internals
+-- -- can emit `SliderSignal`s.
+-- sliderClass :: ReactClass Slider ()
+-- sliderClass = ...
 -- @
-type family Signal ty :: *
+class ReactKey ty where
+    -- | The state needed to render a class (ignoring animation)
+    type ClassState ty :: *
+
+    -- | The state needed to animate a class
+    type AnimationState ty :: *
+
+    -- | The type of signals a class can send
+    type Signal ty :: *
+
 
 -- Unit's ClassState and AnimationState are uninteresting. Its Signal is
 -- entirely uninhabited.
-type instance ClassState     () = ()
-type instance AnimationState () = ()
-type instance Signal         () = Void
+instance ReactKey () where
+    type ClassState     () = ()
+    type AnimationState () = ()
+    type Signal         () = Void
+
 
 data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
       -- | How long this animation lasts in milliseconds
@@ -158,15 +169,19 @@ data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
     , onComplete :: Bool -> Maybe (Signal ty)
     }
 
+
 data RunningAnim ty = RunningAnim
     { config :: AnimConfig ty
     , beganAt :: Double
     }
 
+
 newtype ReactT ty m a = ReactT
     { runReactT :: AnimationState ty -> m ([ReactNode (Signal ty)], a) }
 
+
 type React ty = ReactT ty Identity
+
 
 instance (Monad m, Monoid a) => Monoid (ReactT ty m a) where
     mempty = ReactT $ \_ -> return ([], mempty)
@@ -175,15 +190,19 @@ instance (Monad m, Monoid a) => Monoid (ReactT ty m a) where
         ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
 
+
 instance Monad m => Functor (ReactT ty m) where
     fmap = liftM
+
 
 instance Monad m => Applicative (ReactT ty m) where
     pure = return
     (<*>) = ap
 
+
 instance (Monad m, a ~ ()) => IsString (ReactT ty m a) where
     fromString str = ReactT $ \_ -> return ([Text str], ())
+
 
 instance Monad m => Monad (ReactT ty m) where
     return a = ReactT $ \_ -> return ([], a)
