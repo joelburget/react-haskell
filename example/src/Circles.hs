@@ -16,11 +16,13 @@ import React
 data Circles
 
 data Circ = C1 | C2 | C3 | C4 deriving (Eq, Show)
-data instance ClassState Circles = CircleClassState Circ [Circ]
-data instance AnimationState Circles = CircleAnimations Color Color Color Color (Double, Double)
+data CircState = CircState Circ [Circ]
+data AnimState = AnimState Color Color Color Color (Double, Double)
+data Transition = Flash
 
-type ClassState' = ClassState Circles
-type AnimState = AnimationState Circles
+type instance ClassState Circles = CircState
+type instance AnimationState Circles = AnimState
+type instance Signal Circles = Transition
 
 
 coord :: Circ -> (Double, Double)
@@ -34,43 +36,40 @@ circOrder :: [Circ]
 circOrder = cycle [C1, C3, C2, C4]
 
 
-initialState :: ClassState'
-initialState = CircleClassState C1 (tail circOrder)
+initialState :: CircState
+initialState = CircState C1 (tail circOrder)
 
 
 initialAnimationState :: AnimState
 initialAnimationState =
-    CircleAnimations animZero animZero animZero animZero (0, 0)
+    AnimState animZero animZero animZero animZero (0, 0)
 
 
 colorL :: Circ -> Lens' AnimState Color
-colorL C1 f (CircleAnimations c1 c2 c3 c4 pt) =
-    (\x -> CircleAnimations x c2 c3 c4 pt) <$> f c1
-colorL C2 f (CircleAnimations c1 c2 c3 c4 pt) =
-    (\x -> CircleAnimations c1 x c3 c4 pt) <$> f c2
-colorL C3 f (CircleAnimations c1 c2 c3 c4 pt) =
-    (\x -> CircleAnimations c1 c2 x c4 pt) <$> f c3
-colorL C4 f (CircleAnimations c1 c2 c3 c4 pt) =
-    (\x -> CircleAnimations c1 c2 c3 x pt) <$> f c4
+colorL C1 f (AnimState c1 c2 c3 c4 pt) =
+    (\x -> AnimState x c2 c3 c4 pt) <$> f c1
+colorL C2 f (AnimState c1 c2 c3 c4 pt) =
+    (\x -> AnimState c1 x c3 c4 pt) <$> f c2
+colorL C3 f (AnimState c1 c2 c3 c4 pt) =
+    (\x -> AnimState c1 c2 x c4 pt) <$> f c3
+colorL C4 f (AnimState c1 c2 c3 c4 pt) =
+    (\x -> AnimState c1 c2 c3 x pt) <$> f c4
 
 
 ptL :: Lens' AnimState (Double, Double)
-ptL f (CircleAnimations c1 c2 c3 c4 pt) =
-    CircleAnimations c1 c2 c3 c4 <$> f pt
+ptL f (AnimState c1 c2 c3 c4 pt) =
+    AnimState c1 c2 c3 c4 <$> f pt
 
 
 -- update
 
-data instance Signal Circles = Flash
-type Transition = Signal Circles
-
-transition :: ClassState'
+transition :: CircState
            -> Transition
-           -> (ClassState' , [AnimConfig Circles])
-transition (CircleClassState c' (c:cs)) Flash =
+           -> (CircState , [AnimConfig Circles])
+transition (CircState c' (c:cs)) Flash =
     let coordTrans = coord c `animSub` coord c'
         colorTrans = fillorange `animSub` fillblue
-    in ( CircleClassState c cs
+    in ( CircState c cs
        , [ AnimConfig 800 colorTrans (colorL c) EaseInQuad (const (Just Flash))
          , AnimConfig 2000 coordTrans ptL EaseInOutQuad (const Nothing)
          ]
@@ -96,9 +95,9 @@ circ (x, y) color = circle_ [ cx_ x
                             ]
 
 
-mainView :: ClassState' -> React Circles ()
-mainView (CircleClassState c _) = div_ $ do
-    CircleAnimations c1 c2 c3 c4 trans <- getAnimationState
+mainView :: CircState -> React Circles ()
+mainView (CircState c _) = div_ $ do
+    AnimState c1 c2 c3 c4 trans <- getAnimationState
 
     svg_ [ width_ 800
          , height_ 800

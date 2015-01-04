@@ -22,7 +22,7 @@ module React
 
     -- React.Local
     , locally
-    , GeneralizeClass(..)
+    , Narrowing(..)
 
     -- React.Render
     , cancelRender

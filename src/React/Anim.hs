@@ -12,7 +12,6 @@ import Lens.Family2
 import React.Imports
 import React.Types
 
-import Debug.Trace
 
 -- TODO support delays
 

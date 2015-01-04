@@ -3,6 +3,7 @@
 module Nest where
 
 import Data.Maybe
+import Data.Void
 import Haste
 import React
 import Prelude hiding (fst, snd)
@@ -29,54 +30,43 @@ sToI = readMay . fromJSStr
 
 -- model
 
+data NestingBoth
+type Transition = Either (Maybe Int) JSString
+type State = (Maybe Int, JSString)
+type instance ClassState NestingBoth = State
+type instance Signal NestingBoth = Transition
+type instance AnimationState NestingBoth = ()
+
 data NestingL
-data instance ClassState NestingL = NestL (Maybe Int)
-data instance Signal NestingL = SigL (Maybe Int)
-data instance AnimationState NestingL = NoAnimationL
-type ClassStateL = ClassState NestingL
-type SignalL = Signal NestingL
+type instance ClassState NestingL = Maybe Int
+type instance Signal NestingL = Maybe Int
+type instance AnimationState NestingL = ()
 
 data NestingR
-data instance ClassState NestingR = NestR JSString
-data instance Signal NestingR = SigR JSString
-data instance AnimationState NestingR = NoAnimationR
-type ClassStateR = ClassState NestingR
-type SignalR = Signal NestingR
+type instance ClassState NestingR = JSString
+type instance Signal NestingR = JSString
+type instance AnimationState NestingR = ()
 
-data NestingBoth
-data instance ClassState NestingBoth = NestBoth (Maybe Int) JSString
-data instance Signal NestingBoth = SigBL (Maybe Int) | SigBR JSString
-data instance AnimationState NestingBoth = NoAnimationB
-type ClassStateB = ClassState NestingBoth
-type SignalB = Signal NestingBoth
+narrowL :: Narrowing NestingBoth NestingL
+narrowL = Narrowing id Left
 
-instance GeneralizeClass NestingL NestingBoth where
-    localizeClassState (NestBoth l _) = NestL l
-    localizeAnimationState _ = NoAnimationL
-    generalizeSignal (SigL l) = SigBL l
+narrowR :: Narrowing NestingBoth NestingR
+narrowR = Narrowing id Right
 
-instance GeneralizeClass NestingR NestingBoth where
-    localizeClassState (NestBoth _ r) = NestR r
-    localizeAnimationState _ = NoAnimationR
-    generalizeSignal (SigR r) = SigBR r
+narrowPure :: Narrowing NestingBoth ()
+narrowPure = Narrowing (const ()) absurd
 
-initialStateB :: ClassStateB
-initialStateB = NestBoth (Just 1) "foo"
+initialStateB :: (Maybe Int, JSString)
+initialStateB = (Just 1, "foo")
 
 initialAnimationState :: AnimationState NestingBoth
-initialAnimationState = NoAnimationB
+initialAnimationState = ()
 
 -- view
 
-transition :: ClassStateB -> SignalB -> (ClassStateB, [AnimConfig NestingBoth])
-transition (NestBoth n s) (SigBL n') = (NestBoth n' s, [])
-transition (NestBoth n s) (SigBR s') = (NestBoth n s', [])
-
-generalizeLeft :: SignalL -> SignalB
-generalizeLeft (SigL x) = SigBL x
-
-generalizeRight :: SignalR -> SignalB
-generalizeRight (SigR x) = SigBR x
+transition :: State -> Transition -> (State, [AnimConfig NestingBoth])
+transition (n, s) (Left n') = ((n', s), [])
+transition (n, s) (Right s') = ((n, s'), [])
 
 --
 
@@ -86,20 +76,20 @@ pureView = span_ "type here: "
 leftView :: Maybe Int -> React NestingL ()
 leftView i = div_ $
     input_ [ value_ (iToS i)
-           , onChange (Just . SigL . sToI . targetValue)
+           , onChange (Just . sToI . targetValue)
            ]
 
 rightView :: JSString -> React NestingR ()
 rightView s = div_ $
     input_ [ value_ s
-           , onChange (Just . SigR . targetValue)
+           , onChange (Just . targetValue)
            ]
 
-mainView :: ClassStateB -> React NestingBoth ()
-mainView (NestBoth n s) = div_ $ do
-    locally pureView
-    locally (leftView n)
-    locally (rightView s)
+mainView :: State -> React NestingBoth ()
+mainView (n, s) = div_ $ do
+    locally narrowPure pureView
+    locally narrowL (leftView n)
+    locally narrowR (rightView s)
 
 nestClass :: IO (ReactClass NestingBoth)
 nestClass =

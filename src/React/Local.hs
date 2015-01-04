@@ -1,64 +1,39 @@
 {-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses #-}
-module React.Local (locally, GeneralizeClass(..)) where
+module React.Local (locally, Narrowing(..)) where
 
 import Control.Applicative
+import Data.Void
 
 import React.Types
 
-class GeneralizeClass local general where
-    localizeClassState :: ClassState general -> ClassState local
-    localizeAnimationState :: AnimationState general -> AnimationState local
+-- TODO
+-- * make work with react classes
 
-    generalizeSignal :: Signal local -> Signal general
+data Narrowing general local = Narrowing
+    { localizeAnimationState :: AnimationState general -> AnimationState local
+    , generalizeSignal :: Signal local -> Signal general
+    }
 
-instance GeneralizeClass () general where
-    localizeClassState _ = UnitClassState
-    localizeAnimationState _ = UnitAnimationState
-
-    generalizeSignal = error "this cannot be called"
-
-locally :: (Monad m, GeneralizeClass local general)
-        => ReactT local m x
+locally :: Monad m
+        => Narrowing general local
+        -> ReactT local m x
         -> ReactT general m x
-locally = locallyFocus
+locally narrowing nested = ReactT $ \anim -> do
+    (nodes, x) <- runReactT nested (localizeAnimationState narrowing anim)
+    return (map (nodeConvert (generalizeSignal narrowing)) nodes, x)
 
-handlerConvert :: GeneralizeClass local general
-               => EventHandler (Signal local)
-               -> EventHandler (Signal general)
-handlerConvert (EventHandler handle ty) =
-    EventHandler (\raw -> generalizeSignal <$> handle raw) ty
+handlerConvert :: (localSig -> generalSig)
+               -> EventHandler localSig
+               -> EventHandler generalSig
+handlerConvert generalize (EventHandler handle ty) =
+    EventHandler (\raw -> generalize <$> handle raw) ty
 
-nodeConvert1 :: GeneralizeClass local general
-             => ReactNode (Signal local)
-             -> ReactNode (Signal general)
-nodeConvert1 (Parent name attrs handlers children) =
-    Parent name attrs (map handlerConvert handlers)
-        (map nodeConvert1 children)
-nodeConvert1 (Leaf name attrs handlers) =
-    Leaf name attrs (map handlerConvert handlers)
-nodeConvert1 (Text str) = Text str
-
-locallyFocus :: (Monad m, GeneralizeClass local general)
-             => ReactT local m x
-             -> ReactT general m x
-locallyFocus nested = ReactT $ \anim -> do
-    (nodes, x) <- runReactT nested (localizeAnimationState anim)
-    return (map nodeConvert1 nodes, x)
-
--- handlerConvert' :: EventHandler () -> EventHandler general
--- handlerConvert' (EventHandler handle ty) = EventHandler (const Nothing) ty
-
--- nodeConvert2 :: ReactNode () -> ReactNode general
--- nodeConvert2 (Parent name attrs handlers children) =
---     Parent name attrs (map handlerConvert' handlers)
---         (map nodeConvert2 children)
--- nodeConvert2 (Leaf name attrs handlers) =
---     Leaf name attrs (map handlerConvert' handlers)
--- nodeConvert2 (Text str) = Text str
-
--- locallyEmpty :: Monad m
---              => ReactT () m x
---              -> ReactT general m x
--- locallyEmpty nested = ReactT $ \anim -> do
---     (nodes, x) <- runReactT nested anim
---     return (map nodeConvert2 nodes, x)
+nodeConvert :: (localSig -> generalSig)
+             -> ReactNode localSig
+             -> ReactNode generalSig
+nodeConvert generalize (Parent name attrs handlers children) =
+    Parent name attrs (map (handlerConvert generalize) handlers)
+        (map (nodeConvert generalize) children)
+nodeConvert generalize (Leaf name attrs handlers) =
+    Leaf name attrs (map (handlerConvert generalize) handlers)
+nodeConvert _ (Text str) = Text str

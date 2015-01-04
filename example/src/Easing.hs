@@ -17,21 +17,15 @@ import Lens.Family2 hiding (view)
 -- model
 
 data EasingDemo
-data instance ClassState EasingDemo = Easings [Easing]
+data EasingState = Easings [Easing]
+data AnimState = EasingMap (Map Easing Double)
+data Transition = Restart
 
--- newtype EasingMap v = EasingMap (Map Easing v) deriving Functor
-data instance AnimationState EasingDemo = EasingMap (Map Easing Double)
+type instance ClassState EasingDemo = EasingState
+type instance AnimationState EasingDemo = AnimState
+type instance Signal EasingDemo = Transition
 
--- instance Applicative EasingMap where
---     pure v = EasingMap $ fromList $ zip easings (repeat v)
---     (EasingMap fab) <*> (EasingMap fa) = EasingMap $ fromList $
---         map (\v' -> (v', (fab ! v') (fa ! v')))
---         easings
-
-type ClassState' = ClassState EasingDemo
-type AnimState = AnimationState EasingDemo
-
-initialClassState :: ClassState'
+initialClassState :: EasingState
 initialClassState = Easings easings
 
 initialAnimationState :: AnimState
@@ -72,16 +66,13 @@ easings =
 
 -- update
 
-data instance Signal EasingDemo = Restart
-type Transition = Signal EasingDemo
-
 animIx :: Easing -> Lens' (AnimState) Double
 animIx easing f (EasingMap m) = EasingMap <$>
     ((\v' -> insert easing v' m) <$> f (m ! easing))
 
-transition :: ClassState'
+transition :: EasingState
            -> Transition
-           -> (ClassState', [AnimConfig EasingDemo])
+           -> (EasingState, [AnimConfig EasingDemo])
 transition (Easings easings) Restart =
     ( Easings easings
     , [ AnimConfig 1000 1 (animIx easing) easing (const Nothing)
@@ -91,7 +82,7 @@ transition (Easings easings) Restart =
 
 -- view
 
-view :: ClassState' -> React EasingDemo ()
+view :: EasingState -> React EasingDemo ()
 view (Easings easings) = div_ $ do
     EasingMap runningEasings <- getAnimationState
 

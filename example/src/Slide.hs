@@ -12,48 +12,42 @@ import React
 -- model
 
 data Slide
-data instance ClassState Slide = Open | Closed
+data SlideState = Open | Closed
+data Toggle = Toggle deriving Show
 
-initialClassState :: ClassState'
+type instance ClassState Slide = SlideState
+type instance Signal Slide = Toggle
+type instance AnimationState Slide = Double
+
+initialClassState :: SlideState
 initialClassState = Closed
 
-data instance AnimationState Slide = SlidingProgress Double
-
-initialAnimationState :: AnimState
-initialAnimationState = SlidingProgress 0
-
-type ClassState' = ClassState Slide
-type AnimState = AnimationState Slide
-type Sig = Signal Slide
+initialAnimationState :: Double
+initialAnimationState = 0
 
 -- update
-
-data instance Signal Slide = Toggle
-
-animLens :: Lens' AnimState Double
-animLens f (SlidingProgress t) = SlidingProgress <$> f t
 
 paneWidth = 200
 
 slide :: Double -> Easing -> AnimConfig Slide
 slide from easing = AnimConfig
     { duration = 1000
-    , lens = animLens
+    , lens = id
     , from = from
     , easing = easing
     , onComplete = const Nothing
     }
 
-transition :: ClassState' -> Sig -> (ClassState', [AnimConfig Slide])
+transition :: SlideState -> Toggle -> (SlideState, [AnimConfig Slide])
 transition Open Toggle = (Closed, [ slide paneWidth EaseInOutQuad ])
 transition Closed Toggle = (Open, [ slide (-paneWidth) EaseInOutQuad ])
 
 
 -- view
 
-view :: ClassState' -> React Slide ()
+view :: SlideState -> React Slide ()
 view slid = div_ [ class_ "slider-container" ] $ do
-    SlidingProgress animWidth <- getAnimationState
+    animWidth <- getAnimationState
     let inherentWidth = case slid of
             Open -> paneWidth
             Closed -> 0

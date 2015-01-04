@@ -9,32 +9,31 @@ import Prelude hiding (fst, snd)
 -- model
 
 data Simple
-data instance ClassState Simple = ClassState
+data Transition
+    = Typing JSString
+    | Enter
+data SimpleState = SimpleState
     { fst :: JSString
     , snd :: JSString
     , cur :: JSString -- what the user's currently typing
     }
 
-initialState = ClassState "little mac!" "pit" ""
+type instance ClassState Simple = SimpleState
+type instance AnimationState Simple = ()
+type instance Signal Simple = Transition
 
-data instance AnimationState Simple = NoAnimation
-
-type ClassState' = ClassState Simple
+initialState = SimpleState "little mac!" "pit" ""
 
 -- update
 
-data instance Signal Simple
-    = Typing JSString
-    | Enter
-
-transition :: ClassState' -> Signal Simple -> (ClassState', [AnimConfig Simple])
+transition :: SimpleState -> Transition -> (SimpleState, [AnimConfig Simple])
 transition state (Typing str) = (state{cur=str}, [])
-transition ClassState{fst, cur} Enter = (ClassState cur fst "", [])
+transition SimpleState{fst, cur} Enter = (SimpleState cur fst "", [])
 
 -- view
 
-view :: ClassState' -> React Simple ()
-view (ClassState fst snd cur) = div_ $ do
+view :: SimpleState -> React Simple ()
+view (SimpleState fst snd cur) = div_ $ do
     input_
         [ value_ cur
 
@@ -53,4 +52,4 @@ view (ClassState fst snd cur) = div_ $ do
     text_ snd
 
 simpleClass :: IO (ReactClass Simple)
-simpleClass = createClass view transition initialState NoAnimation []
+simpleClass = createClass view transition initialState () []

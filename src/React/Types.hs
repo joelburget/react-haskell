@@ -10,11 +10,13 @@ import Data.Functor.Identity
 import Data.Monoid
 import Data.String
 
+import Data.Void
 import Haste
 import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 import Lens.Family2
+
 
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
@@ -112,35 +114,37 @@ class Animatable a where
 -- Example:
 --
 -- @
--- data instance ClassState Slider = Open | Closed
+-- data SliderState = Open | Closed
+-- type instance ClassState Slider = SliderState
 -- @
-data family ClassState ty :: *
+type family ClassState ty :: *
 
 -- | The state needed to animate a class
 --
 -- Example:
 --
 -- @
--- data instance ClassState Slider = SlidingProgress Double
+-- type instance ClassState Slider = Double
 -- @
-data family AnimationState ty :: *
+type family AnimationState ty :: *
 
 -- | The type of signals a class can send
 --
 -- Example:
 --
 -- @
--- data instance Signal Slider = SlideOpen | SlideClosed
+-- data SliderSignal = SlideOpen | SlideClosed
+-- type instance Signal Slider = SliderSignal
 -- @
-data family Signal ty :: *
+type family Signal ty :: *
 
 -- Unit's ClassState and AnimationState are uninteresting. Its Signal is
 -- entirely uninhabited.
-data instance ClassState     () = UnitClassState
-data instance AnimationState () = UnitAnimationState
-data instance Signal         ()
+type instance ClassState     () = ()
+type instance AnimationState () = ()
+type instance Signal         () = Void
 
-data AnimConfig ty = forall a. (Animatable a, Show a) => AnimConfig {
+data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
       -- | How long this animation lasts in milliseconds
       duration :: Double
       -- | Where does this animation start (it goes to 'animZero')
@@ -200,7 +204,7 @@ mkStaticAttr :: JSString -> (a -> JSON) -> a -> AttrOrHandler signal
 mkStaticAttr name f a = StaticAttr name (f a)
 
 
-mkEventHandler :: NFData signal
+mkEventHandler :: (NFData signal)
                => (RawEvent -> signal)
                -> EvtType
                -> (signal -> Maybe signal')
@@ -339,7 +343,7 @@ instance NFData KeyboardEvent where
     rnf (KeyboardEvent a b c d e f g h) =
         a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
 
-newtype ChangeEvent = ChangeEvent { targetValue :: JSString }
+newtype ChangeEvent = ChangeEvent { targetValue :: JSString } deriving Show
 
 instance NFData ChangeEvent where
     rnf e@(ChangeEvent str) = str `seq` ()
