@@ -43,7 +43,6 @@ trap 'rm -r "$dir"' EXIT
 cabal haddock --hoogle --hyperlink-source --html-location='/package/$pkg-$version/docs' --contents-location='/package/$pkg-$version'
 
 cp -R dist/doc/html/$pkg/ $dir/$pkg-$ver-docs
-cp -R dist/doc/html/$pkg/ tmp/$pkg-$ver-docs
 
 tar cvz -C $dir --format=ustar -f $dir/$pkg-$ver-docs.tar.gz $pkg-$ver-docs
 

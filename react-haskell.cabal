@@ -75,7 +75,7 @@ library
     NamedFieldPuns,
     OverloadedStrings
   build-depends:
-    base >= 4.5,
+    base >= 4.5 && < 5,
     transformers,
     monads-tf,
     deepseq,
