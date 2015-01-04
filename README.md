@@ -9,8 +9,8 @@ I was driven to create this thing because I had a large existing Haskell codebas
 Let's put a simple paragraph on the page:
 
 ```haskell
-sample :: React
-sample = p <! className "style" $ em "andy warhol"
+sample :: React () ()
+sample = p_ [ class_ "style" ] $ em_ "andy warhol"
 
 main :: IO ()
 main = do
@@ -29,11 +29,11 @@ That creates a dom node on the page that looks like:
 We can make that a little more complicated with some more child nodes.
 
 ```haskell
-sample :: React
-sample = div <! className "beautify" $ do
+sample :: React () ()
+sample = div_ [ class_ "beautify" ] $ do
     "velvet underground"
 
-    input
+    input_
 
     "lou reed"
 ```
@@ -41,13 +41,13 @@ sample = div <! className "beautify" $ do
 But of course that input doesn't do anything. Let's change that.
 
 ```haskell
-sample :: StatefulReact JSString
-sample = div $ do
+sample :: JSString -> React AppKey ()
+sample str = div_ $ do
     "favorite artist:"
 
-    input <! onChange (updateState . targetValue)
+    input_ [ onChange (Just . targetValue) ]
 
-    text <$> getState
+    text str
 ```
 
 ## Getting Started

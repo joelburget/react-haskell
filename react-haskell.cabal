@@ -10,11 +10,24 @@ description:
   .
   Here's a simple example which demonstrates basic elements, attributes, state, and handling events.
   .
-  > statefulView :: StatefulReact JSString ()
-  > statefulView = div_ <! class_ "container" $ do
-  >     str <- getState
-  >     input_ <! value_ str
-  >            <! onChange (\_ evt -> toJSStr $ map toUpper $ fromJSStr $ targetValue evt)
+  > -- We're creating a class with JSString state
+  > data Example
+  > instance ReactKey Example where
+  >     type ClassState Example = JSString
+  >     type AnimationState Example = ()
+  >     type Signal Example = JSString
+  >
+  > -- updating to the new state without animation
+  > transition :: JSString -> JSString -> (JSString, [AnimConfig Example])
+  > transition oldState signal = (signal, [])
+  >
+  > view :: JSString -> React Example ()
+  > view str = div_ [ class_ "container" ] $ do
+  >     input_ [ value_ str, onChange (Just . targetValue) ]
+  >
+  > main :: IO ()
+  > main = withElem "id" $ \elem ->
+  >     render elem =<< createClass view transition "" () []
 license:             MIT
 license-file:        LICENSE
 author:              Joel Burget

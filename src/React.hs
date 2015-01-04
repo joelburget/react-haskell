@@ -5,9 +5,6 @@
 -- Maintainer  :  Joel Burget <joelburget@gmail.com>
 -- Stability   :  experimental
 -- Portability :  non-portable
---
--- React-Haskell is
---
 module React
     ( module X
 
