@@ -175,9 +175,8 @@ data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
       duration :: Double
       -- | Where does this animation start and end?
     , endpoints :: (a, a)
-    -- , lens :: Lens' anim a XXX
       -- | Pointer to this field within 'AnimationState'
-    , lens :: Traversal' (AnimationState ty) a
+    , lens :: Lens' (AnimationState ty) a
       -- | How is the animation eased?
     , easing :: Easing
       -- | Do something when it's finished?
