@@ -87,12 +87,14 @@ view :: EasingState -> React EasingDemo ()
 view (Easings easings) = div_ $ do
     EasingMap runningEasings <- getAnimationState
 
-    div_ $ button_ [ onClick (const (Just Restart)) ] "click me!"
+    div_ $ button_ [ onClick (const (Just Restart)) ] "start easing"
 
-    div_ $ forM_ easings $ \easing ->
+    div_ [ class_ "easings" ] $ forM_ easings $ \easing ->
         div_ [ class_ "box" ] $ do
             subView (runningEasings ! easing) easing
             div_ [ class_ "caption" ] $ fromString $ show easing
+
+    div_ $ button_ [ onClick (const (Just Restart)) ] "start easing"
 
 fillblue, fillorange :: Color
 fillblue = Color 85 161 220

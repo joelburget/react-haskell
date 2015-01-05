@@ -100,9 +100,9 @@ mainView :: CircState -> React Circles ()
 mainView (CircState c _) = div_ $ do
     AnimState c1 c2 c3 c4 trans <- getAnimationState
 
-    svg_ [ width_ 800
-         , height_ 800
-         , viewBox_ "-2 -2 4 4"
+    svg_ [ width_ 600
+         , height_ 600
+         , viewBox_ "-1.5 -1.5 3 3"
          ] $ do
         circ (coord C1) (fillblue `animAdd` c1)
         circ (coord C2) (fillblue `animAdd` c2)
