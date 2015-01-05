@@ -252,9 +252,9 @@ mkEventHandler unNative ty handle =
 
 separateAttrs :: [AttrOrHandler signal] -> ([EventHandler signal], Attrs)
 separateAttrs [] = ([], [])
-separateAttrs ((StaticAttr k v):xs) =
+separateAttrs (StaticAttr k v:xs) =
     let (hs, as) = separateAttrs xs in (hs, (k, v):as)
-separateAttrs ((Handler h):xs) =
+separateAttrs (Handler h:xs) =
     let (hs, as) = separateAttrs xs in (h:hs, as)
 
 

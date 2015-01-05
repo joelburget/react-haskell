@@ -1,7 +1,8 @@
-{-# LANGUAGE ForeignFunctionInterface, CPP #-}
+{-# LANGUAGE CPP #-}
 
--- TODO send GHC bug report
-{- ANN module "HLint: ignore Use camelCase" -}
+#ifdef __HASTE__
+{-# LANGUAGE ForeignFunctionInterface #-}
+#endif
 
 module React.Imports where
 

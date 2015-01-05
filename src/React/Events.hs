@@ -3,6 +3,7 @@ module React.Events where
 
 import Control.Applicative
 import Control.DeepSeq
+import Data.Maybe
 
 import Haste
 import Haste.Prim
@@ -13,10 +14,7 @@ import React.Types
 -- TODO: handle (a -> Maybe b) or (a -> b)
 
 handlerToJs :: (RawEvent -> Maybe (IO ())) -> Ptr (RawEvent -> IO ())
-handlerToJs handle =
-    let go :: Maybe (IO ()) -> IO ()
-        go = maybe (return ()) id
-    in toPtr (go . handle)
+handlerToJs handle = toPtr (fromMaybe (return ()) . handle)
 
 makeHandler :: RawAttrs -> (RawEvent -> Maybe (IO ()), EvtType) -> IO ()
 makeHandler obj (handle, ChangeEvt) =

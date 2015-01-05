@@ -48,7 +48,7 @@ doRender elem time ReactClass{ classRender,
             mapAccumL classTransition prevState transitions
 
         newAnims' = concat newAnims
-        newRunningAnims = map (\conf -> RunningAnim conf time) newAnims'
+        newRunningAnims = map (`RunningAnim` time) newAnims'
 
         (runningAnims', endingAnims) = partition
             (\(RunningAnim AnimConfig{duration} beganAt) ->

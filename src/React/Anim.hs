@@ -86,7 +86,7 @@ instance Animatable Color where
         Color (r0 + r1) (g0 + g1) (b0 + b1)
     animSub (Color r0 g0 b0) (Color r1 g1 b1) =
         Color (r0 - r1) (g0 - g1) (b0 - b1)
-    animZero = (Color 0 0 0)
+    animZero = Color 0 0 0
 
 instance Show Color where
     show (Color r g b) = "rgb" ++ show (r, g, b)
@@ -177,4 +177,4 @@ lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin) =
     (time - begin) / duration
 
 intLerp :: Int -> Int -> Double -> Int
-intLerp a b t = floor $ (fromIntegral a) + (fromIntegral $ b - a) * t
+intLerp a b t = floor $ fromIntegral a + fromIntegral (b - a) * t
