@@ -83,18 +83,23 @@ transition (Easings easings) Restart =
 
 -- view
 
+buttonBox :: React EasingDemo ()
+buttonBox = div_ [ class_ "button-box" ] $
+    button_ [ class_ "btn btn--m btn--gray-border"
+            , onClick (const (Just Restart))
+            ]
+            "start easing"
+
 view :: EasingState -> React EasingDemo ()
 view (Easings easings) = div_ $ do
     EasingMap runningEasings <- getAnimationState
 
-    div_ $ button_ [ onClick (const (Just Restart)) ] "start easing"
-
+    buttonBox
     div_ [ class_ "easings" ] $ forM_ easings $ \easing ->
         div_ [ class_ "box" ] $ do
             subView (runningEasings ! easing) easing
             div_ [ class_ "caption" ] $ fromString $ show easing
-
-    div_ $ button_ [ onClick (const (Just Restart)) ] "start easing"
+    buttonBox
 
 fillblue, fillorange :: Color
 fillblue = Color 85 161 220

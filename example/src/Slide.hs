@@ -53,7 +53,7 @@ view slid = div_ [ class_ "slider-container" ] $ do
             Open -> paneWidth
             Closed -> 0
 
-    div_ $ button_ [ onClick (const (Just Toggle)) ] "toggle"
+    div_ $ button_ [ class_ "btn btn--m btn--gray-border", onClick (const (Just Toggle)) ] "toggle"
     div_ [ class_ "slider"
          , style_ (Dict [("width", Num (inherentWidth + animWidth))])
          ]

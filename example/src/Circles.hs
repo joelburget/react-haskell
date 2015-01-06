@@ -11,6 +11,7 @@ import Haste hiding (fromString)
 import Haste.JSON
 import React
 
+
 -- model
 
 data Circles
@@ -18,7 +19,7 @@ data Circles
 data Circ = C1 | C2 | C3 | C4 deriving (Eq, Show)
 data CircState = CircState Circ [Circ]
 data AnimState = AnimState Color Color Color Color (Double, Double)
-data Transition = Flash
+data Transition = SingleFlash Circ | RepeatingFlash
 
 instance ReactKey Circles where
     type ClassState Circles = CircState
@@ -66,13 +67,26 @@ ptL f (AnimState c1 c2 c3 c4 pt) =
 
 transition :: CircState
            -> Transition
-           -> (CircState , [AnimConfig Circles])
-transition (CircState c' (c:cs)) Flash =
-    let coordTrans = coord c `animSub` coord c'
-        colorTrans = fillorange `animSub` fillblue
-    in ( CircState c cs
-       , [ AnimConfig 800 (colorTrans, animZero) (colorL c) EaseInQuad (const (Just Flash))
-         , AnimConfig 2000 (coordTrans, animZero) ptL EaseInOutQuad (const Nothing)
+           -> (CircState, [AnimConfig Circles])
+transition (CircState c' cs) flash =
+    let colorTrans = fillorange `animSub` fillblue
+        (newLoc, cs', newSignal) = case flash of
+            RepeatingFlash -> (head cs, tail cs, Just RepeatingFlash)
+            SingleFlash c'' -> (c'', cs, Nothing)
+        coordTrans = coord newLoc `animSub` coord c'
+    in ( CircState newLoc cs'
+       , [ AnimConfig
+               800
+               (colorTrans, animZero)
+               (colorL newLoc)
+               EaseInQuad
+               (const newSignal)
+         , AnimConfig
+               2000
+               (coordTrans, animZero)
+               ptL
+               EaseInOutQuad
+               (const Nothing)
          ]
        )
 
@@ -87,13 +101,26 @@ fillorange = Color 245 175 51
 fill_' = fill_ . fromString . show
 
 
--- PureReact ()
-circ :: (Double, Double) -> Color -> React Circles ()
-circ (x, y) color = circle_ [ cx_ x
-                            , cy_ y
-                            , r_ 0.15
-                            , fill_' color
-                            ]
+circ :: Circ -> Color -> React Circles ()
+circ c = circ' True (const (Just (SingleFlash c))) (coord c)
+
+
+circ' :: Bool
+      -> (MouseEvent -> Maybe Transition)
+      -> (Double, Double)
+      -> Color
+      -> React Circles ()
+circ' clickable handler (x, y) color =
+    let lst = [ cx_ x
+              , cy_ y
+              , r_ 0.15
+              , fill_' color
+              ]
+        lst' = [ class_ "hover-circ"
+               , onClick handler
+               ]
+               ++ lst
+    in circle_ (if clickable then lst' else lst)
 
 
 mainView :: CircState -> React Circles ()
@@ -104,13 +131,13 @@ mainView (CircState c _) = div_ $ do
          , height_ 600
          , viewBox_ "-1.5 -1.5 3 3"
          ] $ do
-        circ (coord C1) (fillblue `animAdd` c1)
-        circ (coord C2) (fillblue `animAdd` c2)
-        circ (coord C3) (fillblue `animAdd` c3)
-        circ (coord C4) (fillblue `animAdd` c4)
-        circ (coord c `animSub` trans) fillblue
+        circ C1 (fillblue `animAdd` c1)
+        circ C2 (fillblue `animAdd` c2)
+        circ C3 (fillblue `animAdd` c3)
+        circ C4 (fillblue `animAdd` c4)
+        circ' False (const Nothing) (coord c `animSub` trans) fillblue
 
 
 circlesClass :: IO (ReactClass Circles)
 circlesClass =
-    createClass mainView transition initialState initialAnimationState [Flash]
+    createClass mainView transition initialState initialAnimationState [RepeatingFlash]
