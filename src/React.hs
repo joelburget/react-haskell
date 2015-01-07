@@ -28,6 +28,7 @@ module React
     -- React.Types
     , ReactT(..)
     , React
+    , PureReact
     , ReactKey(AnimationState, ClassState, Signal)
     , RenderHandle(..)
     , AnimConfig(..)

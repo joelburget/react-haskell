@@ -155,6 +155,9 @@ instance ReactKey () where
     type Signal         () = Void
 
 
+type PureReact = React () ()
+
+
 -- things you might want to control about an animation:
 -- * duration
 -- * from
