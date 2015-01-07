@@ -92,7 +92,7 @@ view status = div_ [ class_ "chain-container" ] $ do
     div_ [ class_ "chaining"
          , style_ (Dict [("width", Num xt),
                          ("height", Num yt),
-                         ("background-color", color)
+                         ("backgroundColor", color)
                         ])
          ]
          ""
