@@ -45,7 +45,7 @@ doRender elem time ReactClass{ classRender,
     prevAnim <- readIORef animRef
 
     let (newState, newAnims) =
-            mapAccumL classTransition prevState transitions
+            mapAccumL (flip classTransition) prevState transitions
 
         newAnims' = concat newAnims
         newRunningAnims = map (`RunningAnim` time) newAnims'

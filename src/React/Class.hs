@@ -22,8 +22,8 @@ import Haste.Prim
 -- Use 'createClass' to construct.
 data ReactClass ty = ReactClass
     { classRender :: ClassState ty -> React ty ()
-    , classTransition :: ClassState ty
-                      -> Signal ty
+    , classTransition :: Signal ty
+                      -> ClassState ty
                       -> (ClassState ty, [AnimConfig ty])
 
     , foreignClass :: ForeignClass
@@ -37,7 +37,7 @@ data ReactClass ty = ReactClass
 
 -- | 'ReactClass' smart contstructor.
 createClass :: (ClassState ty -> React ty ()) -- ^ render function
-            -> (ClassState ty -> Signal ty -> (ClassState ty, [AnimConfig ty]))
+            -> (Signal ty -> ClassState ty -> (ClassState ty, [AnimConfig ty]))
             -- ^ transition function
             -> ClassState ty -- ^ initial state
             -> AnimationState ty -- ^ initial animation state
