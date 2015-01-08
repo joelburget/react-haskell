@@ -27,11 +27,11 @@ data Transition
     = Typing JSString
     | Enter
 
-transition :: ClassState
-           -> Transition
+transition :: Transition
+           -> ClassState
            -> (ClassState, [AnimConfig Transition AnimationState])
-transition state (Typing str) = (state{cur=str}, [])
-transition ClassState{fst, cur} Enter =
+transition (Typing str) state = (state{cur=str}, [])
+transition Enter ClassState{fst, cur} =
     ( ClassState cur fst ""
     , [AnimConfig 1000 (-20, 0) id EaseInCubic (const Nothing)]
     )

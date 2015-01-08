@@ -26,9 +26,9 @@ initialState = SimpleState "little mac!" "pit" ""
 
 -- update
 
-transition :: SimpleState -> Transition -> (SimpleState, [AnimConfig Simple])
-transition state (Typing str) = (state{typing=str}, [])
-transition SimpleState{fighter1, typing} Enter =
+transition :: Transition -> SimpleState -> (SimpleState, [AnimConfig Simple])
+transition (Typing str) state = (state{typing=str}, [])
+transition Enter SimpleState{fighter1, typing} =
     (SimpleState typing fighter1 "", [])
 
 -- view

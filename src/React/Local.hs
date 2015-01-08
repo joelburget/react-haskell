@@ -1,5 +1,8 @@
-{-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses #-}
-module React.Local (locally, Narrowing(..)) where
+{-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses,
+  FlexibleContexts, IncoherentInstances #-}
+-- Note on IncoherentInstances: the two instances below will both work fine
+-- for `GeneralizeSignal Void Void`. They should never be called.
+module React.Local (locally, GeneralizeSignal(..)) where
 
 import Control.Applicative
 import Data.Void
@@ -9,28 +12,43 @@ import React.Types
 -- TODO
 -- * make work with react classes
 
-data Narrowing general local = Narrowing
-    { localizeAnimationState :: AnimationState general -> AnimationState local
-    , generalizeSignal :: Signal local -> Signal general
-    }
+class GeneralizeSignal sigloc siggen where
+    generalizeSignal :: sigloc -> siggen
 
-locally :: Monad m
-        => Narrowing general local
-        -> ReactT local m x
+
+instance GeneralizeSignal a a where
+    generalizeSignal = id
+
+
+instance GeneralizeSignal Void a where
+    generalizeSignal = absurd
+
+
+locally :: ( Monad m
+           , GeneralizeSignal sigloc siggen
+           , siggen ~ Signal general
+           , sigloc ~ Signal local
+           , AnimationState local ~ AnimationState general
+           )
+        => ReactT local   m x
         -> ReactT general m x
-locally narrowing nested = ReactT $ \anim -> do
-    (nodes, x) <- runReactT nested (localizeAnimationState narrowing anim)
-    return (map (nodeConvert (generalizeSignal narrowing)) nodes, x)
+locally nested = result where
+    result = ReactT $ \anim -> do
+        let gensig = nodeConvert generalizeSignal
+        (nodes, x) <- runReactT nested anim
+        return (map gensig nodes, x)
 
-handlerConvert :: (localSig -> generalSig)
-               -> EventHandler localSig
-               -> EventHandler generalSig
+
+handlerConvert :: (sigloc -> siggen)
+               -> EventHandler sigloc
+               -> EventHandler siggen
 handlerConvert generalize (EventHandler handle ty) =
     EventHandler (\raw -> generalize <$> handle raw) ty
 
-nodeConvert :: (localSig -> generalSig)
-             -> ReactNode localSig
-             -> ReactNode generalSig
+
+nodeConvert :: (sigloc -> siggen)
+             -> ReactNode sigloc
+             -> ReactNode siggen
 nodeConvert generalize (Parent name attrs handlers children) =
     Parent name attrs (map (handlerConvert generalize) handlers)
         (map (nodeConvert generalize) children)

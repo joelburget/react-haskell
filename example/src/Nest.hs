@@ -67,9 +67,9 @@ initialAnimationState = ()
 
 -- view
 
-transition :: State -> Transition -> (State, [AnimConfig NestingBoth])
-transition (n, s) (Left n') = ((n', s), [])
-transition (n, s) (Right s') = ((n, s'), [])
+transition :: Transition -> State -> (State, [AnimConfig NestingBoth])
+transition (Left n')  (n, s) = ((n', s), [])
+transition (Right s') (n, s) = ((n, s'), [])
 
 --
 

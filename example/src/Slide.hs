@@ -39,9 +39,9 @@ slide from = AnimConfig
     , onComplete = const Nothing
     }
 
-transition :: SlideState -> Toggle -> (SlideState, [AnimConfig Slide])
-transition Open Toggle = (Closed, [ slide paneWidth ])
-transition Closed Toggle = (Open, [ slide (-paneWidth) ])
+transition :: Toggle -> SlideState -> (SlideState, [AnimConfig Slide])
+transition Toggle Open = (Closed, [ slide paneWidth ])
+transition Toggle Closed = (Open, [ slide (-paneWidth) ])
 
 
 -- view

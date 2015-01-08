@@ -71,16 +71,16 @@ animIx :: Easing -> Lens' (AnimState) Double
 animIx easing f (EasingMap m) = EasingMap <$>
     ((\v' -> insert easing v' m) <$> f (m ! easing))
 
-transition :: EasingState
-           -> Transition
+transition :: Transition
+           -> EasingState
            -> (EasingState, [AnimConfig EasingDemo])
-transition (Easings Closed easings) Toggle =
+transition Toggle (Easings Closed easings) =
     ( Easings Open easings
     , [ AnimConfig 1000 (-1, 0) (animIx easing) easing (const Nothing)
       | easing <- easings
       ]
     )
-transition (Easings Open easings) Toggle =
+transition Toggle (Easings Open easings) =
     ( Easings Closed easings
     , [ AnimConfig 1000 (1, 0) (animIx easing) easing (const Nothing)
       | easing <- easings
