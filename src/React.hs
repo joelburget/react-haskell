@@ -19,7 +19,7 @@ module React
 
     -- React.Local
     , locally
-    , Narrowing(..)
+    , GeneralizeSignal(..)
 
     -- React.Render
     , cancelRender

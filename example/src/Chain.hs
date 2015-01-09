@@ -38,9 +38,9 @@ chain from = AnimConfig
     , onComplete = const Nothing
     }
 
-transition :: ChainState -> Toggle -> (ChainState, [AnimConfig Chain])
-transition Open Toggle = (Closed, [ chain 1 ])
-transition Closed Toggle = (Open, [ chain (-1) ])
+transition :: Toggle -> ChainState -> (ChainState, [AnimConfig Chain])
+transition Toggle Open = (Closed, [ chain 1 ])
+transition Toggle Closed = (Open, [ chain (-1) ])
 
 
 -- view

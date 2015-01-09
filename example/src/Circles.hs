@@ -65,10 +65,10 @@ ptL f (AnimState c1 c2 c3 c4 pt) =
 
 -- update
 
-transition :: CircState
-           -> Transition
+transition :: Transition
+           -> CircState
            -> (CircState, [AnimConfig Circles])
-transition (CircState c' cs) flash =
+transition flash (CircState c' cs) =
     let colorTrans = fillorange `animSub` fillblue
         (newLoc, cs', newSignal) = case flash of
             RepeatingFlash -> (head cs, tail cs, Just RepeatingFlash)
