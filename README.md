@@ -63,3 +63,7 @@ We should try to adhere to React's [Virtual DOM Terminology](https://gist.github
 ## License
 
 [MIT License](http://opensource.org/licenses/MIT)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/joelburget/react-haskell/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
