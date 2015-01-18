@@ -24,14 +24,9 @@ instance GeneralizeSignal Void a where
     generalizeSignal = absurd
 
 
-locally :: ( Monad m
-           , GeneralizeSignal sigloc siggen
-           , siggen ~ Signal general
-           , sigloc ~ Signal local
-           , AnimationState local ~ AnimationState general
-           )
-        => ReactT local   m x
-        -> ReactT general m x
+locally :: (Monad m, GeneralizeSignal sigloc siggen)
+        => ReactT stateloc sigloc anim m x
+        -> ReactT stategen siggen anim m x
 locally nested = result where
     result = ReactT $ \anim -> do
         let gensig = nodeConvert generalizeSignal

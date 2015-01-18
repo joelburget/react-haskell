@@ -28,10 +28,10 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __HASTE__
-foreign import ccall js_createClass :: Ptr (state -> React ty ())
+foreign import ccall js_createClass :: Ptr (state -> React state sig anim ())
                                     -> IO ForeignClass
 #else
-js_createClass :: Ptr (state -> React ty ())
+js_createClass :: Ptr (state -> React state sig anim ())
                -> IO ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif

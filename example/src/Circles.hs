@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, Rank2Types #-}
+{-# LANGUAGE OverloadedStrings, Rank2Types, LiberalTypeSynonyms #-}
 module Circles (circlesClass) where
 
 import Control.Applicative
@@ -14,18 +14,11 @@ import React
 
 -- model
 
-data Circles
-
 data Circ = C1 | C2 | C3 | C4 deriving (Eq, Show)
 data CircState = CircState Circ [Circ]
 data AnimState = AnimState Color Color Color Color (Double, Double)
 data Transition = SingleFlash Circ | RepeatingFlash
-
-instance ReactKey Circles where
-    type ClassState Circles = CircState
-    type AnimationState Circles = AnimState
-    type Signal Circles = Transition
-
+type Circles a = a CircState Transition AnimState
 
 coord :: Circ -> (Double, Double)
 coord C1 = (-1, -1)
@@ -59,15 +52,14 @@ colorL C4 f (AnimState c1 c2 c3 c4 pt) =
 
 
 ptL :: Lens' AnimState (Double, Double)
-ptL f (AnimState c1 c2 c3 c4 pt) =
-    AnimState c1 c2 c3 c4 <$> f pt
+ptL f (AnimState c1 c2 c3 c4 pt) = AnimState c1 c2 c3 c4 <$> f pt
 
 
 -- update
 
 transition :: Transition
            -> CircState
-           -> (CircState, [AnimConfig Circles])
+           -> (CircState, [AnimConfig Transition AnimState])
 transition flash (CircState c' cs) =
     let colorTrans = fillorange `animSub` fillblue
         (newLoc, cs', newSignal) = case flash of
@@ -101,7 +93,7 @@ fillorange = Color 245 175 51
 fill_' = fill_ . fromString . show
 
 
-circ :: Circ -> Color -> React Circles ()
+circ :: Circ -> Color -> Circles React'
 circ c = circ' True (const (Just (SingleFlash c))) (coord c)
 
 
@@ -109,7 +101,7 @@ circ' :: Bool
       -> (MouseEvent -> Maybe Transition)
       -> (Double, Double)
       -> Color
-      -> React Circles ()
+      -> Circles React'
 circ' clickable handler (x, y) color =
     let lst = [ cx_ x
               , cy_ y
@@ -123,7 +115,7 @@ circ' clickable handler (x, y) color =
     in circle_ (if clickable then lst' else lst)
 
 
-mainView :: CircState -> React Circles ()
+mainView :: CircState -> Circles React'
 mainView (CircState c _) = div_ $ do
     AnimState c1 c2 c3 c4 trans <- getAnimationState
 
@@ -138,6 +130,6 @@ mainView (CircState c _) = div_ $ do
         circ' False (const Nothing) (coord c `animSub` trans) fillblue
 
 
-circlesClass :: IO (ReactClass Circles)
+circlesClass :: IO (Circles ReactClass)
 circlesClass =
     createClass mainView transition initialState initialAnimationState [RepeatingFlash]

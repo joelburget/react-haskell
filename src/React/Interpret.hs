@@ -57,9 +57,9 @@ setField attr (fld, Null) = return ()
 -- getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 interpret :: Monad m
-          => ReactT ty m ()
-          -> AnimationState ty
-          -> (Signal ty -> IO ())
+          => ReactT state sig anim m ()
+          -> anim
+          -> (sig -> IO ())
           -> m (IO ForeignNode)
 interpret react anim cb = do
     ~(child:_, ()) <- runReactT react anim

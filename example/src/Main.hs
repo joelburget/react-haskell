@@ -1,6 +1,6 @@
 module Main where
 
-import Haste
+import Haste.DOM
 import React
 
 import Circles

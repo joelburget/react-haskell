@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
-    ExistentialQuantification, ImpredicativeTypes #-}
+    ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms #-}
 module React.Types where
 
 import Control.Applicative
@@ -110,54 +110,6 @@ class Animatable a where
     animZero :: a
 
 
--- | A 'ReactKey' is a type, which conventionally has no constructors,
--- mapping to the type of state, animation state, and signals associated
--- with a page fragment or class.
---
--- Example:
---
--- @
--- data Slider -- note the key has no constructors
--- data SliderState = Open | Closed
--- data SliderSignal = SlideOpen | SlideClosed
---
--- instance ReactKey Slider where
---     type ClassState Slider = SliderState
---     type AnimationState Slider = Double
---     type Signal Slider = SliderSignal
---
--- -- this page fragment has access to the animation state 'Double' and can
--- -- emit 'SliderSignal's.
--- pageFragment :: React Slider ()
--- pageFragment = div_ ...
---
--- -- this class stores the class state and animation state. its internals
--- -- can emit `SliderSignal`s.
--- sliderClass :: ReactClass Slider ()
--- sliderClass = ...
--- @
-class ReactKey ty where
-    -- | The state needed to render a class (ignoring animation)
-    type ClassState ty :: *
-
-    -- | The state needed to animate a class
-    type AnimationState ty :: *
-
-    -- | The type of signals a class can send
-    type Signal ty :: *
-
-
--- Unit's ClassState and AnimationState are uninteresting. Its Signal is
--- entirely uninhabited.
-instance ReactKey () where
-    type ClassState     () = ()
-    type AnimationState () = ()
-    type Signal         () = Void
-
-
-type PureReact = React () ()
-
-
 -- things you might want to control about an animation:
 -- * duration
 -- * from
@@ -173,34 +125,36 @@ type PureReact = React () ()
 --   - need to connect ClassState and AnimationState somehow
 -- * animate manually from -> to
 
-data AnimConfig ty = forall a. (Animatable a) => AnimConfig {
+data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
       -- | How long this animation lasts in milliseconds
       duration :: Double
       -- | Where does this animation start and end?
     , endpoints :: (a, a)
       -- | Pointer to this field within 'AnimationState'
-    , lens :: Lens' (AnimationState ty) a
+    , lens :: Lens' anim a
       -- | How is the animation eased?
     , easing :: Easing
       -- | Do something when it's finished?
-    , onComplete :: Bool -> Maybe (Signal ty)
+    , onComplete :: Bool -> Maybe sig
     }
 
 
-data RunningAnim ty = RunningAnim
-    { config :: AnimConfig ty
+data RunningAnim sig anim = RunningAnim
+    { config :: AnimConfig sig anim
     , beganAt :: Double
     }
 
 
-newtype ReactT ty m a = ReactT
-    { runReactT :: AnimationState ty -> m ([ReactNode (Signal ty)], a) }
+newtype ReactT state sig anim m a = ReactT
+    { runReactT :: anim -> m ([ReactNode sig], a) }
 
 
-type React ty = ReactT ty Identity
+type React state sig anim = ReactT state sig anim Identity
+type React' state sig anim = ReactT state sig anim Identity ()
+type Pure a = a () Void ()
 
 
-instance (Monad m, Monoid a) => Monoid (ReactT ty m a) where
+instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
     mempty = ReactT $ \_ -> return ([], mempty)
     mappend f1 f2 = ReactT $ \anim -> do
         ~(c1, a) <- runReactT f1 anim
@@ -208,20 +162,20 @@ instance (Monad m, Monoid a) => Monoid (ReactT ty m a) where
         return (c1 <> c2, a <> b)
 
 
-instance Monad m => Functor (ReactT ty m) where
+instance Monad m => Functor (ReactT state sig anim m) where
     fmap = liftM
 
 
-instance Monad m => Applicative (ReactT ty m) where
+instance Monad m => Applicative (ReactT state sig anim m) where
     pure = return
     (<*>) = ap
 
 
-instance (Monad m, a ~ ()) => IsString (ReactT ty m a) where
+instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
     fromString str = ReactT $ \_ -> return ([Text str], ())
 
 
-instance Monad m => Monad (ReactT ty m) where
+instance Monad m => Monad (ReactT state sig anim m) where
     return a = ReactT $ \_ -> return ([], a)
     m >>= f = ReactT $ \anim -> do
         ~(c1, a) <- runReactT m anim
@@ -289,8 +243,8 @@ class TermParent result where
     termParent :: JSString -> TermParentArg result -> result
 
 
-instance (Monad m, f ~ ReactT ty m a) => TermParent (f -> ReactT ty m a) where
-    type TermParentArg (f -> ReactT ty m a) = [AttrOrHandler (Signal ty)]
+instance (Monad m, f ~ ReactT state sig anim m a) => TermParent (f -> ReactT state sig anim m a) where
+    type TermParentArg (f -> ReactT state sig anim m a) = [AttrOrHandler sig]
 
     termParent name attrs children = ReactT $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
@@ -298,18 +252,18 @@ instance (Monad m, f ~ ReactT ty m a) => TermParent (f -> ReactT ty m a) where
         return ([Parent name as hs childNodes], a)
 
 
-instance Monad m => TermParent (ReactT ty m a) where
-    type TermParentArg (ReactT ty m a) = ReactT ty m a
+instance Monad m => TermParent (ReactT state sig anim m a) where
+    type TermParentArg (ReactT state sig anim m a) = ReactT state sig anim m a
 
     termParent name children = ReactT $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
         return ([Parent name [] [] childNodes], a)
 
 
-termLeaf :: (Monad m, sig ~ Signal ty)
+termLeaf :: Monad m
          => JSString
          -> [AttrOrHandler sig]
-         -> ReactT ty m ()
+         -> ReactT state sig animj m ()
 termLeaf name attrs = ReactT $ \_ -> do
     let (hs, as) = separateAttrs attrs
     return ([Leaf name as hs], ())

@@ -156,10 +156,10 @@ easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 easeDouble EaseInSine t = js_bezier 0.47 0 0.745 0.715 t
 easeDouble EaseOutSine t = js_bezier 0.39 0.575 0.565 1 t
 
-getAnimationState :: Monad m => ReactT ty m (AnimationState ty)
+getAnimationState :: Monad m => ReactT state sig anim m anim
 getAnimationState = ReactT $ \anim -> return ([], anim)
 
-stepRunningAnims :: AnimationState ty -> [(RunningAnim ty, Double)] -> AnimationState ty
+stepRunningAnims :: anim -> [(RunningAnim sig anim, Double)] -> anim
 stepRunningAnims anim running =
     let start = foldr
             ( \(RunningAnim AnimConfig{lens=lens} _, _) anim' ->
@@ -172,7 +172,7 @@ stepRunningAnims anim running =
             anim' & lens %~ (`animAdd` interpolate easing from to progress)
         ) start running
 
-lerp :: Double -> RunningAnim ty -> Double
+lerp :: Double -> RunningAnim sig anim -> Double
 lerp time (RunningAnim (AnimConfig duration _ _ _ _) begin) =
     (time - begin) / duration
 

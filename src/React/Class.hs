@@ -20,29 +20,29 @@ import Haste.Prim
 -- a tool for scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass ty = ReactClass
-    { classRender :: ClassState ty -> React ty ()
-    , classTransition :: Signal ty
-                      -> ClassState ty
-                      -> (ClassState ty, [AnimConfig ty])
+data ReactClass state sig anim = ReactClass
+    { classRender :: state -> React state sig anim ()
+    , classTransition :: sig
+                      -> state
+                      -> (state, [AnimConfig sig anim])
 
     , foreignClass :: ForeignClass
 
-    , stateRef :: IORef (ClassState ty)
-    , animRef :: IORef (AnimationState ty)
-    , runningAnimRef :: IORef [RunningAnim ty]
-    , transitionRef :: IORef [Signal ty]
+    , stateRef :: IORef state
+    , animRef :: IORef anim
+    , runningAnimRef :: IORef [RunningAnim sig anim]
+    , transitionRef :: IORef [sig]
     }
 
 
--- | 'ReactClass' smart contstructor.
-createClass :: (ClassState ty -> React ty ()) -- ^ render function
-            -> (Signal ty -> ClassState ty -> (ClassState ty, [AnimConfig ty]))
+-- | 'ReactClass' smart constructor.
+createClass :: (state -> React state sig anim ()) -- ^ render function
+            -> (sig -> state -> (state, [AnimConfig sig anim]))
             -- ^ transition function
-            -> ClassState ty -- ^ initial state
-            -> AnimationState ty -- ^ initial animation state
-            -> [Signal ty] -- signals to send on startup
-            -> IO (ReactClass ty)
+            -> state -- ^ initial state
+            -> anim -- ^ initial animation state
+            -> [sig] -- signals to send on startup
+            -> IO (ReactClass state sig anim)
 createClass render transition initialState initialAnim initialTrans = do
     foreignClass <- js_createClass $ toPtr render
 

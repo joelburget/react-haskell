@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, LiberalTypeSynonyms #-}
 module SimpleAnim (simpleAnimClass) where
 
 import Haste
@@ -16,16 +16,18 @@ data ClassState = ClassState
     , cur :: JSString
     }
 
+data Transition
+    = Typing JSString
+    | Enter
+
 type AnimationState = Map JSString Double
+
+type SimpleAnim a = a ClassState Transition AnimationState
 
 initialState = ClassState "little mac!" "pit" ""
 
 
 -- update
-
-data Transition
-    = Typing JSString
-    | Enter
 
 transition :: Transition
            -> ClassState
@@ -39,7 +41,7 @@ transition Enter ClassState{fst, cur} =
 
 -- view
 
-view :: ClassState -> React AnimationState Transition ()
+view :: ClassState -> SimpleAnim React'
 view (ClassState fst snd cur) = div_ [ class_ "table" ] $ do
     -- animTop <- getAnimationState
     let animTop = 0
@@ -74,5 +76,5 @@ view (ClassState fst snd cur) = div_ [ class_ "table" ] $ do
             text_ snd
 
 
-simpleAnimClass :: IO (ReactClass ClassState Transition AnimationState)
+simpleAnimClass :: IO (SimpleAnim ReactClass)
 simpleAnimClass = createClass view transition initialState 0 []

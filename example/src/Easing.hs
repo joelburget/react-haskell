@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types, TupleSections,
-  GeneralizedNewtypeDeriving, TypeFamilies #-}
+  GeneralizedNewtypeDeriving, TypeFamilies, LiberalTypeSynonyms #-}
 module Easing (easingClass) where
 
 import Control.Applicative hiding (empty)
@@ -15,16 +15,11 @@ import Lens.Family2 hiding (view)
 
 -- model
 
-data EasingDemo
 data Eased = Open | Closed deriving Eq
 data EasingState = Easings Eased [Easing]
 data AnimState = EasingMap (Map Easing Double)
 data Transition = Toggle
-
-instance ReactKey EasingDemo where
-    type ClassState EasingDemo = EasingState
-    type AnimationState EasingDemo = AnimState
-    type Signal EasingDemo = Transition
+type Ease a = a EasingState Transition AnimState
 
 initialClassState :: EasingState
 initialClassState = Easings Closed easings
@@ -73,7 +68,7 @@ animIx easing f (EasingMap m) = EasingMap <$>
 
 transition :: Transition
            -> EasingState
-           -> (EasingState, [AnimConfig EasingDemo])
+           -> (EasingState, [AnimConfig Transition AnimState])
 transition Toggle (Easings Closed easings) =
     ( Easings Open easings
     , [ AnimConfig 1000 (-1, 0) (animIx easing) easing (const Nothing)
@@ -89,14 +84,14 @@ transition Toggle (Easings Open easings) =
 
 -- view
 
-buttonBox :: React EasingDemo ()
+buttonBox :: Ease React'
 buttonBox = div_ [ class_ "button-box" ] $
     button_ [ class_ "btn btn--m btn--gray-border"
             , onClick (const (Just Toggle))
             ]
             "toggle easing"
 
-view :: EasingState -> React EasingDemo ()
+view :: EasingState -> Ease React'
 view (Easings direction easings) = div_ $ do
     EasingMap runningEasings <- getAnimationState
     let t = if direction == Closed then 0 else 1
@@ -131,7 +126,7 @@ safeShow x =
     in if take 2 shown == "--" then drop 2 shown else shown
 
 -- Trying to replicate http://www.objc.io/issue-12/view-layer-synergy.html
-subView :: Double -> Easing -> React EasingDemo ()
+subView :: Double -> Easing -> Ease React'
 subView t easing = svg_ [ width_ 100
                         , height_ 100
                         , viewBox_ "0 0 100 100"
@@ -182,6 +177,6 @@ subView t easing = svg_ [ width_ 100
           ]
 
 
-easingClass :: IO (ReactClass EasingDemo)
+easingClass :: IO (Ease ReactClass)
 easingClass =
     createClass view transition initialClassState initialAnimationState []

@@ -31,7 +31,7 @@ import React.Local
 import React.Types
 
 
-doRender :: Elem -> Double -> ReactClass ty -> IO ()
+doRender :: Elem -> Double -> ReactClass state sig anim -> IO ()
 doRender elem time ReactClass{ classRender,
                                classTransition,
                                transitionRef,
@@ -80,7 +80,7 @@ updateCb ref update = modifyIORef ref (update:)
 
 
 render :: Elem
-       -> ReactClass ty
+       -> ReactClass state sig anim
        -> IO RenderHandle
 render elem cls@ReactClass{transitionRef, runningAnimRef} = do
     let renderCb time = do

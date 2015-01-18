@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, ExtendedDefaultRules,
+  LiberalTypeSynonyms #-}
 module Slide (slideClass) where
 
 import Control.Applicative
@@ -11,14 +12,9 @@ import React
 
 -- model
 
-data Slide
 data SlideState = Open | Closed
 data Toggle = Toggle deriving Show
-
-instance ReactKey Slide where
-    type ClassState Slide = SlideState
-    type Signal Slide = Toggle
-    type AnimationState Slide = Double
+type Slide a = a SlideState Toggle Double
 
 initialClassState :: SlideState
 initialClassState = Closed
@@ -30,7 +26,7 @@ initialAnimationState = 0
 
 paneWidth = 200
 
-slide :: Double -> AnimConfig Slide
+slide :: Double -> AnimConfig Toggle Double
 slide from = AnimConfig
     { duration = 1000
     , lens = id
@@ -39,14 +35,14 @@ slide from = AnimConfig
     , onComplete = const Nothing
     }
 
-transition :: Toggle -> SlideState -> (SlideState, [AnimConfig Slide])
+transition :: Toggle -> SlideState -> (SlideState, [AnimConfig Toggle Double])
 transition Toggle Open = (Closed, [ slide paneWidth ])
 transition Toggle Closed = (Open, [ slide (-paneWidth) ])
 
 
 -- view
 
-view :: SlideState -> React Slide ()
+view :: SlideState -> Slide React'
 view slid = div_ [ class_ "slider-container" ] $ do
     animWidth <- getAnimationState
     let inherentWidth = case slid of
@@ -59,6 +55,6 @@ view slid = div_ [ class_ "slider-container" ] $ do
          ]
          ""
 
-slideClass :: IO (ReactClass Slide)
+slideClass :: IO (Slide ReactClass)
 slideClass =
     createClass view transition initialClassState initialAnimationState []

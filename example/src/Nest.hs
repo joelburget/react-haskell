@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TupleSections,
-  TypeFamilies, MultiParamTypeClasses #-}
+  TypeFamilies, MultiParamTypeClasses, LiberalTypeSynonyms #-}
 module Nest where
 
 import Data.Maybe
@@ -30,36 +30,20 @@ sToI = readMay . fromJSStr
 
 -- model
 
-data NestingBoth
 type Transition = Either (Maybe Int) JSString
 type State = (Maybe Int, JSString)
-instance ReactKey NestingBoth where
-    type ClassState NestingBoth = State
-    type Signal NestingBoth = Transition
-    type AnimationState NestingBoth = ()
 
-data NestingL
-instance ReactKey NestingL where
-    type ClassState NestingL = Maybe Int
-    type Signal NestingL = Maybe Int
-    type AnimationState NestingL = ()
+type NestingBoth a = a State Transition ()
+type NestingL a = a (Maybe Int) (Maybe Int) ()
+type NestingR a = a JSString JSString ()
 
-data NestingR
-instance ReactKey NestingR where
-    type ClassState NestingR = JSString
-    type Signal NestingR = JSString
-    type AnimationState NestingR = ()
+instance GeneralizeSignal (Maybe Int) Transition where
+    generalizeSignal = Left
 
-narrowL :: Narrowing NestingBoth NestingL
-narrowL = Narrowing id Left
+instance GeneralizeSignal JSString Transition where
+    generalizeSignal = Right
 
-narrowR :: Narrowing NestingBoth NestingR
-narrowR = Narrowing id Right
-
-narrowPure :: Narrowing NestingBoth ()
-narrowPure = Narrowing (const ()) absurd
-
-initialStateB :: (Maybe Int, JSString)
+initialStateB :: State
 initialStateB = (Just 1, "foo")
 
 initialAnimationState :: AnimationState NestingBoth
@@ -73,27 +57,27 @@ transition (Right s') (n, s) = ((n, s'), [])
 
 --
 
-pureView :: React () ()
+pureView :: Pure React'
 pureView = span_ "type here: "
 
-leftView :: Maybe Int -> React NestingL ()
+leftView :: Maybe Int -> NestingL React'
 leftView i = div_ $
     input_ [ value_ (iToS i)
            , onChange (Just . sToI . targetValue)
            ]
 
-rightView :: JSString -> React NestingR ()
+rightView :: JSString -> NestingR React'
 rightView s = div_ $
     input_ [ value_ s
            , onChange (Just . targetValue)
            ]
 
-mainView :: State -> React NestingBoth ()
+mainView :: State -> NestingBoth React'
 mainView (n, s) = div_ $ do
-    locally narrowPure pureView
-    locally narrowL (leftView n)
-    locally narrowR (rightView s)
+    locally pureView
+    locally (leftView n)
+    locally (rightView s)
 
-nestClass :: IO (ReactClass NestingBoth)
+nestClass :: IO (NestingBoth ReactClass)
 nestClass =
     createClass mainView transition initialStateB initialAnimationState []

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings, LiberalTypeSynonyms #-}
 module Chain (chainClass) where
 
 import Control.Applicative
@@ -12,14 +12,9 @@ import React
 
 -- model
 
-data Chain
 data ChainState = Open | Closed deriving Eq
 data Toggle = Toggle deriving Show
-
-instance ReactKey Chain where
-    type ClassState Chain = ChainState
-    type Signal Chain = Toggle
-    type AnimationState Chain = Double
+type Chain a = a ChainState Toggle Double
 
 initialClassState :: ChainState
 initialClassState = Closed
@@ -29,7 +24,7 @@ initialAnimationState = 0
 
 -- update
 
-chain :: Double -> AnimConfig Chain
+chain :: Double -> AnimConfig Toggle Double
 chain from = AnimConfig
     { duration = 1000
     , lens = id
@@ -38,7 +33,7 @@ chain from = AnimConfig
     , onComplete = const Nothing
     }
 
-transition :: Toggle -> ChainState -> (ChainState, [AnimConfig Chain])
+transition :: Toggle -> ChainState -> (ChainState, [AnimConfig Toggle Double])
 transition Toggle Open = (Closed, [ chain 1 ])
 transition Toggle Closed = (Open, [ chain (-1) ])
 
@@ -76,7 +71,7 @@ derive t | t < 1 =
     )
 derive t = (finalWidth, finalHeight)
 
-view :: ChainState -> React Chain ()
+view :: ChainState -> Chain React'
 view status = div_ [ class_ "chain-container" ] $ do
     animState <- getAnimationState
 
@@ -97,6 +92,6 @@ view status = div_ [ class_ "chain-container" ] $ do
          ]
          ""
 
-chainClass :: IO (ReactClass Chain)
+chainClass :: IO (Chain ReactClass)
 chainClass =
     createClass view transition initialClassState initialAnimationState []
