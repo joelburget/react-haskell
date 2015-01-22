@@ -22,6 +22,7 @@ newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
 newtype ForeignClass = ForeignClass JSAny deriving (Pack, Unpack)
+type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 
 newtype RenderHandle = RenderHandle Int
     deriving (Pack, Unpack)
@@ -49,8 +50,8 @@ type Attrs = [(JSString, JSON)]
 -- underlying monad so it can only set attrs and string?)
 
 data ReactNode signal
-    = Parent JSString Attrs [EventHandler signal] [ReactNode signal]
-    | Leaf JSString Attrs [EventHandler signal]
+    = Parent ForeignRender Attrs [EventHandler signal] [ReactNode signal]
+    | Leaf ForeignRender Attrs [EventHandler signal]
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
 
@@ -212,61 +213,6 @@ separateAttrs (StaticAttr k v:xs) =
     let (hs, as) = separateAttrs xs in (hs, (k, v):as)
 separateAttrs (Handler h:xs) =
     let (hs, as) = separateAttrs xs in (h:hs, as)
-
-
--- terms
-
--- | Parent nodes always take children, but can also optionally take a list
--- of arguments.
---
--- Example of the first case, which exercises the simpler instance:
---
--- @
--- div_ $ ... children ...
--- @
---
--- Example of the second, which exercises the more complicated instance:
---
--- @
--- span_ [class_ "example"] $ ... children ...
--- @
-class TermParent result where
-    -- | The argument to a parent term is either:
-    --
-    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
-    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
-    --
-    -- * or children (@ReactT ty m a@), which leads to a result type of
-    --   @ReactT ty m a@.
-    type TermParentArg result :: *
-
-    termParent :: JSString -> TermParentArg result -> result
-
-
-instance (Monad m, f ~ ReactT state sig anim m a) => TermParent (f -> ReactT state sig anim m a) where
-    type TermParentArg (f -> ReactT state sig anim m a) = [AttrOrHandler sig]
-
-    termParent name attrs children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        let (hs, as) = separateAttrs attrs
-        return ([Parent name as hs childNodes], a)
-
-
-instance Monad m => TermParent (ReactT state sig anim m a) where
-    type TermParentArg (ReactT state sig anim m a) = ReactT state sig anim m a
-
-    termParent name children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        return ([Parent name [] [] childNodes], a)
-
-
-termLeaf :: Monad m
-         => JSString
-         -> [AttrOrHandler sig]
-         -> ReactT state sig animj m ()
-termLeaf name attrs = ReactT $ \_ -> do
-    let (hs, as) = separateAttrs attrs
-    return ([Leaf name as hs], ())
 
 
 -- | Low level properties common to all events

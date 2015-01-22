@@ -44,9 +44,9 @@ handlerConvert generalize (EventHandler handle ty) =
 nodeConvert :: (sigloc -> siggen)
              -> ReactNode sigloc
              -> ReactNode siggen
-nodeConvert generalize (Parent name attrs handlers children) =
-    Parent name attrs (map (handlerConvert generalize) handlers)
+nodeConvert generalize (Parent f attrs handlers children) =
+    Parent f attrs (map (handlerConvert generalize) handlers)
         (map (nodeConvert generalize) children)
-nodeConvert generalize (Leaf name attrs handlers) =
-    Leaf name attrs (map (handlerConvert generalize) handlers)
+nodeConvert generalize (Leaf f attrs handlers) =
+    Leaf f attrs (map (handlerConvert generalize) handlers)
 nodeConvert _ (Text str) = Text str

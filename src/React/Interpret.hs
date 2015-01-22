@@ -13,29 +13,19 @@ import React.Imports
 import React.Types
 
 
-element :: (JSString -> RawAttrs -> ReactArray -> IO ForeignNode)
-        -> JSString
+element :: (RawAttrs -> ReactArray -> IO ForeignNode)
         -> Attrs
         -> [(RawEvent -> Maybe (IO ()), EvtType)]
         -> [ForeignNode]
         -> IO ForeignNode
-element constructor name attrs handlers content = do
+element constructor attrs handlers content = do
     attr <- js_empty_object
     mapM_ (setField attr) attrs
     mapM_ (makeHandler attr) handlers
 
     children <- js_ReactArray_empty
     mapM_ (js_ReactArray_push children) content
-    constructor name attr children
-
-
-voidElement :: (JSString -> RawAttrs -> IO ForeignNode)
-            -> JSString
-            -> Attrs
-            -> [(RawEvent -> Maybe (IO ()), EvtType)]
-            -> IO ForeignNode
-voidElement constructor name attrs handlers =
-    element (\n a c -> constructor n a) name attrs handlers []
+    constructor attr children
 
 
 setField :: RawAttrs -> (JSString, JSON) -> IO ()
@@ -70,11 +60,11 @@ interpret' :: (signal -> IO ())
            -> ReactNode signal
            -> IO ForeignNode
 interpret' cb = \case
-    Parent name as hs children -> do
+    Parent f as hs children -> do
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs
-        element js_React_DOM_parent name as hs' children'
-    Leaf name as hs -> do
+        element f as hs' children'
+    Leaf f as hs -> do
         let hs' = map (unHandler cb) hs
-        voidElement js_React_DOM_leaf name as hs'
+        element f as hs' []
     Text str -> js_React_DOM_text (toJSStr str)

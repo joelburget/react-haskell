@@ -1,4 +1,4 @@
--- |
+
 -- Module      :  React
 -- Copyright   :  (C) 2014-15 Joel Burget
 -- License     :  MIT
@@ -29,6 +29,7 @@ module React
     , ReactT(..)
     , React
     , React'
+    , Pure
     , RenderHandle(..)
     , AnimConfig(..)
     , Easing(..)
@@ -38,6 +39,18 @@ module React
     , KeyboardEvent(..)
     , ChangeEvent(..)
     , FocusEvent(..)
+    , ForeignRender
+
+    -- XXX(joel)
+    , AttrOrHandler()
+    , RawAttrs(..)
+    , ReactArray(..)
+    , ForeignNode(..)
+    , mkStaticAttr
+
+    -- React.Elements
+    , foreignLeaf
+    , foreignParent
     ) where
 
 -- TODO
