@@ -29,17 +29,40 @@ element constructor attrs handlers content = do
 
 
 setField :: RawAttrs -> (JSString, JSON) -> IO ()
+setField attr (fld, Num v) = js_set_field_Double attr fld v
 setField attr (fld, Str v) = js_set_field_String attr fld v
+setField attr (fld, Bool True) = js_set_field_True attr fld
+setField attr (fld, Bool False) = js_set_field_False attr fld
+setField attr (fld, Arr arr) = do
+    jsArr <- js_empty_arr
+    let arr' = zip arr [0..]
+    forM_ arr' $ \(val, ix) -> setIx jsArr ix val
+    js_set_field_Arr attr fld jsArr
 setField attr (fld, Dict vs) = do
     subObj <- js_empty_object
     mapM_ (setField subObj) vs
     js_set_field_Obj attr fld subObj
-setField attr (fld, Num v) = js_set_field_Double attr fld v
-setField attr (fld, Bool True) = js_set_field_True attr fld
-setField attr (fld, Bool False) = js_set_field_False attr fld
 
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
+
+setIx :: RawAttrs -> Int -> JSON -> IO ()
+setIx arr i (Num v) = js_set_ix_Double arr i v
+setIx arr i (Str v) = js_set_ix_String arr i v
+setIx arr i (Bool v) = js_set_ix_Bool arr i v
+setIx arr i (Arr setArr) = do
+    jsArr <- js_empty_arr
+    let setArr' = zip setArr [0..]
+    -- TODO flip, uncurry
+    forM_ setArr' $ \(val, ix) -> setIx jsArr ix val
+    js_set_ix_Arr arr i jsArr
+setIx arr i (Dict d) = do
+    subObj <- js_empty_object
+    mapM_ (setField subObj) d
+    js_set_ix_Obj arr i subObj
+
+-- TODO
+setIx arr i Null = return ()
 
 
 -- TODO figure out what to do with this

@@ -65,6 +65,13 @@ js_React_DOM_parent = error "cannot evaluate js_React_DOM_parent in ghc"
 #endif
 
 #ifdef __HASTE__
+foreign import ccall js_empty_arr :: IO RawAttrs
+#else
+js_empty_arr :: IO RawAttrs
+js_empty_arr = error "cannot evaluate js_empty_arr in ghc"
+#endif
+
+#ifdef __HASTE__
 foreign import ccall js_empty_object :: IO RawAttrs
 #else
 js_empty_object :: IO RawAttrs
@@ -100,6 +107,13 @@ js_set_field_Obj = error "cannot evaluate js_set_field_Obj in ghc"
 #endif
 
 #ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_field_Arr :: RawAttrs -> JSString -> RawAttrs -> IO ()
+#else
+js_set_field_Arr :: RawAttrs -> JSString -> RawAttrs -> IO ()
+js_set_field_Arr = error "cannot evaluate js_set_field_Arr in ghc"
+#endif
+
+#ifdef __HASTE__
 foreign import ccall js_set_field_True :: RawAttrs -> JSString -> IO ()
 #else
 js_set_field_True :: RawAttrs -> JSString -> IO ()
@@ -111,6 +125,41 @@ foreign import ccall js_set_field_False :: RawAttrs -> JSString -> IO ()
 #else
 js_set_field_False :: RawAttrs -> JSString -> IO ()
 js_set_field_False = error "cannot evaluate js_set_field_False in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_ix_Bool :: RawAttrs -> Int -> Bool -> IO ()
+#else
+js_set_ix_Bool :: RawAttrs -> Int -> Bool -> IO ()
+js_set_ix_Bool = error "cannot evaluate js_set_ix_Bool in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_ix_Double :: RawAttrs -> Int -> Double -> IO ()
+#else
+js_set_ix_Double :: RawAttrs -> Int -> Double -> IO ()
+js_set_ix_Double = error "cannot evaluate js_set_ix_Double in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_ix_String :: RawAttrs -> Int -> JSString -> IO ()
+#else
+js_set_ix_String :: RawAttrs -> Int -> JSString -> IO ()
+js_set_ix_String = error "cannot evaluate js_set_ix_String in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_ix_Arr :: RawAttrs -> Int -> RawAttrs -> IO ()
+#else
+js_set_ix_Arr :: RawAttrs -> Int -> RawAttrs -> IO ()
+js_set_ix_Arr = error "cannot evaluate js_set_ix_Arr in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall "js_set_field" js_set_ix_Obj :: RawAttrs -> Int -> RawAttrs -> IO ()
+#else
+js_set_ix_Obj :: RawAttrs -> Int -> RawAttrs -> IO ()
+js_set_ix_Obj = error "cannot evaluate js_set_ix_Obj in ghc"
 #endif
 
 #ifdef __HASTE__
