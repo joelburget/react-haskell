@@ -55,10 +55,6 @@ sample str = div_ $ do
 * [Animating Web UI with React and Haskell](http://joelburget.com/react-haskell) (article)
 * [Writing a React JS front-end in Haskell](http://begriffs.com/posts/2015-01-12-reactjs-in-haskell.html) (video)
 
-## Getting Started
-
-TODO
-
 ## Notes
 
 Jordan Walke [sketched out](https://gist.github.com/jordwalke/67819c91df1552009b22) a similar API for OCaml.
