@@ -1,6 +1,6 @@
 # React-Haskell [![Hackage](https://img.shields.io/hackage/v/react-haskell.svg?style=flat-square)](https://hackage.haskell.org/package/react-haskell)
 
-As crazy as it seems, using React and Haskell together just *may* be a good idea.
+As crazy as it seems, using [React](http://facebook.github.io/react) and [Haskell](https://www.haskell.org) together just *may* be a good idea.
 
 I was driven to create this thing because I had a large existing Haskell codebase I wanted to put online. However, even without existing code, I think a lot of problems are better modeled in Haskell than JavaScript or  other languages. Or you might want to use some existing Haskell libraries.
 
