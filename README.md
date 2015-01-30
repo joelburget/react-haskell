@@ -10,7 +10,7 @@ Let's put a simple paragraph on the page:
 
 ```haskell
 sample :: React () ()
-sample = p_ [ class_ "style" ] $ em_ "andy warhol"
+sample = p_ [ class_ "style" ] $ em_ "Andy Warhol"
 
 main :: IO ()
 main = do
@@ -18,11 +18,11 @@ main = do
     render elem sample
 ```
 
-That creates a dom node on the page that looks like:
+That creates a DOM node on the page that looks like:
 
 ```html
 <p class="style">
-    <em>andy warhol</em>
+    <em>Andy Warhol</em>
 </p>
 ```
 
@@ -31,11 +31,11 @@ We can make that a little more complicated with some more child nodes.
 ```haskell
 sample :: React () ()
 sample = div_ [ class_ "beautify" ] $ do
-    "velvet underground"
+    "The Velvet Underground"
 
     input_
 
-    "lou reed"
+    "Lou Reed"
 ```
 
 But of course that input doesn't do anything. Let's change that.
@@ -43,7 +43,7 @@ But of course that input doesn't do anything. Let's change that.
 ```haskell
 sample :: JSString -> React AppKey ()
 sample str = div_ $ do
-    "favorite artist:"
+    "Favorite artist:"
 
     input_ [ onChange (Just . targetValue) ]
 
@@ -65,6 +65,4 @@ We should try to adhere to React's [Virtual DOM Terminology](https://gist.github
 
 [MIT License](http://opensource.org/licenses/MIT)
 
-
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/joelburget/react-haskell/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
