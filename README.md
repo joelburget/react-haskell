@@ -50,6 +50,11 @@ sample str = div_ $ do
     text str
 ```
 
+## Additional Resources
+
+* [Animating Web UI with React and Haskell](http://joelburget.com/react-haskell) (article)
+* [Writing a React JS front-end in Haskell](http://begriffs.com/posts/2015-01-12-reactjs-in-haskell.html) (video)
+
 ## Getting Started
 
 TODO
