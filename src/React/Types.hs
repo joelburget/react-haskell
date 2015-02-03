@@ -17,6 +17,14 @@ import Haste.JSON
 import Haste.Prim
 import Lens.Family2
 
+import Data.IORef
+
+
+data ReactClassInstance sig anim =
+  ReactClassInstance { animRef :: IORef anim
+                     , runningAnimRef :: IORef [RunningAnim sig anim]
+                     , transitionRef :: IORef [sig]
+                     }
 
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)

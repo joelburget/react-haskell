@@ -5,6 +5,7 @@ import Haste.Prim
 
 import React.Imports
 import React.Types
+import React.Class
 
 
 -- | Parent nodes always take children, but can also optionally take a list
@@ -88,6 +89,8 @@ reactLeaf :: Monad m
          -> ReactT state sig animj m ()
 reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
+reactClass_ :: Monad m => ReactClass cstate csig canim -> [AttrOrHandler sig] -> ReactT state sig anim m ()
+reactClass_ rc = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass rc)
 
 text_ :: JSString -> React state sig anim ()
 text_ str = ReactT $ \_ -> return ([Text (fromJSStr str)], ())

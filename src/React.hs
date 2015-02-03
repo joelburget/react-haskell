@@ -22,7 +22,6 @@ module React
     , GeneralizeSignal(..)
 
     -- React.Render
-    , cancelRender
     , render
 
     -- React.Types

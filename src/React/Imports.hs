@@ -14,9 +14,9 @@ import Haste.JSON
 import Haste.Prim
 
 #ifdef __HASTE__
-foreign import ccall js_render :: ForeignNode -> Elem -> IO ()
+foreign import ccall js_render :: ForeignClass -> Elem -> IO ()
 #else
-js_render :: ForeignNode -> Elem -> IO ()
+js_render :: ForeignClass -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 #endif
 
@@ -28,10 +28,14 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __HASTE__
-foreign import ccall js_createClass :: Ptr (state -> React state sig anim ())
+foreign import ccall js_createClass :: Ptr (ReactClassInstance sig anim -> state -> IO ForeignNode)
+                                    -> Ptr state
+                                    -> Ptr (ReactClassInstance sig anim)
                                     -> IO ForeignClass
 #else
-js_createClass :: Ptr (state -> React state sig anim ())
+js_createClass :: (Ptr state -> ForeignNode)
+               -> Ptr state
+               -> ReactClassInstance sig anim
                -> IO ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
@@ -62,6 +66,13 @@ foreign import ccall js_React_DOM_parent :: JSString -> RawAttrs -> ReactArray -
 #else
 js_React_DOM_parent :: JSString -> RawAttrs -> ReactArray -> IO ForeignNode
 js_React_DOM_parent = error "cannot evaluate js_React_DOM_parent in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall js_React_DOM_class :: ForeignClass -> IO ForeignNode
+#else
+js_React_DOM_class :: ForeignClass -> IO ForeignNode
+js_React_DOM_class = error "cannot evaluate js_React_DOM_class in ghc"
 #endif
 
 #ifdef __HASTE__

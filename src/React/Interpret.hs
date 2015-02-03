@@ -75,7 +75,7 @@ interpret :: Monad m
           -> (sig -> IO ())
           -> m (IO ForeignNode)
 interpret react anim cb = do
-    ~(child:_, ()) <- runReactT react anim
+    ~(child:otherChildren, ()) <- runReactT react anim
     return $ interpret' cb child
 
 
@@ -84,10 +84,18 @@ interpret' :: (signal -> IO ())
            -> IO ForeignNode
 interpret' cb = \case
     Parent f as hs children -> do
+        putStrLn "parentStart"
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs
-        element f as hs' children'
+        node <- element f as hs' children'
+        putStrLn "parentEnd"
+        putStrLn $ show (length children)
+        return node
     Leaf f as hs -> do
+        putStrLn "Leaf"
         let hs' = map (unHandler cb) hs
         element f as hs' []
-    Text str -> js_React_DOM_text (toJSStr str)
+    Text str -> do
+      node <- js_React_DOM_text (toJSStr str)
+      putStrLn "text"
+      return node
