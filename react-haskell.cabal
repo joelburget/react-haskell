@@ -34,7 +34,7 @@ author:              Joel Burget
 maintainer:          joelburget@gmail.com
 category:            Web
 build-type:          Simple
-cabal-version:       >=1.10
+cabal-version:       >=1.20
 
 homepage: https://github.com/joelburget/react-haskell
 bug-reports: https://github.com/joelburget/react-haskell/issues
@@ -80,12 +80,7 @@ library
     monads-tf,
     deepseq,
     lens-family,
-    void == 0.7
-  if flag(haste-inst)
-    build-depends:
-      haste-lib >= 0.4 && <0.6
-  else
-    build-depends:
-      haste-compiler
+    void == 0.7,
+    ghcjs-base
   hs-source-dirs:      src
   default-language:    Haskell2010
