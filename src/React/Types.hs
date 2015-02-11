@@ -20,11 +20,7 @@ import Lens.Family2
 import Data.IORef
 
 
-data ReactClassInstance sig anim =
-  ReactClassInstance { animRef :: IORef anim
-                     , runningAnimRef :: IORef [RunningAnim sig anim]
-                     , transitionRef :: IORef [sig]
-                     }
+data ForeignClassInstance
 
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
@@ -64,131 +60,131 @@ data ReactNode signal
     | Text String -- TODO(joel) JSString?
 
 
--- | Standard easing functions. These are used to 'interpolate' smoothly.
---
--- See <http://joelburget.com/react-haskell/ here> for visualizations.
-data Easing
-    = Linear
-
-    | EaseInQuad
-    | EaseOutQuad
-    | EaseInOutQuad
-
-    | EaseInCubic
-    | EaseOutCubic
-    | EaseInOutCubic
-
-    | EaseInQuart
-    | EaseOutQuart
-    | EaseInOutQuart
-
-    | EaseInQuint
-    | EaseOutQuint
-    | EaseInOutQuint
-
-    | EaseInElastic
-    | EaseOutElastic
-    | EaseInOutElastic
-
-    | EaseInBounce
-    | EaseOutBounce
-    | EaseInOutBounce
-
-    | EaseBezier Double Double Double Double
-    | EaseInSine
-    | EaseOutSine
-    deriving (Show, Eq, Ord)
-
--- | Properties that can animate.
---
--- Numeric values like 'width' and 'height', as well as colors.
-class Animatable a where
-    -- TODO is `to` always `animZero`?
-    -- | Use an easing function to interpolate between two values
-    interpolate :: Easing -- ^ easing function
-                -> a -- ^ from
-                -> a -- ^ to
-                -> Double -- ^ [0..1] ratio of /time/ elapsed
-                -> a
-
-    -- | Add two animations
-    animAdd :: a -> a -> a
-
-    -- | Subtract two animations
-    animSub :: a -> a -> a
-    animZero :: a
-
-
--- things you might want to control about an animation:
--- * duration
--- * from
--- * to
--- * lens
--- * easing
--- * oncomplete
--- * chaining
--- * delay
-
--- possible configurations:
--- * set new state, animate from old to new at same time
---   - need to connect ClassState and AnimationState somehow
--- * animate manually from -> to
-
-data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
-      -- | How long this animation lasts in milliseconds
-      duration :: Double
-      -- | Where does this animation start and end?
-    , endpoints :: (a, a)
-      -- | Pointer to this field within 'AnimationState'
-    , lens :: Lens' anim a
-      -- | How is the animation eased?
-    , easing :: Easing
-      -- | Do something when it's finished?
-    , onComplete :: Bool -> Maybe sig
-    }
-
-
-data RunningAnim sig anim = RunningAnim
-    { config :: AnimConfig sig anim
-    , beganAt :: Double
-    }
-
-
-newtype ReactT state sig anim m a = ReactT
-    { runReactT :: anim -> m ([ReactNode sig], a) }
+-- -- | Standard easing functions. These are used to 'interpolate' smoothly.
+-- --
+-- -- See <http://joelburget.com/react-haskell/ here> for visualizations.
+-- data Easing
+--     = Linear
+-- 
+--     | EaseInQuad
+--     | EaseOutQuad
+--     | EaseInOutQuad
+-- 
+--     | EaseInCubic
+--     | EaseOutCubic
+--     | EaseInOutCubic
+-- 
+--     | EaseInQuart
+--     | EaseOutQuart
+--     | EaseInOutQuart
+-- 
+--     | EaseInQuint
+--     | EaseOutQuint
+--     | EaseInOutQuint
+-- 
+--     | EaseInElastic
+--     | EaseOutElastic
+--     | EaseInOutElastic
+-- 
+--     | EaseInBounce
+--     | EaseOutBounce
+--     | EaseInOutBounce
+-- 
+--     | EaseBezier Double Double Double Double
+--     | EaseInSine
+--     | EaseOutSine
+--     deriving (Show, Eq, Ord)
+-- 
+-- -- | Properties that can animate.
+-- --
+-- -- Numeric values like 'width' and 'height', as well as colors.
+-- class Animatable a where
+--     -- TODO is `to` always `animZero`?
+--     -- | Use an easing function to interpolate between two values
+--     interpolate :: Easing -- ^ easing function
+--                 -> a -- ^ from
+--                 -> a -- ^ to
+--                 -> Double -- ^ [0..1] ratio of /time/ elapsed
+--                 -> a
+-- 
+--     -- | Add two animations
+--     animAdd :: a -> a -> a
+-- 
+--     -- | Subtract two animations
+--     animSub :: a -> a -> a
+--     animZero :: a
+-- 
+-- 
+-- -- things you might want to control about an animation:
+-- -- * duration
+-- -- * from
+-- -- * to
+-- -- * lens
+-- -- * easing
+-- -- * oncomplete
+-- -- * chaining
+-- -- * delay
+-- 
+-- -- possible configurations:
+-- -- * set new state, animate from old to new at same time
+-- --   - need to connect ClassState and AnimationState somehow
+-- -- * animate manually from -> to
+-- 
+-- data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
+--       -- | How long this animation lasts in milliseconds
+--       duration :: Double
+--       -- | Where does this animation start and end?
+--     , endpoints :: (a, a)
+--       -- | Pointer to this field within 'AnimationState'
+--     , lens :: Lens' anim a
+--       -- | How is the animation eased?
+--     , easing :: Easing
+--       -- | Do something when it's finished?
+--     , onComplete :: Bool -> Maybe sig
+--     }
+-- 
+-- 
+-- data RunningAnim sig anim = RunningAnim
+--     { config :: AnimConfig sig anim
+--     , beganAt :: Double
+--     }
 
 
-type React state sig anim = ReactT state sig anim Identity
-type React' state sig anim = ReactT state sig anim Identity ()
+newtype ReactT state sig m a = ReactT
+    { runReactT :: m ([ReactNode sig], a) }
+
+
+type React state sig = ReactT state sig Identity
+type React' state sig = ReactT state sig Identity ()
 type Pure a = a () Void ()
 
 
-instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
-    mempty = ReactT $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT f1 anim
-        ~(c2, b) <- runReactT f2 anim
+instance (Monad m, Monoid a) => Monoid (ReactT state sig m a) where
+    mempty = ReactT $ return ([], mempty)
+    mappend f1 f2 = ReactT $ do
+        ~(c1, a) <- runReactT f1
+        ~(c2, b) <- runReactT f2
         return (c1 <> c2, a <> b)
 
 
-instance Monad m => Functor (ReactT state sig anim m) where
+instance Monad m => Functor (ReactT state sig m) where
     fmap = liftM
 
 
-instance Monad m => Applicative (ReactT state sig anim m) where
+instance Monad m => Applicative (ReactT state sig m) where
     pure = return
     (<*>) = ap
 
 
-instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
-    fromString str = ReactT $ \_ -> return ([Text str], ())
+instance (Monad m, a ~ ()) => IsString (ReactT state sig m a) where
+    fromString str = ReactT $ return ([Text str], ())
 
 
-instance Monad m => Monad (ReactT state sig anim m) where
-    return a = ReactT $ \_ -> return ([], a)
-    m >>= f = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT m anim
-        ~(c2, b) <- runReactT (f a) anim
+instance Monad m => Monad (ReactT state sig m) where
+    return a = ReactT $ return ([], a)
+    m >>= f = ReactT $ do
+        ~(c1, a) <- runReactT m
+        ~(c2, b) <- runReactT (f a)
         return (c1 <> c2, b)
 
 

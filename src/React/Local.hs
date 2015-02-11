@@ -25,12 +25,12 @@ instance GeneralizeSignal Void a where
 
 
 locally :: (Monad m, GeneralizeSignal sigloc siggen)
-        => ReactT stateloc sigloc anim m x
-        -> ReactT stategen siggen anim m x
+        => ReactT stateloc sigloc m x
+        -> ReactT stategen siggen m x
 locally nested = result where
-    result = ReactT $ \anim -> do
+    result = ReactT $ do
         let gensig = nodeConvert generalizeSignal
-        (nodes, x) <- runReactT nested anim
+        (nodes, x) <- runReactT nested
         return (map gensig nodes, x)
 
 

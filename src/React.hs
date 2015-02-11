@@ -9,9 +9,9 @@ module React
     ( module X
 
     -- React.Anim
-    , Color(..)
-    , getAnimationState
-    , Animatable(..) -- XXX
+    --, Color(..)
+    --, getAnimationState
+    --, Animatable(..) -- XXX
 
     -- React.Class
     , ReactClass()
@@ -30,8 +30,8 @@ module React
     , React'
     , Pure
     , RenderHandle(..)
-    , AnimConfig(..)
-    , Easing(..)
+    --, AnimConfig(..)
+    --, Easing(..)
     , EventProperties(..)
     , ModifierKeys(..)
     , MouseEvent(..)

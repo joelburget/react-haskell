@@ -14,6 +14,13 @@ import Haste.JSON
 import Haste.Prim
 
 #ifdef __HASTE__
+foreign import ccall js_overState:: Ptr ForeignClassInstance -> Ptr (Ptr state -> Ptr state) -> IO ()
+#else
+js_overState:: Ptr ForeignClassInstance -> Ptr (Ptr state -> Ptr state) -> IO ()
+js_overState = error "cannot evaluate js_overState in ghc"
+#endif
+
+#ifdef __HASTE__
 foreign import ccall js_render :: ForeignClass -> Elem -> IO ()
 #else
 js_render :: ForeignClass -> Elem -> IO ()
@@ -28,14 +35,12 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __HASTE__
-foreign import ccall js_createClass :: Ptr (ReactClassInstance sig anim -> state -> IO ForeignNode)
+foreign import ccall js_createClass :: Ptr (Ptr ForeignClassInstance -> Ptr state -> IO ForeignNode)
                                     -> Ptr state
-                                    -> Ptr (ReactClassInstance sig anim)
                                     -> IO ForeignClass
 #else
-js_createClass :: (Ptr state -> ForeignNode)
+js_createClass :: Ptr (Ptr ForeignClassInstance -> Ptr state -> ForeignNode)
                -> Ptr state
-               -> ReactClassInstance sig anim
                -> IO ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif

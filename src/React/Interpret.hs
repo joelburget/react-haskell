@@ -70,12 +70,11 @@ setIx arr i Null = return ()
 -- getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 interpret :: Monad m
-          => ReactT state sig anim m ()
-          -> anim
+          => ReactT state sig m ()
           -> (sig -> IO ())
           -> m (IO ForeignNode)
-interpret react anim cb = do
-    ~(child:otherChildren, ()) <- runReactT react anim
+interpret react cb = do
+    ~(child:otherChildren, ()) <- runReactT react
     return $ interpret' cb child
 
 
@@ -85,17 +84,17 @@ interpret' :: (signal -> IO ())
 interpret' cb = \case
     Parent f as hs children -> do
         putStrLn "parentStart"
+        putStrLn $ show (length children)
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs
         node <- element f as hs' children'
         putStrLn "parentEnd"
-        putStrLn $ show (length children)
         return node
     Leaf f as hs -> do
         putStrLn "Leaf"
         let hs' = map (unHandler cb) hs
         element f as hs' []
     Text str -> do
-      node <- js_React_DOM_text (toJSStr str)
       putStrLn "text"
+      node <- js_React_DOM_text (toJSStr str)
       return node

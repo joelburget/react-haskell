@@ -19,7 +19,6 @@ import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 
-import React.Anim
 import React.Attrs
 import React.Class
 import React.Elements
@@ -33,7 +32,7 @@ import React.Types
 
 
 
-render :: ReactClass state sig anim
+render :: ReactClass state sig
        -> Elem
        -> IO ()
 render ReactClass{foreignClass, classTransition} elem = js_render foreignClass elem
