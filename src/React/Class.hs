@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, BangPatterns #-}
 module React.Class
     ( ReactClass(..)
     , createClass
@@ -39,7 +39,6 @@ createClass :: (state -> React state sig ()) -- ^ render function
             -> IO (ReactClass state sig)
 createClass render transition initialState initialTrans = do
 
-    putStrLn "Creating Class"
     foreignClass <- js_createClass
                       (toPtr $ classForeignRender render transition)
                       (toPtr initialState)
@@ -48,20 +47,17 @@ createClass render transition initialState initialTrans = do
 
 classForeignRender :: (state -> React state sig ())
                    -> (sig -> state -> state)
-                   -> Ptr ForeignClassInstance
+                   -> ForeignClassInstance
                    -> Ptr state
                    -> IO ForeignNode
 classForeignRender classRender
                    classTransition
-                   pthis
+                   this
                    pstate = do
 
-   putStrLn "classForeignRender start"
-   n<-runIdentity $
-        interpret (classRender $ fromPtr pstate) (updateCb pthis classTransition)
-   putStrLn "classForeignRender done"
-   return n
+    runIdentity $
+        interpret (classRender $ fromPtr pstate) (updateCb this classTransition)
 
-updateCb :: Ptr ForeignClassInstance -> (sig -> state -> state) -> sig -> IO ()
+updateCb :: ForeignClassInstance -> (sig -> state -> state) -> sig -> IO ()
 updateCb this trans sig = js_overState this $ toPtr (toPtr.(trans sig).fromPtr)
 

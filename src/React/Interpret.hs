@@ -83,18 +83,13 @@ interpret' :: (signal -> IO ())
            -> IO ForeignNode
 interpret' cb = \case
     Parent f as hs children -> do
-        putStrLn "parentStart"
-        putStrLn $ show (length children)
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs
         node <- element f as hs' children'
-        putStrLn "parentEnd"
         return node
     Leaf f as hs -> do
-        putStrLn "Leaf"
         let hs' = map (unHandler cb) hs
         element f as hs' []
     Text str -> do
-      putStrLn "text"
       node <- js_React_DOM_text (toJSStr str)
       return node

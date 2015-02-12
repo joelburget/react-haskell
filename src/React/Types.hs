@@ -20,8 +20,7 @@ import Lens.Family2
 import Data.IORef
 
 
-data ForeignClassInstance
-
+newtype ForeignClassInstance = ForeignClassInstance JSAny deriving (Pack, Unpack)
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
 newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
