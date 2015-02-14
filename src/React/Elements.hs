@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances, NamedFieldPuns #-}
 module React.Elements where
 
 import Haste.Prim
@@ -6,6 +6,7 @@ import Haste.Prim
 import React.Imports
 import React.Types
 import React.Class
+import React.ElemTypes
 
 
 -- | Parent nodes always take children, but can also optionally take a list
@@ -22,78 +23,9 @@ import React.Class
 -- @
 -- span_ [class_ "example"] $ ... children ...
 -- @
-class TermParent result where
-    -- | The argument to a parent term is either:
-    --
-    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
-    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
-    --
-    -- * or children (@ReactT ty m a@), which leads to a result type of
-    --   @ReactT ty m a@.
-    type TermParentArg result :: *
 
-    termParent :: ForeignRender -> TermParentArg result -> result
-
-
-instance (Monad m, f ~ ReactT state sig m a) =>
-        TermParent (f -> ReactT state sig m a) where
-    type TermParentArg (f -> ReactT state sig m a) = [AttrOrHandler sig]
-
-    termParent render attrs children = ReactT $ do
-        ~(childNodes, a) <- runReactT children
-        let (hs, as) = separateAttrs attrs
-        return ([Parent render as hs childNodes], a)
-
-
-instance Monad m => TermParent (ReactT state sig m a) where
-    type TermParentArg (ReactT state sig m a) = ReactT state sig m a
-
-    termParent render children = ReactT $ do
-        ~(childNodes, a) <- runReactT children
-        return ([Parent render [] [] childNodes], a)
-
-
-foreignParent :: TermParent t
-              => ForeignRender
-              -> TermParentArg t
-              -> t
-foreignParent = termParent
-
-
-reactParent :: TermParent t
-            => JSString
-            -> TermParentArg t
-            -> t
-reactParent name = termParent (js_React_DOM_parent name)
-
-
-termLeaf :: Monad m
-         => ForeignRender
-         -> [AttrOrHandler sig]
-         -> ReactT state sig m ()
-termLeaf render attrs = ReactT $ do
-    let (hs, as) = separateAttrs attrs
-    return ([Leaf render as hs], ())
-
-
-foreignLeaf :: Monad m
-            => ForeignRender
-            -> [AttrOrHandler sig]
-            -> ReactT state sig m ()
-foreignLeaf = termLeaf
-
-
-reactLeaf :: Monad m
-         => JSString
-         -> [AttrOrHandler sig]
-         -> ReactT state sig m ()
-reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
-
-reactClass_ :: Monad m
-            => ReactClass cstate csig
-            -> [AttrOrHandler sig]
-            -> ReactT state sig m ()
-reactClass_ rc = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass rc)
+reactClass_ :: ReactClass state sig -> React state sig ()
+reactClass_ ReactClass{foreignClass} = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass) []
 
 text_ :: JSString -> React state sig ()
 text_ str = ReactT $ return ([Text (fromJSStr str)], ())

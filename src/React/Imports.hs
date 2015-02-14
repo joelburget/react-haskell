@@ -13,6 +13,28 @@ import Haste.Foreign
 import Haste.JSON
 import Haste.Prim
 
+
+#ifdef __HASTE
+foreign import ccall js_performance_now:: IO Double
+#else
+js_performance_now:: IO Double
+js_performance_now = error "cannot evaluate js_performance_now in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall js_getState:: ForeignClassInstance -> IO (Ptr state)
+#else
+js_getState:: ForeignClassInstance -> IO (Ptr state)
+js_getState = error "cannot evaluate js_getState in ghc"
+#endif
+
+#ifdef __HASTE__
+foreign import ccall js_setState:: ForeignClassInstance -> Ptr state -> IO ()
+#else
+js_setState:: ForeignClassInstance -> Ptr state -> IO ()
+js_setState = error "cannot evaluate js_setState in ghc"
+#endif
+
 #ifdef __HASTE__
 foreign import ccall js_overState:: ForeignClassInstance -> Ptr (Ptr state -> Ptr state) -> IO ()
 #else

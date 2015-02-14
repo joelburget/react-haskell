@@ -20,6 +20,9 @@ import Lens.Family2
 import Data.IORef
 
 
+data ReactClass state sig =
+  ReactClass { foreignClass :: ForeignClass
+             }
 newtype ForeignClassInstance = ForeignClassInstance JSAny deriving (Pack, Unpack)
 newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
 newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
@@ -51,103 +54,12 @@ type Attrs = [(JSString, JSON)]
 
 -- it'd be super cool to restrict `Pre` to a string somehow (restrict the
 -- underlying monad so it can only set attrs and string?)
-
+                                                            --
 data ReactNode signal
     = Parent ForeignRender Attrs [EventHandler signal] [ReactNode signal]
     | Leaf ForeignRender Attrs [EventHandler signal]
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
-
-
--- -- | Standard easing functions. These are used to 'interpolate' smoothly.
--- --
--- -- See <http://joelburget.com/react-haskell/ here> for visualizations.
--- data Easing
---     = Linear
--- 
---     | EaseInQuad
---     | EaseOutQuad
---     | EaseInOutQuad
--- 
---     | EaseInCubic
---     | EaseOutCubic
---     | EaseInOutCubic
--- 
---     | EaseInQuart
---     | EaseOutQuart
---     | EaseInOutQuart
--- 
---     | EaseInQuint
---     | EaseOutQuint
---     | EaseInOutQuint
--- 
---     | EaseInElastic
---     | EaseOutElastic
---     | EaseInOutElastic
--- 
---     | EaseInBounce
---     | EaseOutBounce
---     | EaseInOutBounce
--- 
---     | EaseBezier Double Double Double Double
---     | EaseInSine
---     | EaseOutSine
---     deriving (Show, Eq, Ord)
--- 
--- -- | Properties that can animate.
--- --
--- -- Numeric values like 'width' and 'height', as well as colors.
--- class Animatable a where
---     -- TODO is `to` always `animZero`?
---     -- | Use an easing function to interpolate between two values
---     interpolate :: Easing -- ^ easing function
---                 -> a -- ^ from
---                 -> a -- ^ to
---                 -> Double -- ^ [0..1] ratio of /time/ elapsed
---                 -> a
--- 
---     -- | Add two animations
---     animAdd :: a -> a -> a
--- 
---     -- | Subtract two animations
---     animSub :: a -> a -> a
---     animZero :: a
--- 
--- 
--- -- things you might want to control about an animation:
--- -- * duration
--- -- * from
--- -- * to
--- -- * lens
--- -- * easing
--- -- * oncomplete
--- -- * chaining
--- -- * delay
--- 
--- -- possible configurations:
--- -- * set new state, animate from old to new at same time
--- --   - need to connect ClassState and AnimationState somehow
--- -- * animate manually from -> to
--- 
--- data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
---       -- | How long this animation lasts in milliseconds
---       duration :: Double
---       -- | Where does this animation start and end?
---     , endpoints :: (a, a)
---       -- | Pointer to this field within 'AnimationState'
---     , lens :: Lens' anim a
---       -- | How is the animation eased?
---     , easing :: Easing
---       -- | Do something when it's finished?
---     , onComplete :: Bool -> Maybe sig
---     }
--- 
--- 
--- data RunningAnim sig anim = RunningAnim
---     { config :: AnimConfig sig anim
---     , beganAt :: Double
---     }
-
 
 newtype ReactT state sig m a = ReactT
     { runReactT :: m ([ReactNode sig], a) }
@@ -295,3 +207,35 @@ data FocusEvent e =
 
 instance NFData e => NFData (FocusEvent e) where
     rnf (FocusEvent a b) = a `seq` b `seq` ()
+
+-- Useful for defining elements
+class TermParent result where
+    -- | The argument to a parent term is either:
+    --
+    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
+    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
+    --
+    -- * or children (@ReactT ty m a@), which leads to a result type of
+    --   @ReactT ty m a@.
+    type TermParentArg result :: *
+
+    termParent :: ForeignRender -> TermParentArg result -> result
+
+
+instance (Monad m, f ~ ReactT state sig m a) =>
+        TermParent (f -> ReactT state sig m a) where
+    type TermParentArg (f -> ReactT state sig m a) = [AttrOrHandler sig]
+
+    termParent render attrs children = ReactT $ do
+        ~(childNodes, a) <- runReactT children
+        let (hs, as) = separateAttrs attrs
+        return ([Parent render as hs childNodes], a)
+
+
+instance Monad m => TermParent (ReactT state sig m a) where
+    type TermParentArg (ReactT state sig m a) = ReactT state sig m a
+
+    termParent render children = ReactT $ do
+        ~(childNodes, a) <- runReactT children
+        return ([Parent render [] [] childNodes], a)
+

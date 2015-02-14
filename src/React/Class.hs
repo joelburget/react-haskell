@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings, BangPatterns #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, BangPatterns, TypeFamilies #-}
 module React.Class
     ( ReactClass(..)
     , createClass
@@ -9,8 +9,8 @@ import Data.Monoid
 import Data.Maybe
 import Data.Functor.Identity
 import React.Interpret
-
 import React.Imports
+import React.ElemTypes
 import React.Types
 
 import Haste
@@ -24,10 +24,7 @@ import Haste.Prim
 -- a tool for scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass state sig =
-  ReactClass { foreignClass :: ForeignClass
-             , classTransition :: (sig -> state -> state)
-             }
+
 
 
 -- | 'ReactClass' smart constructor.
@@ -43,7 +40,7 @@ createClass render transition initialState initialTrans = do
                       (toPtr $ classForeignRender render transition)
                       (toPtr initialState)
 
-    return $ ReactClass foreignClass transition
+    return $ ReactClass foreignClass
 
 classForeignRender :: (state -> React state sig ())
                    -> (sig -> state -> state)
@@ -58,6 +55,11 @@ classForeignRender classRender
     runIdentity $
         interpret (classRender $ fromPtr pstate) (updateCb this classTransition)
 
-updateCb :: ForeignClassInstance -> (sig -> state -> state) -> sig -> IO ()
+updateCb :: ForeignClassInstance
+         -> (sig -> state -> state)
+         -> sig
+         -> IO ()
 updateCb this trans sig = js_overState this $ toPtr (toPtr.(trans sig).fromPtr)
+
+
 

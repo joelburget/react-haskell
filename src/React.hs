@@ -57,13 +57,13 @@ module React
 -- store elem in monad
 -- escaping / dangerouslySetInnerHTML
 
-import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret
 import React.Local
-import React.Render
 import React.Types
+import React.Render
+import React.ElemTypes
 
 import React.Attrs as X
 import React.Elements as X
