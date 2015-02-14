@@ -24,8 +24,11 @@ import React.ElemTypes
 -- span_ [class_ "example"] $ ... children ...
 -- @
 
-reactClass_ :: ReactClass state sig -> React state sig ()
-reactClass_ ReactClass{foreignClass} = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass) []
+reactClass_ :: Monad m
+            => ReactClass cstate csig
+            -> [AttrOrHandler sig]
+            -> ReactT state sig m ()
+reactClass_ ReactClass{foreignClass} = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass)
 
 text_ :: JSString -> React state sig ()
 text_ str = ReactT $ return ([Text (fromJSStr str)], ())
