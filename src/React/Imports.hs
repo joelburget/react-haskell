@@ -14,7 +14,7 @@ import Haste.JSON
 import Haste.Prim
 
 
-#ifdef __HASTE
+#ifdef __HASTE__
 foreign import ccall js_performance_now:: IO Double
 #else
 js_performance_now:: IO Double

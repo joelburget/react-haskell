@@ -51,14 +51,11 @@ source-repository head
   location: https://github.com/joelburget/react-haskell.git
 
 library
-  exposed-modules: React
+  exposed-modules: React, React.Class, React.Anim, React.Anim.Class
   other-modules:
-    React.Anim,
-    React.Anim.Class,
     React.Attrs,
-    React.Class,
     React.Elements,
-    React.ElemTypes
+    React.ElemTypes,
     React.Events,
     React.Imports,
     React.Interpret,

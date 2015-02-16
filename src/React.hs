@@ -13,10 +13,6 @@ module React
     --, getAnimationState
     --, Animatable(..) -- XXX
 
-    -- React.Class
-    , ReactClass()
-    , createClass
-
     -- React.Local
     , locally
     , GeneralizeSignal(..)

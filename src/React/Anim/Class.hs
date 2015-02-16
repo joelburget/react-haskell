@@ -1,5 +1,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
-module React.Anim.Class where
+module React.Anim.Class
+    ( ReactClass(..)
+    , createClass
+    , ReactA'
+    , ReactClassA'
+    ) where
 
 import Lens.Family2
 import Data.Functor.Identity
@@ -26,6 +31,9 @@ data WithAnimState u sig anim =
                 , runningAnims :: [RunningAnim sig anim]
                 }
 
+type ReactA' state sig anim = React' (WithAnimState state sig anim) sig
+type ReactClassA' state sig anim = ReactClass (WithAnimState state sig anim) sig
+
 -- This class can wrap V.ReactClass, but only if the V.ReactClass transition lives inside the IO monad, or the render lives inside the IO monad.
 -- Instead, it will just have to be a different implementation
 createClass :: (state -> anim -> React (WithAnimState state sig anim) sig ())
@@ -34,7 +42,20 @@ createClass :: (state -> anim -> React (WithAnimState state sig anim) sig ())
             -> anim
             -> [sig]
             -> IO (ReactClass (WithAnimState state sig anim) sig)
-createClass render transition initialState anim initialTrans = do
+createClass render transition initialState anim initialSigs = do
+
+-- TODO(johncant) wrong place. Need initialState :: IO state
+--    time <- js_performance_now
+--
+--    let (state, newAnims) = mapAccumL
+--                       (\state sig ->
+--                            transition sig state)
+--                       initialState
+--                       initialSigs
+--
+--        newAnims' = concat newAnims
+--
+--        newRunningAnims = map (`RunningAnim` time) newAnims'
 
     foreignClass <- js_createClass
                         (toPtr $ classForeignRender render transition)
@@ -71,10 +92,10 @@ updateCb this trans sig = do
 
     let (newState, newAnims) = trans sig userState
 
-        newRunningAnims = map (`RunningAnim` time) newAnims
+        newRunningAnims = runningAnims <> (map (`RunningAnim` time) newAnims)
 
     js_raf $ toPtr $ animTick this
-    js_setState this $ toPtr $ WithAnimState newState anim runningAnims
+    js_setState this $ toPtr $ WithAnimState newState anim newRunningAnims
 
 
 animTick :: ForeignClassInstance
@@ -83,6 +104,8 @@ animTick :: ForeignClassInstance
 animTick this time = do
 
     state@WithAnimState{userState, anim, runningAnims} <- fromPtr =<< js_getState this
+
+    mapM_ (putStrLn.show) $ map (duration.config) runningAnims
 
     let (runningAnims', endingAnims) = partition
           (\(RunningAnim AnimConfig{duration} beganAt) ->

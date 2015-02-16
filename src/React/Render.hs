@@ -7,5 +7,5 @@ import React.Imports
 import Haste.DOM
 
 
-render :: ReactClass state sig -> Elem -> IO ()
-render ReactClass{foreignClass} elem = js_render foreignClass elem
+render :: Elem -> ReactClass state sig -> IO ()
+render elem ReactClass{foreignClass} = js_render foreignClass elem
