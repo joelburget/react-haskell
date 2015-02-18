@@ -1,10 +1,12 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances, NamedFieldPuns #-}
 module React.Elements where
 
 import Haste.Prim
 
 import React.Imports
 import React.Types
+import React.Class
+import React.ElemTypes
 
 
 -- | Parent nodes always take children, but can also optionally take a list
@@ -21,76 +23,15 @@ import React.Types
 -- @
 -- span_ [class_ "example"] $ ... children ...
 -- @
-class TermParent result where
-    -- | The argument to a parent term is either:
-    --
-    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
-    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
-    --
-    -- * or children (@ReactT ty m a@), which leads to a result type of
-    --   @ReactT ty m a@.
-    type TermParentArg result :: *
 
-    termParent :: ForeignRender -> TermParentArg result -> result
-
-
-instance (Monad m, f ~ ReactT state sig anim m a) =>
-        TermParent (f -> ReactT state sig anim m a) where
-    type TermParentArg (f -> ReactT state sig anim m a) = [AttrOrHandler sig]
-
-    termParent render attrs children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        let (hs, as) = separateAttrs attrs
-        return ([Parent render as hs childNodes], a)
-
-
-instance Monad m => TermParent (ReactT state sig anim m a) where
-    type TermParentArg (ReactT state sig anim m a) = ReactT state sig anim m a
-
-    termParent render children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        return ([Parent render [] [] childNodes], a)
-
-
-foreignParent :: TermParent t
-              => ForeignRender
-              -> TermParentArg t
-              -> t
-foreignParent = termParent
-
-
-reactParent :: TermParent t
-            => JSString
-            -> TermParentArg t
-            -> t
-reactParent name = termParent (js_React_DOM_parent name)
-
-
-termLeaf :: Monad m
-         => ForeignRender
-         -> [AttrOrHandler sig]
-         -> ReactT state sig anim m ()
-termLeaf render attrs = ReactT $ \_ -> do
-    let (hs, as) = separateAttrs attrs
-    return ([Leaf render as hs], ())
-
-
-foreignLeaf :: Monad m
-            => ForeignRender
+reactClass_ :: Monad m
+            => ReactClass cstate csig
             -> [AttrOrHandler sig]
-            -> ReactT state sig anim m ()
-foreignLeaf = termLeaf
+            -> ReactT state sig m ()
+reactClass_ ReactClass{foreignClass} = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass)
 
-
-reactLeaf :: Monad m
-         => JSString
-         -> [AttrOrHandler sig]
-         -> ReactT state sig animj m ()
-reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
-
-
-text_ :: JSString -> React state sig anim ()
-text_ str = ReactT $ \_ -> return ([Text (fromJSStr str)], ())
+text_ :: JSString -> React state sig ()
+text_ str = ReactT $ return ([Text (fromJSStr str)], ())
 
 a_ :: TermParent t => TermParentArg t -> t
 a_ = reactParent "a"
@@ -366,49 +307,49 @@ video_ :: TermParent t => TermParentArg t -> t
 video_ = reactParent "video"
 
 
-area_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+area_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 area_ = reactLeaf "area"
 
-base_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+base_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 base_ = reactLeaf "base"
 
-br_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+br_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 br_ = reactLeaf "br"
 
-col_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+col_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 col_ = reactLeaf "col"
 
-embed_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+embed_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 embed_ = reactLeaf "embed"
 
-hr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+hr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 hr_ = reactLeaf "hr"
 
-img_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+img_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 img_ = reactLeaf "img"
 
-input_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+input_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 input_ = reactLeaf "input"
 
-keygen_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+keygen_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 keygen_ = reactLeaf "keygen"
 
-link_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+link_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 link_ = reactLeaf "link"
 
-meta_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+meta_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 meta_ = reactLeaf "meta"
 
-param_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+param_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 param_ = reactLeaf "param"
 
-source_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+source_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 source_ = reactLeaf "source"
 
-track_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+track_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 track_ = reactLeaf "track"
 
-wbr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+wbr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 wbr_ = reactLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
@@ -448,23 +389,23 @@ stop_ = reactParent "stop"
 tspan_ :: TermParent t => TermParentArg t -> t
 tspan_ = reactParent "tspan"
 
-circle_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+circle_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 circle_ = reactLeaf "circle"
 
-ellipse_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+ellipse_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 ellipse_ = reactLeaf "ellipse"
 
-line_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+line_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 line_ = reactLeaf "line"
 
-path_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+path_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 path_ = reactLeaf "path"
 
-polygon_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+polygon_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 polygon_ = reactLeaf "polygon"
 
-polyline_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+polyline_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 polyline_ = reactLeaf "polyline"
 
-rect_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
+rect_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig m ()
 rect_ = reactLeaf "rect"

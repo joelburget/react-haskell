@@ -8,6 +8,8 @@ import Haste hiding (fromString)
 import Haste.JSON
 import Lens.Family2 hiding (view)
 import React
+import React.Anim
+import React.Anim.Class
 
 
 -- model
@@ -71,9 +73,8 @@ derive t | t < 1 =
     )
 derive t = (finalWidth, finalHeight)
 
-view :: ChainState -> Chain React'
-view status = div_ [ class_ "chain-container" ] $ do
-    animState <- getAnimationState
+view :: ChainState -> Double -> Chain ReactA'
+view status animState = div_ [ class_ "chain-container" ] $ do
 
     let numStatus = if status == Open then 1 else 0
         t = animState + numStatus
@@ -92,6 +93,6 @@ view status = div_ [ class_ "chain-container" ] $ do
          ]
          ""
 
-chainClass :: IO (Chain ReactClass)
+chainClass :: IO (Chain ReactClassA')
 chainClass =
     createClass view transition initialClassState initialAnimationState []

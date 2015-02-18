@@ -4,6 +4,7 @@ module Simple (simpleClass) where
 import Haste
 import Haste.JSON
 import React
+import React.Class
 
 -- model
 
@@ -15,16 +16,16 @@ data SimpleState = SimpleState
     , fighter2 :: JSString
     , typing :: JSString -- what the user's currently typing
     }
-type Simple a = a SimpleState Transition ()
+type Simple a = a SimpleState Transition
 
 initialState = SimpleState "little mac!" "pit" ""
 
 -- update
 
-transition :: Transition -> SimpleState -> (SimpleState, [AnimConfig Transition ()])
-transition (Typing str) state = (state{typing=str}, [])
+transition :: Transition -> SimpleState -> SimpleState
+transition (Typing str) state = state{typing=str}
 transition Enter SimpleState{fighter1, typing} =
-    (SimpleState typing fighter1 "", [])
+    SimpleState typing fighter1 ""
 
 -- view
 
@@ -32,6 +33,7 @@ view :: SimpleState -> Simple React'
 view (SimpleState fighter1 fighter2 typing) = div_ $ do
     div_ $ do
         "send a new competitor into the ring: "
+        div_ [] $ text_ typing
         input_
             [ value_ typing
 
@@ -52,4 +54,4 @@ view (SimpleState fighter1 fighter2 typing) = div_ $ do
         text_ fighter2
 
 simpleClass :: IO (Simple ReactClass)
-simpleClass = createClass view transition initialState () []
+simpleClass = createClass view transition initialState []
