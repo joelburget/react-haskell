@@ -38,7 +38,7 @@ createClass render transition initialState initialTrans = do
 
     foreignClass <- js_createClass
                       (toPtr $ classForeignRender render transition)
-                      (toPtr initialState)
+                      (toPtr (\_ -> return initialState))
 
     return $ ReactClass foreignClass
 

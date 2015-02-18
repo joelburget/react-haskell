@@ -29,6 +29,7 @@ data WithAnimState u sig anim =
   WithAnimState { userState :: u
                 , anim :: anim
                 , runningAnims :: [RunningAnim sig anim]
+                , renderHandle :: Maybe RenderHandle
                 }
 
 type ReactA' state sig anim = React' (WithAnimState state sig anim) sig
@@ -44,25 +45,27 @@ createClass :: (state -> anim -> React (WithAnimState state sig anim) sig ())
             -> IO (ReactClass (WithAnimState state sig anim) sig)
 createClass render transition initialState anim initialSigs = do
 
--- TODO(johncant) wrong place. Need initialState :: IO state
---    time <- js_performance_now
---
---    let (state, newAnims) = mapAccumL
---                       (\state sig ->
---                            transition sig state)
---                       initialState
---                       initialSigs
---
---        newAnims' = concat newAnims
---
---        newRunningAnims = map (`RunningAnim` time) newAnims'
+    let initialStateM = (\this -> do
+
+            time <- js_performance_now
+            rh <- js_raf . toPtr $ animTick this transition
+
+            let state = foldl
+                          (flip $ wrapTrans transition time)
+                          (WithAnimState
+                            initialState
+                            anim
+                            []
+                            $ Just rh)
+                          initialSigs
+
+            return state)
+
+
 
     foreignClass <- js_createClass
                         (toPtr $ classForeignRender render transition)
-                        (toPtr $ WithAnimState
-                          initialState
-                          anim
-                          [])
+                        (toPtr initialStateM)
 
     return $ ReactClass foreignClass
 
@@ -77,7 +80,7 @@ classForeignRender classRender
                    this
                    pstate = do
 
-    let (WithAnimState ustate a ra) = fromPtr pstate
+    let (WithAnimState ustate a ra rh) = fromPtr pstate
 
     runIdentity $
       interpret (classRender ustate a) (updateCb this classTransition)
@@ -88,38 +91,77 @@ updateCb :: ForeignClassInstance
          -> IO ()
 updateCb this trans sig = do
     time <- js_performance_now
-    state@WithAnimState{userState, anim, runningAnims} <- fromPtr =<< js_getState this
+    state <- fromPtr =<< js_getState this
 
-    let (newState, newAnims) = trans sig userState
+    let newState = wrapTrans trans time sig state
 
-        newRunningAnims = runningAnims <> (map (`RunningAnim` time) newAnims)
+    case renderHandle newState of
+      Just h -> js_cancelRaf h
+      Nothing -> return ()
 
-    js_raf $ toPtr $ animTick this
-    js_setState this $ toPtr $ WithAnimState newState anim newRunningAnims
+    newHandle <- js_raf . toPtr $ animTick this trans
+
+    js_setState
+      this
+      $ toPtr
+        newState{renderHandle=Just newHandle}
 
 
 animTick :: ForeignClassInstance
+         -> (sig -> state -> (state, [AnimConfig sig anim]))
          -> Double
          -> IO ()
-animTick this time = do
+animTick this trans time = do
 
-    state@WithAnimState{userState, anim, runningAnims} <- fromPtr =<< js_getState this
-
-    mapM_ (putStrLn.show) $ map (duration.config) runningAnims
+    state@WithAnimState{runningAnims} <- fromPtr =<< js_getState this
 
     let (runningAnims', endingAnims) = partition
           (\(RunningAnim AnimConfig{duration} beganAt) ->
               beganAt + duration > time)
           runningAnims
 
-        endingAnims' = zip endingAnims [1..]
-        runningAnims'' = zip runningAnims' (map (lerp time) runningAnims')
-        newAnim = stepRunningAnims anim (endingAnims' ++ runningAnims'')
+        endAnimSigTimes = mapMaybe
+            (\(RunningAnim AnimConfig{ duration
+                                     , onComplete
+                                     }
+                           beganAt) -> do
 
-        endAnimTrans = mapMaybe
-            (\anim -> onComplete (config anim) True)
-            endingAnims
+                sig <- onComplete True
+                return ( sig
+                       , beganAt + duration
+                       )
+            )
+           endingAnims
 
-    js_raf $ toPtr $ animTick this
-    js_setState this $ toPtr $ WithAnimState userState newAnim (map fst runningAnims'')
+        newState@(WithAnimState _ anim newRunningAnims _) = foldl
+                     (\st (sig, time) ->
+                       wrapTrans trans time sig st)
+                       state{
+                         runningAnims=runningAnims'
+                       }
+                       endAnimSigTimes
 
+        runningAnims'' = zip newRunningAnims $ map (lerp time) newRunningAnims
+        newAnim = stepRunningAnims anim (runningAnims'')
+
+    newHandle <- js_raf $ toPtr $ animTick this trans
+
+    js_setState this $ toPtr $ newState{ anim=newAnim
+                                       , renderHandle=Just newHandle
+                                       }
+
+wrapTrans :: (sig -> state -> (state, [AnimConfig sig anim]))
+           -> Double
+           -> sig
+           -> WithAnimState state sig anim
+           -> WithAnimState state sig anim
+wrapTrans trans
+           time
+           sig
+           (WithAnimState ustate
+                          anim
+                          runningAnims
+                          rh)
+           = WithAnimState newUState anim newRunningAnims rh
+    where (newUState, animConfs) = trans sig ustate
+          newRunningAnims = runningAnims <> (zipWith RunningAnim animConfs (Data.List.repeat time))

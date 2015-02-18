@@ -58,11 +58,11 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 
 #ifdef __HASTE__
 foreign import ccall js_createClass :: Ptr (ForeignClassInstance -> Ptr state -> IO ForeignNode)
-                                    -> Ptr state
+                                    -> Ptr (ForeignClassInstance -> IO state)
                                     -> IO ForeignClass
 #else
 js_createClass :: Ptr (ForeignClassInstance -> Ptr state -> ForeignNode)
-               -> Ptr state
+               -> Ptr (ForeignClassInstance -> IO state)
                -> IO ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
