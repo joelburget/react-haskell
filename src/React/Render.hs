@@ -15,10 +15,9 @@ import Data.Maybe
 import Data.Monoid
 import Data.String
 
-import Haste hiding (fromString)
-import Haste.Foreign
-import Haste.JSON
-import Haste.Prim
+import GHCJS.Foreign
+import GHCJS.Marshal
+import GHCJS.Types
 
 import React.Anim
 import React.Attrs
@@ -79,11 +78,14 @@ updateCb :: IORef [signal] -> signal -> IO ()
 updateCb ref update = modifyIORef ref (update:)
 
 
+-- XXX don't think the handle remains valid. fix this with a ref.
 render :: Elem
        -> ReactClass state sig anim
        -> IO RenderHandle
 render elem cls@ReactClass{transitionRef, runningAnimRef} = do
-    let renderCb time = do
+    let renderCb :: JSRef Double -> IO ()
+        renderCb timeRef = do
+            Just time <- fromJSRef timeRef
             transitions <- readIORef transitionRef
             runningAnims <- readIORef runningAnimRef
 
@@ -91,11 +93,14 @@ render elem cls@ReactClass{transitionRef, runningAnimRef} = do
             when (length transitions + length runningAnims > 0) $
                 doRender elem time cls
 
-            js_raf $ toPtr renderCb
+            raf
             return ()
 
+        raf :: IO RenderHandle
+        raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
+
     doRender elem 0 cls
-    js_raf $ toPtr renderCb
+    raf
 
 
 cancelRender :: RenderHandle -> IO ()

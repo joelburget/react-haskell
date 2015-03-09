@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns, LiberalTypeSynonyms #-}
 module SimpleAnim (simpleAnimClass) where
 
-import Haste
-import Haste.JSON
 import React
 import Prelude hiding (fst, snd)
 import Data.Map
@@ -54,7 +52,7 @@ view (ClassState fst snd cur) = div_ [ class_ "table" ] $ do
             , value_ cur
 
             -- change the input value as the user types
-            , onChange (Just . Typing . targetValue)
+            , onChange (Just . Typing . value . target)
 
             -- then move the user's new value to the fst and fst to snd when
             -- they enter

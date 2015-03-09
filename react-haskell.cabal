@@ -2,7 +2,7 @@ name:                react-haskell
 version:             1.3.0.0
 synopsis:            Haskell React bindings
 description:
-  This package provides high level bindings to Facebook's <http://facebook.github.io/react/ React> library, meant for use with <http://haste-lang.org Haste>.
+  This package provides high level bindings to Facebook's <http://facebook.github.io/react/ React> library, meant for use with GHCJS.
   .
   React is a JavaScript library for building user interfaces. React (and React-Haskell) is focused on just UI - it's not a framework.
   .
@@ -23,7 +23,7 @@ description:
   >
   > view :: JSString -> React Example ()
   > view str = div_ [ class_ "container" ] $ do
-  >     input_ [ value_ str, onChange (Just . targetValue) ]
+  >     input_ [ value_ str, onChange (Just . value . target) ]
   >
   > main :: IO ()
   > main = withElem "id" $ \elem ->
@@ -40,11 +40,7 @@ homepage: https://github.com/joelburget/react-haskell
 bug-reports: https://github.com/joelburget/react-haskell/issues
 
 data-dir: lib
-data-files: stubs.js, bezier.js
-
-flag haste-inst
-  description: Built with haste-inst/hastec
-  default: False
+data-files: stubs.js, bezier.js, react.js
 
 source-repository head
   type: git
@@ -80,12 +76,9 @@ library
     monads-tf,
     deepseq,
     lens-family,
+    ghcjs-base >= 0.1,
+    ghcjs-prim >= 0.1.0.0,
+    ghcjs-dom >= 0.1,
     void == 0.7
-  if flag(haste-inst)
-    build-depends:
-      haste-lib >= 0.4 && <0.6
-  else
-    build-depends:
-      haste-compiler
   hs-source-dirs:      src
   default-language:    Haskell2010

@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Attrs where
 
-import React.Types
+import GHCJS.Types
 
-import Haste.JSON
-import Haste.Prim
+import React.Types
 
 class_ :: JSString -> AttrOrHandler signal
 class_ = mkStaticAttr "className" Str

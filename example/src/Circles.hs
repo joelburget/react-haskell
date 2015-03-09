@@ -7,8 +7,6 @@ import Data.String (fromString)
 
 import Lens.Family2
 
-import Haste hiding (fromString)
-import Haste.JSON
 import React
 
 

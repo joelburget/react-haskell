@@ -4,8 +4,6 @@ module Slide (slideClass) where
 
 import Control.Applicative
 
-import Haste
-import Haste.JSON
 import Lens.Family2 hiding (view)
 import React
 

@@ -6,7 +6,6 @@ import Control.Applicative
 import Data.IORef
 import Data.Monoid
 
-import Haste
 import Lens.Family2
 
 import React.Imports

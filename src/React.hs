@@ -34,6 +34,7 @@ module React
     , AnimConfig(..)
     , Easing(..)
     , EventProperties(..)
+    , Target(..)
     , ModifierKeys(..)
     , MouseEvent(..)
     , KeyboardEvent(..)
@@ -42,15 +43,14 @@ module React
     , ForeignRender
 
     -- XXX(joel)
+    , JSON(..)
+
+    -- XXX(joel)
     , AttrOrHandler()
     , RawAttrs(..)
     , ReactArray(..)
     , ForeignNode(..)
     , mkStaticAttr
-
-    -- React.Elements
-    , foreignLeaf
-    , foreignParent
     ) where
 
 -- TODO

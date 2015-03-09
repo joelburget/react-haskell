@@ -3,10 +3,8 @@ module React.Interpret where
 
 import Control.Monad
 
-import Haste.DOM
-import Haste.Foreign
-import Haste.JSON
-import Haste.Prim
+import GHCJS.Prim
+import GHCJS.Types
 
 import React.Events
 import React.Imports
@@ -52,9 +50,8 @@ setIx arr i (Str v) = js_set_ix_String arr i v
 setIx arr i (Bool v) = js_set_ix_Bool arr i v
 setIx arr i (Arr setArr) = do
     jsArr <- js_empty_arr
-    let setArr' = zip setArr [0..]
-    -- TODO flip, uncurry
-    forM_ setArr' $ \(val, ix) -> setIx jsArr ix val
+    let setArr' = zip [0..] setArr
+    mapM_ (uncurry (setIx jsArr)) setArr'
     js_set_ix_Arr arr i jsArr
 setIx arr i (Dict d) = do
     subObj <- js_empty_object
@@ -64,10 +61,6 @@ setIx arr i (Dict d) = do
 -- TODO
 setIx arr i Null = return ()
 
-
--- TODO figure out what to do with this
--- getDomNode :: ForeignNode -> IO (Maybe Elem)
--- getDomNode r = fmap fromPtr (js_React_getDomNode r)
 
 interpret :: Monad m
           => ReactT state sig anim m ()
@@ -90,4 +83,4 @@ interpret' cb = \case
     Leaf f as hs -> do
         let hs' = map (unHandler cb) hs
         element f as hs' []
-    Text str -> js_React_DOM_text (toJSStr str)
+    Text str -> return (ForeignNode (castRef (toJSString str)))

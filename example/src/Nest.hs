@@ -4,13 +4,9 @@ module Nest where
 
 import Data.Maybe
 import Data.Void
-import Haste
 import React
 import Prelude hiding (fst, snd)
 import Control.Applicative
-
-import Haste.JSON
-import Haste.Prim
 
 
 -- utils
@@ -63,13 +59,13 @@ pureView = span_ "type here: "
 leftView :: Maybe Int -> NestingL React'
 leftView i = div_ $
     input_ [ value_ (iToS i)
-           , onChange (Just . sToI . targetValue)
+           , onChange (Just . sToI . value . target)
            ]
 
 rightView :: JSString -> NestingR React'
 rightView s = div_ $
     input_ [ value_ s
-           , onChange (Just . targetValue)
+           , onChange (Just . value . target)
            ]
 
 mainView :: State -> NestingBoth React'

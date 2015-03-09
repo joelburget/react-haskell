@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns, LiberalTypeSynonyms #-}
 module Simple (simpleClass) where
 
-import Haste
-import Haste.JSON
+import GHCJS.Types
+
 import React
 
 -- model
@@ -36,7 +36,7 @@ view (SimpleState fighter1 fighter2 typing) = div_ $ do
             [ value_ typing
 
             -- change the input value as the user types
-            , onChange (Just . Typing . targetValue)
+            , onChange (Just . Typing . value . target)
 
             -- then move the user's new value to the fighter1 and fighter1 to
             -- fighter2 when they enter

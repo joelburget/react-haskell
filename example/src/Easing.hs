@@ -8,8 +8,6 @@ import Data.Map hiding (map)
 import Data.String (fromString)
 import Prelude hiding (lookup)
 
-import Haste hiding (fromString)
-import Haste.JSON hiding ((!))
 import React hiding (repeat)
 import Lens.Family2 hiding (view)
 

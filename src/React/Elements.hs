@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances #-}
 module React.Elements where
 
-import Haste.Prim
+import GHCJS.Foreign
+import GHCJS.Types
 
 import React.Imports
 import React.Types
@@ -90,7 +91,7 @@ reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
 
 text_ :: JSString -> React state sig anim ()
-text_ str = ReactT $ \_ -> return ([Text (fromJSStr str)], ())
+text_ str = ReactT $ \_ -> return ([Text (fromJSString str)], ())
 
 a_ :: TermParent t => TermParentArg t -> t
 a_ = reactParent "a"

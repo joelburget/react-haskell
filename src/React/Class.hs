@@ -4,15 +4,19 @@ module React.Class
     , createClass
     ) where
 
+
+import Control.Monad
 import Data.IORef
+
+import GHCJS.Foreign
+import GHCJS.Marshal
 
 import React.Anim
 import React.Imports
 import React.Types
 
-import Haste
-import Haste.JSON
-import Haste.Prim
+
+import GHCJS.Types
 
 
 -- | A 'ReactClass' is a standalone component of a user interface which
@@ -34,22 +38,26 @@ data ReactClass state sig anim = ReactClass
     , transitionRef :: IORef [sig]
     }
 
-
 -- | 'ReactClass' smart constructor.
 createClass :: (state -> React state sig anim ()) -- ^ render function
             -> (sig -> state -> (state, [AnimConfig sig anim]))
             -- ^ transition function
             -> state -- ^ initial state
             -> anim -- ^ initial animation state
-            -> [sig] -- signals to send on startup
+            -> [sig] -- ^ signals to send on startup
             -> IO (ReactClass state sig anim)
 createClass render transition initialState initialAnim initialTrans = do
-    foreignClass <- js_createClass $ toPtr render
-
     stateRef <- newIORef initialState
     animRef <- newIORef initialAnim
     runningAnimRef <- newIORef []
     transitionRef <- newIORef initialTrans
+
+    -- renderCb <- syncCallback1 AlwaysRetain True (return . render <=< fromJSRef)
+    renderCb <- syncCallback AlwaysRetain True $ do
+        state <- readIORef stateRef
+        return $ render state
+
+    foreignClass <- js_createClass renderCb
 
     return $ ReactClass
         render

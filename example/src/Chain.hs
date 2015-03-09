@@ -4,8 +4,6 @@ module Chain (chainClass) where
 import Control.Applicative
 import Data.String (fromString)
 
-import Haste hiding (fromString)
-import Haste.JSON
 import Lens.Family2 hiding (view)
 import React
 

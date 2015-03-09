@@ -1,31 +1,54 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
-    ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms #-}
+    ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
+    DeriveGeneric #-}
+{-# LANGUAGE JavaScriptFFI #-}
 module React.Types where
 
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
 import Data.Functor.Identity
+import Data.Maybe
 import Data.Monoid
 import Data.String
+import GHC.Generics
+import System.IO.Unsafe
 
 import Data.Void
-import Haste
-import Haste.Foreign
-import Haste.JSON
-import Haste.Prim
+import GHCJS.Foreign
+import GHCJS.Marshal
+import GHCJS.Types
 import Lens.Family2
 
+import           Data.Aeson
+import Data.HashMap.Strict
 
-newtype ForeignNode = ForeignNode JSAny deriving (Pack, Unpack)
-newtype RawAttrs = RawAttrs JSAny  deriving (Pack, Unpack)
-newtype ReactArray = ReactArray JSAny deriving (Pack, Unpack)
-newtype ForeignClass = ForeignClass JSAny deriving (Pack, Unpack)
+
+instance Show JSString where
+    show = fromJSString
+
+type JSAny = JSRef ()
+
+-- XXX
+data JSON
+  = Num  Double
+  | Str  JSString
+  | Bool Bool
+  | Arr  [JSON]
+  | Dict [(JSString, JSON)]
+  | Null
+
+instance IsString JSON where
+  fromString = Str . fromString
+
+newtype ForeignNode = ForeignNode JSAny
+newtype RawAttrs = RawAttrs JSAny
+newtype ReactArray = ReactArray JSAny
+newtype ForeignClass = ForeignClass JSAny
 type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 
 newtype RenderHandle = RenderHandle Int
-    deriving (Pack, Unpack)
 
 data EvtType
     = ChangeEvt
@@ -42,7 +65,9 @@ data EventHandler signal = EventHandler
     , evtType :: EvtType
     }
 
-newtype RawEvent = RawEvent JSAny deriving (Pack, Unpack)
+-- newtype RawEvent = RawEvent JSAny
+data RawEvent_
+type RawEvent = JSRef RawEvent_
 
 type Attrs = [(JSString, JSON)]
 
@@ -195,15 +220,18 @@ mkStaticAttr :: JSString -> (a -> JSON) -> a -> AttrOrHandler signal
 mkStaticAttr name f a = StaticAttr name (f a)
 
 
-mkEventHandler :: (NFData signal)
-               => (RawEvent -> signal)
-               -> EvtType
+mkEventHandler :: (FromJSRef signal, NFData signal)
+               => EvtType
                -> (signal -> Maybe signal')
                -> AttrOrHandler signal'
-mkEventHandler unNative ty handle =
+mkEventHandler ty handle =
     -- important - you must deepseq the event immediately - otherwise
     -- react's pooling will collect and destroy it.
-    let handle' raw = handle $!! unNative raw
+    -- XXX unsafe as fuck
+    let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of
+            Just x -> handle $!! x
+            Nothing -> Nothing
+    -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
 
 
@@ -240,28 +268,34 @@ data ModifierKeys =
                , ctrlKey :: !Bool
                , metaKey :: !Bool
                , shiftKey :: !Bool
-               } deriving (Eq, Show)
+               } deriving (Eq, Show, Generic)
+
+instance FromJSRef ModifierKeys where
 
 instance NFData ModifierKeys where
     rnf (ModifierKeys a b c d) = a `seq` b `seq` c `seq` d `seq` ()
 
 data MouseEvent =
   MouseEvent { -- mouseEventProperties :: !(EventProperties e)
-               mouseModifierKeys :: !ModifierKeys
-             , buttonNum :: !Int -- "button"
+               -- mouseModifierKeys :: !ModifierKeys
+             -- , buttonNum :: !Int -- "button"
                -- , buttons :: Int
-             , clientX :: !Double
+               clientX :: !Double
              , clientY :: !Double
              , pageX :: !Double
              , pageY :: !Double
                -- , relatedTarget :: Unpacked
              , screenX :: !Double
              , screenY :: !Double
-             } deriving Show
+             } deriving (Show, Generic)
+
+instance FromJSRef MouseEvent where
 
 instance NFData MouseEvent where
-    rnf (MouseEvent a b c d e f g h) =
-        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+    -- rnf (MouseEvent a b c d e f g h) =
+    --     a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+    rnf (MouseEvent a b c d e f) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f  `seq` ()
 
 data KeyboardEvent =
   KeyboardEvent { -- keyboardEventProperties :: ! (EventProperties e)
@@ -273,16 +307,33 @@ data KeyboardEvent =
                 , location :: !Int
                 , repeat :: !Bool
                 , which :: !Int
-                } deriving Show
+                } deriving (Show, Generic)
+
+instance FromJSRef KeyboardEvent where
 
 instance NFData KeyboardEvent where
     rnf (KeyboardEvent a b c d e f g h) =
         a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
 
-newtype ChangeEvent = ChangeEvent { targetValue :: JSString } deriving Show
+data Target = Target
+    { value :: !JSString
+    , tagName :: !JSString
+    -- XXX(joel) This is gross. Added a second field so that the generic
+    -- FromJSRef instance does the right thing. Without a second field it
+    -- uses the FromJSRef instance for `value`.
+    } deriving (Show, Generic)
+
+instance FromJSRef Target where
+
+data ChangeEvent = ChangeEvent
+    { target :: !Target
+    , timeStamp :: !Int
+    } deriving (Show, Generic)
+
+instance FromJSRef ChangeEvent where
 
 instance NFData ChangeEvent where
-    rnf e@(ChangeEvent str) = str `seq` ()
+    rnf e@(ChangeEvent str stamp) = str `seq` stamp `seq` ()
 
 data FocusEvent e =
   FocusEvent { -- focusEventProperties :: ! (EventProperties e)
