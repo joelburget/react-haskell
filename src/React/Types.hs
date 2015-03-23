@@ -21,9 +21,6 @@ import GHCJS.Marshal
 import GHCJS.Types
 import Lens.Family2
 
-import           Data.Aeson
-import Data.HashMap.Strict
-
 
 instance Show JSString where
     show = fromJSString
