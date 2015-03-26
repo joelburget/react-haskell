@@ -45,7 +45,7 @@ sample :: JSString -> React AppKey ()
 sample str = div_ $ do
     "favorite artist:"
 
-    input_ [ onChange (Just . value . target) ]
+    input_ [ onChange (Just . targetValue) ]
 
     text str
 ```
