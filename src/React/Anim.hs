@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiWayIf,
-  FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, MultiWayIf, FlexibleContexts, ExistentialQuantification, Rank2Types #-}
 module React.Anim where
 
 import Control.Applicative
@@ -10,6 +9,95 @@ import Lens.Family2
 
 import React.Imports
 import React.Types
+
+
+-- | Standard easing functions. These are used to 'interpolate' smoothly.
+--
+-- See <http://joelburget.com/react-haskell/ here> for visualizations.
+data Easing
+    = Linear
+
+    | EaseInQuad
+    | EaseOutQuad
+    | EaseInOutQuad
+
+    | EaseInCubic
+    | EaseOutCubic
+    | EaseInOutCubic
+
+    | EaseInQuart
+    | EaseOutQuart
+    | EaseInOutQuart
+
+    | EaseInQuint
+    | EaseOutQuint
+    | EaseInOutQuint
+
+    | EaseInElastic
+    | EaseOutElastic
+    | EaseInOutElastic
+
+    | EaseInBounce
+    | EaseOutBounce
+    | EaseInOutBounce
+
+    | EaseBezier Double Double Double Double
+    | EaseInSine
+    | EaseOutSine
+    deriving (Show, Eq, Ord)
+
+-- | Properties that can animate.
+--
+-- Numeric values like 'width' and 'height', as well as colors.
+class Animatable a where
+    -- TODO is `to` always `animZero`?
+    -- | Use an easing function to interpolate between two values
+    interpolate :: Easing -- ^ easing function
+                -> a -- ^ from
+                -> a -- ^ to
+                -> Double -- ^ [0..1] ratio of /time/ elapsed
+                -> a
+
+    -- | Add two animations
+    animAdd :: a -> a -> a
+
+    -- | Subtract two animations
+    animSub :: a -> a -> a
+    animZero :: a
+
+-- things you might want to control about an animation:
+-- * duration
+-- * from
+-- * to
+-- * lens
+-- * easing
+-- * oncomplete
+-- * chaining
+-- * delay
+
+-- possible configurations:
+-- * set new state, animate from old to new at same time
+--   - need to connect ClassState and AnimationState somehow
+-- * animate manually from -> to
+
+data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
+      -- | How long this animation lasts in milliseconds
+      duration :: Double
+      -- | Where does this animation start and end?
+    , endpoints :: (a, a)
+      -- | Pointer to this field within 'AnimationState'
+    , lens :: Lens' anim a
+      -- | How is the animation eased?
+    , easing :: Easing
+      -- | Do something when it's finished?
+    , onComplete :: Bool -> Maybe sig
+    }
+
+
+data RunningAnim sig anim = RunningAnim
+    { config :: AnimConfig sig anim
+    , beganAt :: Double
+    }
 
 
 -- TODO support delays
@@ -155,8 +243,6 @@ easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 easeDouble EaseInSine t = js_bezier 0.47 0 0.745 0.715 t
 easeDouble EaseOutSine t = js_bezier 0.39 0.575 0.565 1 t
 
-getAnimationState :: Monad m => ReactT state sig anim m anim
-getAnimationState = ReactT $ \anim -> return ([], anim)
 
 stepRunningAnims :: anim -> [(RunningAnim sig anim, Double)] -> anim
 stepRunningAnims anim running =

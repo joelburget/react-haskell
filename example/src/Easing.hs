@@ -9,6 +9,9 @@ import Data.String (fromString)
 import Prelude hiding (lookup)
 
 import React hiding (repeat)
+import React.Anim
+import React.Anim.Class
+
 import Lens.Family2 hiding (view)
 
 -- model
@@ -82,16 +85,15 @@ transition Toggle (Easings Open easings) =
 
 -- view
 
-buttonBox :: Ease React'
+buttonBox :: Ease ReactA'
 buttonBox = div_ [ class_ "button-box" ] $
     button_ [ class_ "btn btn--m btn--gray-border"
             , onClick (const (Just Toggle))
             ]
             "toggle easing"
 
-view :: EasingState -> Ease React'
-view (Easings direction easings) = div_ $ do
-    EasingMap runningEasings <- getAnimationState
+view :: EasingState -> AnimState -> Ease ReactA'
+view (Easings direction easings) (EasingMap runningEasings) = div_ $ do
     let t = if direction == Closed then 0 else 1
 
     buttonBox
@@ -124,7 +126,7 @@ safeShow x =
     in if take 2 shown == "--" then drop 2 shown else shown
 
 -- Trying to replicate http://www.objc.io/issue-12/view-layer-synergy.html
-subView :: Double -> Easing -> Ease React'
+subView :: Double -> Easing -> Ease ReactA'
 subView t easing = svg_ [ width_ 100
                         , height_ 100
                         , viewBox_ "0 0 100 100"
@@ -175,6 +177,6 @@ subView t easing = svg_ [ width_ 100
           ]
 
 
-easingClass :: IO (Ease ReactClass)
+easingClass :: IO (Ease ReactClassA')
 easingClass =
     createClass view transition initialClassState initialAnimationState []

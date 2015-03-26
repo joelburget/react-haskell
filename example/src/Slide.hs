@@ -6,6 +6,8 @@ import Control.Applicative
 
 import Lens.Family2 hiding (view)
 import React
+import React.Anim
+import React.Anim.Class
 
 
 -- model
@@ -40,9 +42,9 @@ transition Toggle Closed = (Open, [ slide (-paneWidth) ])
 
 -- view
 
-view :: SlideState -> Slide React'
-view slid = div_ [ class_ "slider-container" ] $ do
-    animWidth <- getAnimationState
+view :: SlideState -> Double -> Slide ReactA'
+view slid animWidth = div_ [ class_ "slider-container" ] $ do
+
     let inherentWidth = case slid of
             Open -> paneWidth
             Closed -> 0
@@ -53,6 +55,6 @@ view slid = div_ [ class_ "slider-container" ] $ do
          ]
          ""
 
-slideClass :: IO (Slide ReactClass)
+slideClass :: IO (Slide ReactClassA')
 slideClass =
     createClass view transition initialClassState initialAnimationState []

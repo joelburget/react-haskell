@@ -9,20 +9,15 @@ module React
     ( module X
 
     -- React.Anim
-    , Color(..)
-    , getAnimationState
-    , Animatable(..) -- XXX
-
-    -- React.Class
-    , ReactClass()
-    , createClass
+    --, Color(..)
+    --, getAnimationState
+    --, Animatable(..) -- XXX
 
     -- React.Local
     , locally
     , GeneralizeSignal(..)
 
     -- React.Render
-    , cancelRender
     , render
 
     -- React.Types
@@ -31,8 +26,8 @@ module React
     , React'
     , Pure
     , RenderHandle(..)
-    , AnimConfig(..)
-    , Easing(..)
+    --, AnimConfig(..)
+    --, Easing(..)
     , EventProperties(..)
     , Target(..)
     , ModifierKeys(..)
@@ -58,13 +53,13 @@ module React
 -- store elem in monad
 -- escaping / dangerouslySetInnerHTML
 
-import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret
 import React.Local
-import React.Render
 import React.Types
+import React.Render
+import React.ElemTypes
 
 import React.Attrs as X
 import React.Elements as X

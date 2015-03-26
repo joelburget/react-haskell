@@ -8,6 +8,8 @@ import Data.String (fromString)
 import Lens.Family2
 
 import React
+import React.Anim
+import React.Anim.Class
 
 
 -- model
@@ -91,7 +93,7 @@ fillorange = Color 245 175 51
 fill_' = fill_ . fromString . show
 
 
-circ :: Circ -> Color -> Circles React'
+circ :: Circ -> Color -> Circles ReactA'
 circ c = circ' True (const (Just (SingleFlash c))) (coord c)
 
 
@@ -99,7 +101,7 @@ circ' :: Bool
       -> (MouseEvent -> Maybe Transition)
       -> (Double, Double)
       -> Color
-      -> Circles React'
+      -> Circles ReactA'
 circ' clickable handler (x, y) color =
     let lst = [ cx_ x
               , cy_ y
@@ -113,9 +115,8 @@ circ' clickable handler (x, y) color =
     in circle_ (if clickable then lst' else lst)
 
 
-mainView :: CircState -> Circles React'
-mainView (CircState c _) = div_ $ do
-    AnimState c1 c2 c3 c4 trans <- getAnimationState
+mainView :: CircState -> AnimState -> Circles ReactA'
+mainView (CircState c _) (AnimState c1 c2 c3 c4 trans) = div_ $ do
 
     svg_ [ width_ 600
          , height_ 600
@@ -128,6 +129,6 @@ mainView (CircState c _) = div_ $ do
         circ' False (const Nothing) (coord c `animSub` trans) fillblue
 
 
-circlesClass :: IO (Circles ReactClass)
+circlesClass :: IO (Circles ReactClassA')
 circlesClass =
     createClass mainView transition initialState initialAnimationState [RepeatingFlash]

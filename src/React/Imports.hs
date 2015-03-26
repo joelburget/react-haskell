@@ -15,8 +15,39 @@ type Elem = Element
 
 #ifdef __GHCJS__
 foreign import javascript unsafe "React.render($1, $2)" js_render :: ForeignNode -> Elem -> IO ()
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_performance_now:: IO Double
 #else
-js_render :: ForeignNode -> Elem -> IO ()
+js_performance_now:: IO Double
+js_performance_now = error "cannot evaluate js_performance_now in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_getState:: ForeignClassInstance -> IO (Ptr state)
+#else
+js_getState:: ForeignClassInstance -> IO (Ptr state)
+js_getState = error "cannot evaluate js_getState in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_setState:: ForeignClassInstance -> Ptr state -> IO ()
+#else
+js_setState:: ForeignClassInstance -> Ptr state -> IO ()
+js_setState = error "cannot evaluate js_setState in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_overState:: ForeignClassInstance -> Ptr (Ptr state -> Ptr state) -> IO ()
+#else
+js_overState:: ForeignClassInstance -> Ptr (Ptr state -> Ptr state) -> IO ()
+js_overState = error "cannot evaluate js_overState in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_render :: ForeignClass -> Elem -> IO ()
+#else
+js_render :: ForeignClass -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 #endif
 
@@ -28,9 +59,12 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __GHCJS__
-foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: JSFun (IO (React state sig anim ())) -> IO ForeignClass
+foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: Ptr (ForeignClassInstance -> Ptr state -> IO ForeignNode)
+                                    -> Ptr (ForeignClassInstance -> IO state)
+                                    -> IO ForeignClass
 #else
-js_createClass :: JSFun (IO (React state sig anim ()))
+js_createClass :: Ptr (ForeignClassInstance -> Ptr state -> ForeignNode)
+               -> Ptr (ForeignClassInstance -> IO state)
                -> IO ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
@@ -61,6 +95,13 @@ foreign import javascript unsafe "React.DOM[$1]($2, $3)" js_React_DOM_parent :: 
 #else
 js_React_DOM_parent :: JSString -> RawAttrs -> ReactArray -> IO ForeignNode
 js_React_DOM_parent = error "cannot evaluate js_React_DOM_parent in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe js_React_DOM_class :: ForeignClass -> IO ForeignNode
+#else
+js_React_DOM_class :: ForeignClass -> IO ForeignNode
+js_React_DOM_class = error "cannot evaluate js_React_DOM_class in ghc"
 #endif
 
 #ifdef __GHCJS__

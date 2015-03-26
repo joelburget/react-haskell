@@ -82,6 +82,9 @@ points_ = mkStaticAttr "points" Str
 transform_ :: JSString -> AttrOrHandler signal
 transform_ = mkStaticAttr "transform" Str
 
+multiple_ :: Bool -> AttrOrHandler signal
+multiple_ = mkStaticAttr "multiple" Bool
+
 -- fillOpacity fontFamily fontSize fx fy gradientTransform
 -- gradientUnits markerEnd markerMid markerStart offset opacity
 -- patternContentUnits patternUnits preserveAspectRatio r rx ry
