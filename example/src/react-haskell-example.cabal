@@ -37,6 +37,6 @@ executable react-haskell-example
     ghcjs-dom >= 0.1,
     containers == 0.5.6.2,
     lens-family == 1.2.0,
-    react-haskell-ghcjs
+    react-haskell
   -- hs-source-dirs:
   default-language:    Haskell2010

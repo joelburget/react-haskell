@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns, ConstraintKinds #-}
 module React.Anim.Class
     ( ReactClass(..)
     , createClass
@@ -11,7 +11,10 @@ import Data.Functor.Identity
 import Data.Monoid
 import Data.List
 import Data.Maybe
-import Haste.Prim
+
+import GHCJS.Foreign
+import GHCJS.Marshal
+import GHCJS.Types
 
 import React.Types
 import React.Imports
@@ -48,7 +51,11 @@ createClass render transition initialState anim initialSigs = do
     let initialStateM = (\this -> do
 
             time <- js_performance_now
-            rh <- js_raf . toPtr $ animTick this transition
+
+            animCb <- syncCallback1 AlwaysRetain True $ \time -> do
+                Just time' <- fromJSRef time
+                animTick this transition time
+            rh <- js_raf animCb
 
             let state = foldl
                           (flip $ wrapTrans transition time)
@@ -61,26 +68,28 @@ createClass render transition initialState anim initialSigs = do
 
             return state)
 
+    renderCb <- syncCallback2 AlwaysRetain True $ \inst st ->
+        classForeignRender render transition inst st
 
+    stateCb <- syncCallback1 AlwaysRetain True $ \_ -> return initialState
 
-    foreignClass <- js_createClass
-                        (toPtr $ classForeignRender render transition)
-                        (toPtr initialStateM)
+    foreignClass <- js_createClass renderCb stateCb
 
     return $ ReactClass foreignClass
 
 
-classForeignRender :: (state -> anim -> React (WithAnimState state sig anim) sig ())
+classForeignRender :: BiRef state
+                   => (state -> anim -> React (WithAnimState state sig anim) sig ())
                    -> (sig -> state -> (state, [AnimConfig sig anim]))
                    -> ForeignClassInstance
-                   -> Ptr (WithAnimState state sig anim)
+                   -> JSRef (WithAnimState state sig anim)
                    -> IO ForeignNode
 classForeignRender classRender
                    classTransition
                    this
                    pstate = do
 
-    let (WithAnimState ustate a ra rh) = fromPtr pstate
+    Just (WithAnimState ustate a ra rh) <- fromJSRef pstate
 
     runIdentity $
       interpret (classRender ustate a) (updateCb this classTransition)
@@ -91,7 +100,7 @@ updateCb :: ForeignClassInstance
          -> IO ()
 updateCb this trans sig = do
     time <- js_performance_now
-    state <- fromPtr =<< js_getState this
+    Just state <- fromJSRef =<< js_getState this
 
     let newState = wrapTrans trans time sig state
 
@@ -99,12 +108,11 @@ updateCb this trans sig = do
       Just h -> js_cancelRaf h
       Nothing -> return ()
 
-    newHandle <- js_raf . toPtr $ animTick this trans
+    animCb <- syncCallback AlwaysRetain True $ animTick this trans
+    newHandle <- js_raf animCb
+    newState' <- toJSRef $ newState{renderHandle=Just newHandle}
 
-    js_setState
-      this
-      $ toPtr
-        newState{renderHandle=Just newHandle}
+    js_setState this newState'
 
 
 animTick :: ForeignClassInstance
@@ -113,7 +121,7 @@ animTick :: ForeignClassInstance
          -> IO ()
 animTick this trans time = do
 
-    state@WithAnimState{runningAnims} <- fromPtr =<< js_getState this
+    Just (state@WithAnimState{runningAnims}) <- fromJSRef =<< js_getState this
 
     let (runningAnims', endingAnims) = partition
           (\(RunningAnim AnimConfig{duration} beganAt) ->
@@ -144,11 +152,14 @@ animTick this trans time = do
         runningAnims'' = zip newRunningAnims $ map (lerp time) newRunningAnims
         newAnim = stepRunningAnims anim (runningAnims'')
 
-    newHandle <- js_raf $ toPtr $ animTick this trans
+    animCb <- syncCallback AlwaysRetain True $ animTick this trans
+    newHandle <- js_raf animCb
+    newState' <- toJSRef $ newState{ anim=newAnim
+                                   , renderHandle=Just newHandle
+                                   }
 
-    js_setState this $ toPtr $ newState{ anim=newAnim
-                                       , renderHandle=Just newHandle
-                                       }
+    js_setState this $ newState'
+
 
 wrapTrans :: (sig -> state -> (state, [AnimConfig sig anim]))
            -> Double

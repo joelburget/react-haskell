@@ -1,4 +1,5 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings, BangPatterns, TypeFamilies #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, BangPatterns, TypeFamilies,
+  ConstraintKinds #-}
 module React.Class
     ( ReactClass(..)
     , createClass
@@ -21,15 +22,13 @@ import React.ElemTypes
 import React.Types
 
 
--- | A 'ReactClass' is a standalone component of a user interface which
--- contains the state necessary to render itself. Classes are
--- a tool for scoping.
---
--- Use 'createClass' to construct.
+toJSAny :: ToJSRef a => a -> IO JSAny
+toJSAny = fmap castRef . toJSRef
 
 
 -- | 'ReactClass' smart constructor.
-createClass :: (state -> React state sig ()) -- ^ render function
+createClass :: BiRef state
+            => (state -> React state sig ()) -- ^ render function
             -> (sig -> state -> state)
             -- ^ transition function
             -> state -- ^ initial state
@@ -37,27 +36,40 @@ createClass :: (state -> React state sig ()) -- ^ render function
             -> IO (ReactClass state sig)
 createClass render transition initialState initialTrans = do
 
-    foreignClass <- js_createClass
-                      (toPtr $ classForeignRender render transition)
-                      (toPtr (\_ -> return initialState))
+    renderCb <- syncCallback2 AlwaysRetain True $ \inst st ->
+        classForeignRender render transition inst st
+
+    stateCb <- syncCallback1 AlwaysRetain True $ \_ -> return initialState
+
+    foreignClassRef <- js_createClass renderCb stateCb
+    Just foreignClass <- fromJSRef foreignClassRef
 
     return $ ReactClass foreignClass
 
-classForeignRender :: (state -> React state sig ())
+
+classForeignRender :: BiRef state
+                   => (state -> React state sig ())
                    -> (sig -> state -> state)
                    -> ForeignClassInstance
-                   -> Ptr state
+                   -> JSRef state
                    -> IO ForeignNode
 classForeignRender classRender
                    classTransition
                    this
-                   pstate = do
+                   stateRef = do
 
+    st <- fromJSRef stateRef
     runIdentity $
-        interpret (classRender $ fromPtr pstate) (updateCb this classTransition)
+        interpret (classRender $ fromJust st) (updateCb this classTransition)
 
-updateCb :: ForeignClassInstance
+
+updateCb :: BiRef state
+         => ForeignClassInstance
          -> (sig -> state -> state)
          -> sig
          -> IO ()
-updateCb this trans sig = js_overState this $ toPtr (toPtr.(trans sig).fromPtr)
+updateCb this trans sig = do
+    cb <- syncCallback1 AlwaysRetain True $ \stateRef -> do
+        Just state <- fromJSRef stateRef
+        toJSRef $ trans sig state
+    js_overState this cb

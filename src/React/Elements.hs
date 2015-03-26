@@ -32,7 +32,7 @@ reactClass_ :: Monad m
 reactClass_ ReactClass{foreignClass} = termLeaf (\_ _ -> js_React_DOM_class $ foreignClass)
 
 text_ :: JSString -> React state sig ()
-text_ str = ReactT $ return ([Text (fromJSStr str)], ())
+text_ str = ReactT $ return ([Text (fromJSString str)], ())
 
 a_ :: TermParent t => TermParentArg t -> t
 a_ = reactParent "a"

@@ -1,6 +1,7 @@
 module React.ElemTypes where
 
-import Haste.Prim
+import GHCJS.Types
+
 import React.Types
 import React.Imports
 

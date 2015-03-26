@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
     ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
-    DeriveGeneric #-}
+    DeriveGeneric, ConstraintKinds #-}
 {-# LANGUAGE JavaScriptFFI #-}
 module React.Types where
 
@@ -23,6 +23,8 @@ import Lens.Family2
 
 import Data.IORef
 
+type BiRef a = (FromJSRef a, ToJSRef a)
+
 instance Show JSString where
     show = fromJSString
 
@@ -40,14 +42,21 @@ data JSON
 instance IsString JSON where
   fromString = Str . fromString
 
+
+-- | A 'ReactClass' is a standalone component of a user interface which
+-- contains the state necessary to render itself. Classes are
+-- a tool for scoping.
+--
+-- Use 'createClass' to construct.
 data ReactClass state sig =
   ReactClass { foreignClass :: ForeignClass
              }
-newtype ForeignClassInstance = ForeignClassInstance JSAny
+
+type ForeignClassInstance = JSAny
 newtype ForeignNode = ForeignNode JSAny
 newtype RawAttrs = RawAttrs JSAny
 newtype ReactArray = ReactArray JSAny
-newtype ForeignClass = ForeignClass JSAny
+newtype ForeignClass = ForeignClass JSAny deriving FromJSRef
 type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 
 newtype RenderHandle = RenderHandle Int
