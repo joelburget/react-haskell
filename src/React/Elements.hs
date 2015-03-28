@@ -90,6 +90,8 @@ reactLeaf :: Monad m
 reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
 
+-- TODO ToJSString a => ?
+-- Would this just be annoyingly ambiguous?
 text_ :: JSString -> React state sig anim ()
 text_ str = ReactT $ \_ -> return ([Text (fromJSString str)], ())
 

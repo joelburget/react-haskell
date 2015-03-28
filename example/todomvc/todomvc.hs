@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms  #-}
 module Main where
 -- TODO:
 -- * persistence
@@ -8,12 +8,14 @@ import Control.Applicative
 import Control.Monad
 import Prelude hiding (div)
 
-import Haste
-import Haste.Foreign
-import Haste.JSON
-import Haste.Prim
+import GHCJS.Foreign
+import GHCJS.Types
+import GHCJS.DOM (currentDocument)
+import GHCJS.DOM.Types (Document)
+import GHCJS.DOM.Document (documentGetElementById)
 import Lens.Family2
 import Lens.Family2.Stock
+import Lens.Family2.TH
 import React
 
 import System.IO.Unsafe
@@ -33,37 +35,55 @@ data PageState = PageState
     , _typingValue :: JSString
     }
 
+$(makeLenses ''Todo)
+$(makeLenses ''PageState)
+
+type TodoMvc a = a PageState Transition ()
+
 initialPageState :: PageState
 initialPageState = PageState
     [Todo "abc" Active, Todo "xyz" Completed,
      Todo "sjdfk" Active, Todo "ksljl" Completed]
     ""
 
+data Key = Enter | Escape
+
+data Transition
+    = Typing JSString
+    | HeaderKey Key
+    | Check Int
+    | DoubleClick
+    | Destroy Int
+    | ToggleAll
+    | ClearCompleted
+
+transition' :: Transition -> PageState -> (PageState, [AnimConfig Transition ()])
+transition' t s = (transition t s, [])
+
+transition :: Transition -> PageState -> PageState
+transition (Typing str) = handleTyping str
+transition (HeaderKey Enter) = handleEnter
+transition (HeaderKey Escape) = handleEsc
+transition (Check i) = handleItemCheck i
+transition DoubleClick = handleLabelDoubleClick
+transition (Destroy i) = handleDestroy i
+transition ToggleAll = handleToggleAll
+transition ClearCompleted = clearCompleted
+
 -- UTILITY
-
--- we have to define these lenses manually since template haskell isn't yet
--- supported in haste
-text :: Lens' Todo JSString
-text f (Todo t s) = (`Todo` s) <$> f t
-
-status :: Lens' Todo Status
-status f (Todo t s) = Todo t <$> f s
-
-todos :: Lens' PageState [Todo]
-todos f (PageState t v) = (`PageState` v) <$> f t
-
-typingValue :: Lens' PageState JSString
-typingValue f (PageState t v) = PageState t <$> f v
 
 toggleStatus :: Status -> Status
 toggleStatus Active = Completed
 toggleStatus Completed = Active
 
-trim :: JSString -> JSString
-trim = unsafePerformIO . ffi "(function(str) { return str.trim(); })"
+foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
+
+-- trim :: JSString -> JSString
+-- trim = unsafePerformIO . ffi "(function(str) { return str.trim(); })"
 
 -- this traversal is in lens but lens-family has a weird ix which isn't
 -- what we want. definition just copied from lens.
+-- TODO(joel) just use lens?
 ix' :: Int -> Traversal' [a] a
 ix' k f xs0 | k < 0     = pure xs0
             | otherwise = go xs0 k where
@@ -91,37 +111,37 @@ handleEnter oldState@PageState{_todos, _typingValue} =
 handleEsc :: PageState -> PageState
 handleEsc state = state & typingValue .~ ""
 
-handleHeaderKey :: PageState -> KeyboardEvent -> PageState
-handleHeaderKey state KeyboardEvent{key="Enter"} = handleEnter state
-handleHeaderKey state KeyboardEvent{key="Escape"} = handleEsc state
-handleHeaderKey state _ = state
+handleHeaderKey :: KeyboardEvent -> Maybe Transition
+handleHeaderKey KeyboardEvent{key="Enter"} = Just (HeaderKey Enter)
+handleHeaderKey KeyboardEvent{key="Escape"} = Just (HeaderKey Escape)
+handleHeaderKey _ = Nothing
 
-handleTyping :: PageState -> ChangeEvent -> PageState
-handleTyping state (ChangeEvent _typingValue) = state{_typingValue}
+handleTyping :: JSString -> PageState -> PageState
+handleTyping _typingValue state = state{_typingValue}
 
 statusOfToggle :: [Todo] -> Status
 statusOfToggle _todos =
     let allActive = all (\Todo{_status} -> _status == Active) _todos
     in if allActive then Active else Completed
 
-handleToggleAll :: PageState -> MouseEvent -> PageState
-handleToggleAll state@PageState{_todos} _ = state{_todos=newTodos} where
+handleToggleAll :: PageState -> PageState
+handleToggleAll state@PageState{_todos} = state{_todos=newTodos} where
     _status = toggleStatus $ statusOfToggle _todos
     newTodos = map (\todo -> todo{_status}) _todos
 
-handleItemCheck :: Int -> PageState -> MouseEvent -> PageState
-handleItemCheck todoNum state _ =
+handleItemCheck :: Int -> PageState -> PageState
+handleItemCheck todoNum state =
     state & todos . ix' todoNum . status %~ toggleStatus
 
 -- TODO
-handleLabelDoubleClick :: PageState -> MouseEvent -> PageState
-handleLabelDoubleClick = const
+handleLabelDoubleClick :: PageState -> PageState
+handleLabelDoubleClick = id
 
-handleDestroy :: Int -> PageState -> MouseEvent -> PageState
-handleDestroy todoNum state _ = state & todos %~ iFilter todoNum
+handleDestroy :: Int -> PageState -> PageState
+handleDestroy todoNum state = state & todos %~ iFilter todoNum
 
-clearCompleted :: PageState -> MouseEvent -> PageState
-clearCompleted state _ = state & todos %~ todosWithStatus Active
+clearCompleted :: PageState -> PageState
+clearCompleted state = state & todos %~ todosWithStatus Active
 
 -- VIEW
 
@@ -130,51 +150,48 @@ clearCompleted state _ = state & todos %~ todosWithStatus Active
 -- autofocus input attribute. Pressing Enter creates the todo, appends it
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
-header :: StatefulReact PageState ()
-header = header_ <! id_ "header" $ do
-    PageState{_typingValue} <- getState
+header :: PageState -> TodoMvc React'
+header PageState{_typingValue} = header_ [ id_ "header" ] $ do
     h1_ "todos"
-    input_ <! id_ "new-todo"
-           <! placeholder_ "What needs to be done?"
-           <! autofocus_ True
-           <! value_ _typingValue
-           <! onChange handleTyping
-           <! onKeyDown handleHeaderKey
+    input_ [ id_ "new-todo"
+           , placeholder_ "What needs to be done?"
+           , autofocus_ True
+           , value_ _typingValue
+           , onChange (Just . Typing . value . target)
+           , onKeyDown handleHeaderKey
+           ]
 
-todoView :: Int -> StatefulReact PageState ()
-todoView i = do
-    PageState{_todos} <- getState
+todoView :: PageState -> Int -> TodoMvc React'
+todoView PageState{_todos} i = do
     let Todo{_text, _status} = _todos !! i
-    li_ <! class_ (if _status == Completed then "completed" else "") $ do
-        div_ <! class_ "view" $ do
-            input_ <! class_ "toggle"
-                   <! type_ "checkbox"
-                   <! checked_ (_status == Completed)
-                   <! onClick (handleItemCheck i)
-            label_ <! onDoubleClick handleLabelDoubleClick $ text_ _text
-            button_ <! class_ "destroy"
-                    <! onClick (handleDestroy i) $ return ()
+    li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
+        div_ [ class_ "view" ] $ do
+            input_ [ class_ "toggle"
+                   , type_ "checkbox"
+                   , checked_ (_status == Completed)
+                   , onClick (const (Just (Check i)))
+                   ]
+            label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
+            button_ [ class_ "destroy"
+                    , onClick (const (Just (Destroy i)))
+                    ] $ return ()
 
-        input_ <! class_ "edit"
-               <! value_ _text
+        input_ [ class_ "edit", value_ _text ]
 
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: StatefulReact PageState ()
-mainBody = do
-    PageState{_todos} <- getState
-    section_ <! id_ "main" $ do
-        input_ <! id_ "toggle-all" <! type_ "checkbox"
-        label_ <! for_ "toggle-all"
-               <! onClick handleToggleAll $
+mainBody :: PageState -> TodoMvc React'
+mainBody st@PageState{_todos} =
+    section_ [ id_ "main" ] $ do
+        input_ [ id_ "toggle-all", type_ "checkbox" ]
+        label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
             "Mark all as complete"
 
-        ul_ <! id_ "todo-list" $ forM_ [0 .. length _todos - 1] todoView
+        ul_ [ id_ "todo-list" ] $ forM_ [0 .. length _todos - 1] (todoView st)
 
-innerFooter :: StatefulReact PageState ()
-innerFooter = footer_ <! id_ "footer" $ do
-    PageState{_todos} <- getState
+innerFooter :: PageState -> TodoMvc React'
+innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
     let activeCount = length (todosWithStatus Active _todos)
     let inactiveCount = length (todosWithStatus Completed _todos)
 
@@ -182,38 +199,43 @@ innerFooter = footer_ <! id_ "footer" $ do
     -- the number is wrapped by a <strong> tag. Also make sure to pluralize
     -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
     -- left"
-    span_ <! id_ "todo-count" $ do
-        strong_ (text_ (toJSStr (show activeCount)))
+    span_ [ id_ "todo-count" ] $ do
+        strong_ (text_ (toJSString (show activeCount)))
 
         if activeCount == 1 then " item left" else " items left"
 
     unless (inactiveCount == 0) $
-        button_ <! id_ "clear-completed"
-                <! onClick clearCompleted $
-            text_ (toJSStr ("Clear completed (" ++ show inactiveCount ++ ")"))
+        button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
+            text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
 
-outerFooter :: StatefulReact PageState ()
-outerFooter = footer_ <! id_ "info" $ do
+outerFooter :: TodoMvc React'
+outerFooter = footer_ [ id_ "info" ] $ do
     p_ "Double-click to edit a todo"
     p_ $ do
         "Created by "
-        a_ <! href_ "http://joelburget.com" $ "Joel Burget"
+        a_ [ href_ "http://joelburget.com" ] "Joel Burget"
     p_ $ do
         "Part of "
-        a_ <! href_ "http://todomvc.com" $ "TodoMVC"
+        a_ [ href_ "http://todomvc.com" ] "TodoMVC"
 
-wholePage :: StatefulReact PageState ()
-wholePage = div_ $ do
-    PageState{_todos} <- getState
-    section_ <! id_ "todoapp" $ do
-        header
+wholePage :: PageState -> TodoMvc React'
+wholePage s@PageState{_todos} = div_ $ do
+    section_ [ id_ "todoapp" ] $ do
+        header s
 
         -- "When there are no todos, #main and #footer should be hidden."
         unless (null _todos) $ do
-            mainBody
-            innerFooter
+            mainBody s
+            innerFooter s
     outerFooter
 
+todoMvcClass :: IO (TodoMvc ReactClass)
+todoMvcClass = createClass wholePage transition' initialPageState () []
+
 main = do
-    Just elem <- elemById "inject"
-    render initialPageState elem wholePage
+    Just doc <- currentDocument
+    let elemId :: JSString
+        elemId = "inject"
+    Just elem <- documentGetElementById doc elemId
+    cls <- todoMvcClass
+    render elem cls
