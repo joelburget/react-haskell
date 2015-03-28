@@ -33,8 +33,8 @@ setField attr (fld, Bool True) = js_set_field_True attr fld
 setField attr (fld, Bool False) = js_set_field_False attr fld
 setField attr (fld, Arr arr) = do
     jsArr <- js_empty_arr
-    let arr' = zip arr [0..]
-    forM_ arr' $ \(val, ix) -> setIx jsArr ix val
+    let arr' = zip [0..] arr
+    mapM_ (uncurry (setIx jsArr)) arr'
     js_set_field_Arr attr fld jsArr
 setField attr (fld, Dict vs) = do
     subObj <- js_empty_object
