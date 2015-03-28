@@ -1,0 +1,37 @@
+name:                react-haskell-todomvc
+version:             0.1.0.0
+synopsis:            yet another todomvc, this time in react-haskell
+-- description:
+license:             MIT
+license-file:        LICENSE
+author:              Joel Burget
+maintainer:          joelburget@gmail.com
+copyright:           (c) Joel Burget 2015
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+
+data-dir: lib
+data-files: stubs.js, bezier.js, react.js
+
+executable react-haskell-todomvc
+  main-is:             todomvc.hs
+  other-extensions:
+    OverloadedStrings,
+    LiberalTypeSynonyms,
+    Rank2Types,
+    TupleSections,
+    GeneralizedNewtypeDeriving,
+    TypeFamilies,
+    NamedFieldPuns,
+    MultiParamTypeClasses,
+    ExtendedDefaultRules
+  build-depends:
+    base >=4.6 && <4.8,
+    ghcjs-base >= 0.1,
+    ghcjs-dom >= 0.1,
+    containers == 0.5.6.2,
+    lens-family == 1.2.0,
+    lens-family-th == 0.4.1.0,
+    react-haskell
+  default-language:    Haskell2010
