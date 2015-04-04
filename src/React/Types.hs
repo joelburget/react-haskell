@@ -21,7 +21,6 @@ import GHCJS.Marshal
 import GHCJS.Types
 import Lens.Family2
 
-
 instance Show JSString where
     show = fromJSString
 
@@ -222,13 +221,10 @@ mkEventHandler :: (FromJSRef signal, NFData signal)
                -> (signal -> Maybe signal')
                -> AttrOrHandler signal'
 mkEventHandler ty handle =
-    -- important - you must deepseq the event immediately - otherwise
-    -- react's pooling will collect and destroy it.
     -- XXX unsafe as fuck
     let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of
             Just x -> handle $!! x
             Nothing -> Nothing
-    -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
 
 
@@ -296,11 +292,11 @@ instance NFData MouseEvent where
 
 data KeyboardEvent =
   KeyboardEvent { -- keyboardEventProperties :: ! (EventProperties e)
-                  keyboardModifierKeys :: !ModifierKeys
-                , charCode :: !Int
+                -- keyboardModifierKeys :: !ModifierKeys
+                  charCode :: !Int
                 , key :: !JSString
                 , keyCode :: !Int
-                , locale :: !JSString
+                -- , locale :: !JSString
                 , location :: !Int
                 , repeat :: !Bool
                 , which :: !Int
@@ -309,8 +305,8 @@ data KeyboardEvent =
 instance FromJSRef KeyboardEvent where
 
 instance NFData KeyboardEvent where
-    rnf (KeyboardEvent a b c d e f g h) =
-        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+    rnf (KeyboardEvent a b c d e f) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` ()
 
 data Target = Target
     { value :: !JSString

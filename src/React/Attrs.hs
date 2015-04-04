@@ -5,6 +5,9 @@ import GHCJS.Types
 
 import React.Types
 
+key_ :: JSString -> AttrOrHandler signal
+key_ = mkStaticAttr "key" Str
+
 class_ :: JSString -> AttrOrHandler signal
 class_ = mkStaticAttr "className" Str
 

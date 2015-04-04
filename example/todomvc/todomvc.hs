@@ -18,8 +18,6 @@ import Lens.Family2.Stock
 import Lens.Family2.TH
 import React
 
-import System.IO.Unsafe
-
 -- MODEL
 
 data Status = Active | Completed
@@ -111,10 +109,10 @@ handleEnter oldState@PageState{_todos, _typingValue} =
 handleEsc :: PageState -> PageState
 handleEsc state = state & typingValue .~ ""
 
-handleHeaderKey :: KeyboardEvent -> Maybe Transition
-handleHeaderKey KeyboardEvent{key="Enter"} = Just (HeaderKey Enter)
-handleHeaderKey KeyboardEvent{key="Escape"} = Just (HeaderKey Escape)
-handleHeaderKey _ = Nothing
+emitKeydown :: KeyboardEvent -> Maybe Transition
+emitKeydown KeyboardEvent{key="Enter"} = Just (HeaderKey Enter)
+emitKeydown KeyboardEvent{key="Escape"} = Just (HeaderKey Escape)
+emitKeydown _ = Nothing
 
 handleTyping :: JSString -> PageState -> PageState
 handleTyping _typingValue state = state{_typingValue}
@@ -158,7 +156,7 @@ header PageState{_typingValue} = header_ [ id_ "header" ] $ do
            , autofocus_ True
            , value_ _typingValue
            , onChange (Just . Typing . value . target)
-           , onKeyDown handleHeaderKey
+           , onKeyDown emitKeydown
            ]
 
 todoView :: PageState -> Int -> TodoMvc React'
@@ -210,6 +208,8 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
 
 outerFooter :: TodoMvc React'
 outerFooter = footer_ [ id_ "info" ] $ do
+    -- TODO react complains about these things not having keys even though
+    -- they're statically defined. figure out how to fix this.
     p_ "Double-click to edit a todo"
     p_ $ do
         "Created by "
