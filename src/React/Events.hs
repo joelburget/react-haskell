@@ -44,6 +44,7 @@ handlerToJs handle = syncCallback1 AlwaysRetain True $ \evt ->
         Nothing -> return ()
         Just x -> x
 
+
 makeHandler' :: a
              -> (RawEvent -> Maybe (IO ()))
              -> (JSFun (RawEvent -> IO ()) -> a -> IO b)

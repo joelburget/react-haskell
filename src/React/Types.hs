@@ -296,11 +296,11 @@ instance NFData MouseEvent where
 
 data KeyboardEvent =
   KeyboardEvent { -- keyboardEventProperties :: ! (EventProperties e)
-                  keyboardModifierKeys :: !ModifierKeys
-                , charCode :: !Int
+                -- keyboardModifierKeys :: !ModifierKeys
+                  charCode :: !Int
                 , key :: !JSString
                 , keyCode :: !Int
-                , locale :: !JSString
+                -- , locale :: !JSString
                 , location :: !Int
                 , repeat :: !Bool
                 , which :: !Int
@@ -309,8 +309,8 @@ data KeyboardEvent =
 instance FromJSRef KeyboardEvent where
 
 instance NFData KeyboardEvent where
-    rnf (KeyboardEvent a b c d e f g h) =
-        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` g `seq` h `seq` ()
+    rnf (KeyboardEvent a b c d e f) =
+        a `seq` b `seq` c `seq` d `seq` e `seq` f `seq` ()
 
 data Target = Target
     { value :: !JSString

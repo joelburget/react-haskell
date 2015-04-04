@@ -111,10 +111,10 @@ handleEnter oldState@PageState{_todos, _typingValue} =
 handleEsc :: PageState -> PageState
 handleEsc state = state & typingValue .~ ""
 
-handleHeaderKey :: KeyboardEvent -> Maybe Transition
-handleHeaderKey KeyboardEvent{key="Enter"} = Just (HeaderKey Enter)
-handleHeaderKey KeyboardEvent{key="Escape"} = Just (HeaderKey Escape)
-handleHeaderKey _ = Nothing
+emitKeydown :: KeyboardEvent -> Maybe Transition
+-- emitKeydown KeyboardEvent{key="Enter"} = trace "enter" $ Just (HeaderKey Enter)
+-- emitKeydown KeyboardEvent{key="Escape"} = trace "esc" $ Just (HeaderKey Escape)
+emitKeydown evt = trace "hi" $ Just (HeaderKey Escape)
 
 handleTyping :: JSString -> PageState -> PageState
 handleTyping _typingValue state = state{_typingValue}

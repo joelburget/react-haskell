@@ -95,6 +95,7 @@ reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 text_ :: JSString -> React state sig anim ()
 text_ str = ReactT $ \_ -> return ([Text (fromJSString str)], ())
 
+-- TODO generate these automatically
 a_ :: TermParent t => TermParentArg t -> t
 a_ = reactParent "a"
 
