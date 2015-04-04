@@ -44,6 +44,7 @@ setField attr (fld, Dict vs) = do
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
+
 setIx :: RawAttrs -> Int -> JSON -> IO ()
 setIx arr i (Num v) = js_set_ix_Double arr i v
 setIx arr i (Str v) = js_set_ix_String arr i v
@@ -62,18 +63,18 @@ setIx arr i (Dict d) = do
 setIx arr i Null = return ()
 
 
-interpret :: Monad m
-          => ReactT state sig anim m ()
+interpret :: (Monad m, GenericReactT rct)
+          => rct state sig anim m ()
           -> anim
           -> (sig -> IO ())
           -> m (IO ForeignNode)
 interpret react anim cb = do
-    ~(child:_, ()) <- runReactT react anim
+    ~(child:_, ()) <- unEmbed react anim
     return $ interpret' cb child
 
 
 interpret' :: (signal -> IO ())
-           -> ReactNode signal
+           -> Child signal
            -> IO ForeignNode
 interpret' cb = \case
     Parent f as hs children -> do

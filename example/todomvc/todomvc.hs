@@ -20,6 +20,8 @@ import React
 
 import System.IO.Unsafe
 
+import Debug.Trace
+
 -- MODEL
 
 data Status = Active | Completed
@@ -152,17 +154,19 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- and then check that it's not empty before creating a new todo."
 header :: PageState -> TodoMvc React'
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
+    traceM "header"
     h1_ "todos"
     input_ [ id_ "new-todo"
            , placeholder_ "What needs to be done?"
            , autofocus_ True
            , value_ _typingValue
            , onChange (Just . Typing . value . target)
-           , onKeyDown handleHeaderKey
+           , onKeyDown emitKeydown
            ]
 
 todoView :: PageState -> Int -> TodoMvc React'
 todoView PageState{_todos} i = do
+    traceM "todoView"
     let Todo{_text, _status} = _todos !! i
     li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
         div_ [ class_ "view" ] $ do
@@ -184,6 +188,7 @@ todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 mainBody :: PageState -> TodoMvc React'
 mainBody st@PageState{_todos} =
     section_ [ id_ "main" ] $ do
+        traceM "mainBody"
         input_ [ id_ "toggle-all", type_ "checkbox" ]
         label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
             "Mark all as complete"
@@ -192,6 +197,7 @@ mainBody st@PageState{_todos} =
 
 innerFooter :: PageState -> TodoMvc React'
 innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
+    traceM "innerFooter"
     let activeCount = length (todosWithStatus Active _todos)
     let inactiveCount = length (todosWithStatus Completed _todos)
 
@@ -210,6 +216,9 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
 
 outerFooter :: TodoMvc React'
 outerFooter = footer_ [ id_ "info" ] $ do
+    -- TODO react complains about these things not having keys even though
+    -- they're statically defined. figure out how to fix this.
+    traceM "outerFooter"
     p_ "Double-click to edit a todo"
     p_ $ do
         "Created by "
@@ -220,6 +229,7 @@ outerFooter = footer_ [ id_ "info" ] $ do
 
 wholePage :: PageState -> TodoMvc React'
 wholePage s@PageState{_todos} = div_ $ do
+    traceM "wholePage"
     section_ [ id_ "todoapp" ] $ do
         header s
 

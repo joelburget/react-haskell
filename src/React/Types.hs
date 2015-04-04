@@ -21,6 +21,7 @@ import GHCJS.Marshal
 import GHCJS.Types
 import Lens.Family2
 
+import Debug.Trace
 
 instance Show JSString where
     show = fromJSString
@@ -72,10 +73,15 @@ type Attrs = [(JSString, JSON)]
 -- underlying monad so it can only set attrs and string?)
 
 data ReactNode signal
-    = Parent ForeignRender Attrs [EventHandler signal] [ReactNode signal]
+    = Parent ForeignRender Attrs [EventHandler signal] [Child signal]
     | Leaf ForeignRender Attrs [EventHandler signal]
     -- | Pre Attrs Handlers [ReactNode]
     | Text String -- TODO(joel) JSString?
+
+
+data Child sig
+    = Static [ReactNode sig]
+    | Dynamic JSString (ReactNode sig)
 
 
 -- | Standard easing functions. These are used to 'interpolate' smoothly.
@@ -168,18 +174,72 @@ data RunningAnim sig anim = RunningAnim
     }
 
 
-newtype ReactT state sig anim m a = ReactT
-    { runReactT :: anim -> m ([ReactNode sig], a) }
+data ReactT state sig anim m a = ReactT
+    { static :: Bool
+    , runReactT :: anim -> m ([Child sig], a)
+    }
+
+
+-- newtype StaticReactT state sig anim m a =
+--     StaticReactT { unStaticReactT :: ReactT state sig anim m a }
+--     deriving (IsString, Monoid, Functor, Applicative, Monad)
+
+
+-- newtype DynamicReactT state sig anim m a =
+--     DynamicReactT { unDynamicReactT :: ReactT state sig anim m a }
+--     deriving (IsString, Monoid, Functor, Applicative, Monad)
+
+
+-- class GenericReactT result where
+--     embed :: (anim -> m ([Child sig], a)) -> result state sig anim m a
+--     unEmbed :: result state sig anim m a -> anim -> m ([Child sig], a)
+
+
+-- -- instance GenericReactT ReactT where
+-- --     embed = ReactT
+-- --     unEmbed = runReactT
+
+
+-- instance GenericReactT StaticReactT where
+--     embed = StaticReactT . ReactT
+--     unEmbed = runReactT . unStaticReactT
+
+
+-- instance GenericReactT DynamicReactT where
+--     embed = DynamicReactT . ReactT
+--     unEmbed = runReactT . unDynamicReactT
+
+
+-- -- Idea:
+-- --
+-- -- * You must use `dynamic_` to build a component with reorderable children.
+-- --   - (by default we deal with dynamic values)
+-- -- * Dynamic children must have a key. *
+-- -- * Static children must not have a key. *
+-- -- * Dynamic children are passed to createElement as an array.
+-- -- * Static children are passed to createElement as parameters.
+-- --
+-- -- * I'm not sure it's possible to force the key thing.
+-- dynamic_ :: ReactT state sig anim m a -> StaticReactT state sig anim m a
+-- dynamic_ = StaticReactT
+
+
+type Pure a = a () Void ()
 
 
 type React state sig anim = ReactT state sig anim Identity
 type React' state sig anim = ReactT state sig anim Identity ()
-type Pure a = a () Void ()
+
+-- type StaticReact state sig anim = StaticReactT state sig anim Identity
+-- type StaticReact' state sig anim = StaticReactT state sig anim Identity ()
+
+-- type DynamicReact state sig anim = DynamicReactT state sig anim Identity
+-- type DynamicReact' state sig anim = DynamicReactT state sig anim Identity ()
 
 
 instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
-    mempty = ReactT $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT $ \anim -> do
+    mempty = ReactT False $ \_ -> return ([], mempty)
+    mappend f1 f2 = ReactT False $ \anim -> do
         ~(c1, a) <- runReactT f1 anim
         ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
@@ -195,12 +255,12 @@ instance Monad m => Applicative (ReactT state sig anim m) where
 
 
 instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
-    fromString str = ReactT $ \_ -> return ([Text str], ())
+    fromString str = ReactT False $ \_ -> return ([Static [Text str]], ())
 
 
 instance Monad m => Monad (ReactT state sig anim m) where
-    return a = ReactT $ \_ -> return ([], a)
-    m >>= f = ReactT $ \anim -> do
+    return a = ReactT False $ \_ -> return ([], a)
+    m >>= f = ReactT False $ \anim -> do
         ~(c1, a) <- runReactT m anim
         ~(c2, b) <- runReactT (f a) anim
         return (c1 <> c2, b)
@@ -222,12 +282,10 @@ mkEventHandler :: (FromJSRef signal, NFData signal)
                -> (signal -> Maybe signal')
                -> AttrOrHandler signal'
 mkEventHandler ty handle =
-    -- important - you must deepseq the event immediately - otherwise
-    -- react's pooling will collect and destroy it.
     -- XXX unsafe as fuck
     let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of
-            Just x -> handle $!! x
-            Nothing -> Nothing
+            Just x -> trace "mkEventHandler just" $ handle x
+            Nothing -> trace "mkEventHandler nothing" $ Nothing
     -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
 

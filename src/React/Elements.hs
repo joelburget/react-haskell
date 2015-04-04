@@ -39,7 +39,7 @@ instance (Monad m, f ~ ReactT state sig anim m a) =>
         TermParent (f -> ReactT state sig anim m a) where
     type TermParentArg (f -> ReactT state sig anim m a) = [AttrOrHandler sig]
 
-    termParent render attrs children = ReactT $ \anim -> do
+    termParent render attrs children = ReactT False $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
         let (hs, as) = separateAttrs attrs
         return ([Parent render as hs childNodes], a)
@@ -48,7 +48,7 @@ instance (Monad m, f ~ ReactT state sig anim m a) =>
 instance Monad m => TermParent (ReactT state sig anim m a) where
     type TermParentArg (ReactT state sig anim m a) = ReactT state sig anim m a
 
-    termParent render children = ReactT $ \anim -> do
+    termParent render children = ReactT False $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
         return ([Parent render [] [] childNodes], a)
 
@@ -71,7 +71,7 @@ termLeaf :: Monad m
          => ForeignRender
          -> [AttrOrHandler sig]
          -> ReactT state sig anim m ()
-termLeaf render attrs = ReactT $ \_ -> do
+termLeaf render attrs = ReactT False $ \_ -> do
     let (hs, as) = separateAttrs attrs
     return ([Leaf render as hs], ())
 
@@ -92,8 +92,9 @@ reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
 -- TODO ToJSString a => ?
 -- Would this just be annoyingly ambiguous?
-text_ :: JSString -> React state sig anim ()
-text_ str = ReactT $ \_ -> return ([Text (fromJSString str)], ())
+text_ :: JSString -> StaticReact state sig anim ()
+text_ str = ReactT False $ \_ ->
+    return ([Text (fromJSString str)], ())
 
 -- TODO generate these automatically
 a_ :: TermParent t => TermParentArg t -> t
