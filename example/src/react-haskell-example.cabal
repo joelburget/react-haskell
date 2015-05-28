@@ -32,11 +32,11 @@ executable react-haskell-example
     MultiParamTypeClasses,
     ExtendedDefaultRules
   build-depends:
-    base >=4.6 && <4.8,
+    base >=4.6 && <5,
     ghcjs-base >= 0.1,
     ghcjs-dom >= 0.1,
-    containers == 0.5.6.2,
+    containers >= 0.5.6.2,
     lens-family == 1.2.0,
-    react-haskell-ghcjs
+    react-haskell >= 1.3
   -- hs-source-dirs:
   default-language:    Haskell2010
