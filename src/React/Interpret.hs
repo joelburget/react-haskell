@@ -63,13 +63,13 @@ setIx arr i (Dict d) = do
 setIx arr i Null = return ()
 
 
-interpret :: (Monad m, GenericReactT rct)
-          => rct state sig anim m ()
+interpret :: Monad m
+          => ReactT state sig anim m ()
           -> anim
           -> (sig -> IO ())
           -> m (IO ForeignNode)
 interpret react anim cb = do
-    ~(child:_, ()) <- unEmbed react anim
+    ~(child:_, ()) <- runReactT react anim
     return $ interpret' cb child
 
 
@@ -77,6 +77,13 @@ interpret' :: (signal -> IO ())
            -> Child signal
            -> IO ForeignNode
 interpret' cb = \case
+    Static node -> interpret'' cb node
+    Dynamic nodes -> undefined
+
+interpret'' :: (signal -> IO ())
+            -> ReactNode signal
+            -> IO ForeignNode
+interpret'' cb = \case
     Parent f as hs children -> do
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs

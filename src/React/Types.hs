@@ -79,9 +79,19 @@ data ReactNode signal
     | Text String -- TODO(joel) JSString?
 
 
+-- A child is either a sequence of static nodes or *one* dynamic node. This
+-- representation is motivated by ...
+--
+-- React.createElement("div", null, a, [b, c], d)
+--
+-- Now React can infer that `a` and `d` are static, while `b` and `c` are
+-- dynamic.
+--
+-- XXX
+
 data Child sig
-    = Static [ReactNode sig]
-    | Dynamic JSString (ReactNode sig)
+    = Static (ReactNode sig)
+    | Dynamic [ReactNode sig]
 
 
 -- | Standard easing functions. These are used to 'interpolate' smoothly.
@@ -174,9 +184,8 @@ data RunningAnim sig anim = RunningAnim
     }
 
 
-data ReactT state sig anim m a = ReactT
-    { static :: Bool
-    , runReactT :: anim -> m ([Child sig], a)
+newtype ReactT state sig anim m a = ReactT {
+    runReactT :: anim -> m ([Child sig], a)
     }
 
 
@@ -238,8 +247,8 @@ type React' state sig anim = ReactT state sig anim Identity ()
 
 
 instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
-    mempty = ReactT False $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT False $ \anim -> do
+    mempty = ReactT $ \_ -> return ([], mempty)
+    mappend f1 f2 = ReactT $ \anim -> do
         ~(c1, a) <- runReactT f1 anim
         ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
@@ -255,12 +264,12 @@ instance Monad m => Applicative (ReactT state sig anim m) where
 
 
 instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
-    fromString str = ReactT False $ \_ -> return ([Static [Text str]], ())
+    fromString str = ReactT $ \_ -> return ([Static (Text str)], ())
 
 
 instance Monad m => Monad (ReactT state sig anim m) where
-    return a = ReactT False $ \_ -> return ([], a)
-    m >>= f = ReactT False $ \anim -> do
+    return a = ReactT $ \_ -> return ([], a)
+    m >>= f = ReactT $ \anim -> do
         ~(c1, a) <- runReactT m anim
         ~(c2, b) <- runReactT (f a) anim
         return (c1 <> c2, b)

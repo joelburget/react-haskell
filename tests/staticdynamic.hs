@@ -27,4 +27,4 @@ dynamicInStatic = div_ $
 -- Answer? Things *only* render when their parents render. Thus their
 -- parents know when their children's props *can* change. We make anything
 -- dependent on a variable that can change dynamic.
-oilAndWater = div_ $
+-- oilAndWater = div_ $

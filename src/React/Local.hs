@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses,
-  FlexibleContexts, IncoherentInstances #-}
+  FlexibleContexts, IncoherentInstances, LambdaCase #-}
 -- Note on IncoherentInstances: the two instances below will both work fine
 -- for `GeneralizeSignal Void Void`. They should never be called.
 module React.Local (locally, GeneralizeSignal(..)) where
@@ -29,9 +29,19 @@ locally :: (Monad m, GeneralizeSignal sigloc siggen)
         -> ReactT stategen siggen anim m x
 locally nested = result where
     result = ReactT $ \anim -> do
-        let gensig = nodeConvert generalizeSignal
-        (nodes, x) <- runReactT nested anim
-        return (map gensig nodes, x)
+        let gensig = childConvert generalizeSignal
+        (children, x) <- runReactT nested anim
+        return (map gensig children, x)
+
+
+childConvert :: (sigloc -> siggen)
+             -> Child sigloc
+             -> Child siggen
+childConvert generalize =
+    let gensig = nodeConvert generalize
+    in \case
+        Static node -> Static (gensig node)
+        Dynamic nodes -> Dynamic (map gensig nodes)
 
 
 handlerConvert :: (sigloc -> siggen)
@@ -42,11 +52,11 @@ handlerConvert generalize (EventHandler handle ty) =
 
 
 nodeConvert :: (sigloc -> siggen)
-             -> ReactNode sigloc
-             -> ReactNode siggen
+            -> ReactNode sigloc
+            -> ReactNode siggen
 nodeConvert generalize (Parent f attrs handlers children) =
     Parent f attrs (map (handlerConvert generalize) handlers)
-        (map (nodeConvert generalize) children)
+        (map (childConvert generalize) children)
 nodeConvert generalize (Leaf f attrs handlers) =
     Leaf f attrs (map (handlerConvert generalize) handlers)
 nodeConvert _ (Text str) = Text str
