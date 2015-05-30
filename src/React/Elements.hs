@@ -42,7 +42,7 @@ instance (Monad m, f ~ ReactT state sig anim m a) =>
     termParent render attrs children = ReactT $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
         let (hs, as) = separateAttrs attrs
-        return ([Dynamic [Parent render as hs childNodes]], a)
+        return ([Static (Parent render as hs childNodes)], a)
 
 
 instance Monad m => TermParent (ReactT state sig anim m a) where
@@ -50,7 +50,7 @@ instance Monad m => TermParent (ReactT state sig anim m a) where
 
     termParent render children = ReactT $ \anim -> do
         ~(childNodes, a) <- runReactT children anim
-        return ([Dynamic [Parent render [] [] childNodes]], a)
+        return ([Static (Parent render [] [] childNodes)], a)
 
 
 foreignParent :: TermParent t
@@ -73,7 +73,7 @@ termLeaf :: Monad m
          -> ReactT state sig anim m ()
 termLeaf render attrs = ReactT $ \_ -> do
     let (hs, as) = separateAttrs attrs
-    return ([Dynamic [Leaf render as hs]], ())
+    return ([Static (Leaf render as hs)], ())
 
 
 foreignLeaf :: Monad m

@@ -91,8 +91,22 @@ data ReactNode signal
 
 data Child sig
     = Static (ReactNode sig)
-    | Dynamic [ReactNode sig]
+    | Dynamic [(Int, ReactNode sig)]
 
+
+keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m ()
+keyed = mapM_ $ \(ix, m) -> ReactT $ \anim -> do
+    (children, _) <- runReactT m anim
+    -- ^ got a [Child sig], really need `ReactNode sig`
+    return children
+
+
+keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m a
+keyed nodes = ReactT $ \anim -> do
+    let f :: anim -> (Int, ReactT state sig anim m a) -> m
+        f anim (key, m) = runReactT anim
+
+    runReactT :: anim -> m ([Child sig], a)
 
 -- | Standard easing functions. These are used to 'interpolate' smoothly.
 --
@@ -183,6 +197,14 @@ data RunningAnim sig anim = RunningAnim
     , beganAt :: Double
     }
 
+-- Idea:
+--
+-- ReactT is the type representing
+-- * classes
+-- * builtins
+-- * sequences
+--
+-- Use a phantom type to only allow rendering of first two.
 
 newtype ReactT state sig anim m a = ReactT {
     runReactT :: anim -> m ([Child sig], a)

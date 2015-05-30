@@ -12,15 +12,17 @@ import React
 keyFromInt :: Int -> AttrOrHandler a
 keyFromInt = key_ . fromString . show
 
-staticInDynamic = div_ $ forM_ [1..10] $ \i ->
-    span_ [ keyFromInt i ] "static"
+staticInDynamic = div_ $ keyed $
+    let node = span_ "static"
+    in [ (key, node) | key <- [1..10] ]
 
 dynamicInStatic = div_ $
     "this"
     "is"
     "static"
-    div_ $ forM_ [1..10] $ \i ->
-        span_ [ keyFromInt i ] "static"
+    div_ $ keyed $
+        let node = span_ "static"
+        in [ (key, node) | key <- [1..10] ]
     "... mostly."
 
 -- XXX how can we tell whether we're using a parameter?
