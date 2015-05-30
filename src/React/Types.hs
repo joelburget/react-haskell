@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
     ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
-    DeriveGeneric #-}
+    DeriveGeneric, DataKinds, GADTs #-}
 {-# LANGUAGE JavaScriptFFI #-}
 module React.Types where
 
@@ -94,19 +94,13 @@ data Child sig
     | Dynamic [(Int, ReactNode sig)]
 
 
-keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m ()
-keyed = mapM_ $ \(ix, m) -> ReactT $ \anim -> do
-    (children, _) <- runReactT m anim
-    -- ^ got a [Child sig], really need `ReactNode sig`
-    return children
+-- keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m ()
+-- keyed = mapM_ $ \(ix, m) -> ReactT $ \anim -> do
+--     (children, _) <- runReactT m anim
+--     -- ^ got a [Child sig], really need `ReactNode sig`
+--     return children
 
-
-keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m a
-keyed nodes = ReactT $ \anim -> do
-    let f :: anim -> (Int, ReactT state sig anim m a) -> m
-        f anim (key, m) = runReactT anim
-
-    runReactT :: anim -> m ([Child sig], a)
+--     runReactT :: anim -> m ([Child sig], a)
 
 -- | Standard easing functions. These are used to 'interpolate' smoothly.
 --
@@ -206,9 +200,35 @@ data RunningAnim sig anim = RunningAnim
 --
 -- Use a phantom type to only allow rendering of first two.
 
-newtype ReactT state sig anim m a = ReactT {
-    runReactT :: anim -> m ([Child sig], a)
-    }
+data ReactType
+    = RtClass
+    | RtBuiltin
+    | RtSequence
+
+-- phew, what a mouthful
+data ReactT :: ReactType -> * -> * -> * -> (* -> *) -> * -> * where
+
+    -- even this could maybe just store the class name and attrs?
+    ReactTClass    :: (anim -> m ([Child sig], a))
+                   -> ReactT RtClass    state sig anim m a
+
+    -- This could really store just the name and attrs
+    ReactTBuiltin  :: (anim -> m ([Child sig], a))
+                   -- TODO -> ReactT RtBuiltin  state sig Void m a
+                   -> ReactT RtBuiltin  state sig anim m a
+
+    ReactTSequence :: (anim -> m ([Child sig], a))
+                   -> ReactT RtSequence state sig anim m a
+
+
+runReactT :: ReactT ty state sig anim m a -> anim -> m ([Child sig], a)
+runReactT (ReactTClass f) anim = f anim
+runReactT (ReactTBuiltin f) anim = f anim
+runReactT (ReactTSequence f) anim = f anim
+
+-- newtype ReactT state sig anim m a = ReactT {
+--     runReactT :: anim -> m ([Child sig], a)
+--     }
 
 
 -- newtype StaticReactT state sig anim m a =
@@ -258,8 +278,8 @@ newtype ReactT state sig anim m a = ReactT {
 type Pure a = a () Void ()
 
 
-type React state sig anim = ReactT state sig anim Identity
-type React' state sig anim = ReactT state sig anim Identity ()
+type React ty state sig anim = ReactT ty state sig anim Identity
+type React' ty state sig anim = ReactT ty state sig anim Identity ()
 
 -- type StaticReact state sig anim = StaticReactT state sig anim Identity
 -- type StaticReact' state sig anim = StaticReactT state sig anim Identity ()
@@ -268,30 +288,30 @@ type React' state sig anim = ReactT state sig anim Identity ()
 -- type DynamicReact' state sig anim = DynamicReactT state sig anim Identity ()
 
 
-instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
-    mempty = ReactT $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT $ \anim -> do
+instance (Monad m, Monoid a) => Monoid (ReactT RtSequence state sig anim m a) where
+    mempty = ReactTSequence $ \_ -> return ([], mempty)
+    mappend f1 f2 = ReactTSequence $ \anim -> do
         ~(c1, a) <- runReactT f1 anim
         ~(c2, b) <- runReactT f2 anim
         return (c1 <> c2, a <> b)
 
 
-instance Monad m => Functor (ReactT state sig anim m) where
+instance Monad m => Functor (ReactT ty state sig anim m) where
     fmap = liftM
 
 
-instance Monad m => Applicative (ReactT state sig anim m) where
+instance Monad m => Applicative (ReactT ty state sig anim m) where
     pure = return
     (<*>) = ap
 
 
-instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
-    fromString str = ReactT $ \_ -> return ([Static (Text str)], ())
+instance (Monad m, a ~ ()) => IsString (ReactT RtBuiltin state sig anim m a) where
+    fromString str = ReactTBuiltin $ \_ -> return ([Static (Text str)], ())
 
 
-instance Monad m => Monad (ReactT state sig anim m) where
-    return a = ReactT $ \_ -> return ([], a)
-    m >>= f = ReactT $ \anim -> do
+instance Monad m => Monad (ReactT RtSequence state sig anim m) where
+    return a = ReactTSequence $ \_ -> return ([], a)
+    m >>= f = ReactTSequence $ \anim -> do
         ~(c1, a) <- runReactT m anim
         ~(c2, b) <- runReactT (f a) anim
         return (c1 <> c2, b)
