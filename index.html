@@ -79,17 +79,48 @@ sample str = div_ $ <span class="pl-k">do</span>
 <h2>
 <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
 
-<p>TODO</p>
+<p>The first step is a working GHCJS installation. The easiest way is to download a virtual machine with GHCJS pre-installed. I recommend <a href="https://github.com/joelburget/ghcjs-box">ghcjs-box</a>.</p>
+
+<p>Now that GHCJS is installed we can use cabal to create a project.</p>
+
+<div class="highlight highlight-bash"><pre>$ mkdir project
+$ <span class="pl-c1">cd</span> project
+$ cabal init <span class="pl-c"># generate a .cabal file</span></pre></div>
+
+<p>Now edit the cabal file to include dependencies.</p>
+
+<pre lang="cabal"><code>build-depends:
+  base &gt;= 4.8 &amp;&amp; &lt; 5,
+  ghcjs-base,
+  ghcjs-dom,
+  react-haskell &gt;= 1.3
+</code></pre>
+
+<p>Now we can write <code>Main.hs</code>.</p>
+
+<div class="highlight highlight-haskell"><pre><span class="pl-en">sample</span> <span class="pl-k">::</span> <span class="pl-k">React</span> <span class="pl-c1">()</span> <span class="pl-c1">()</span>
+sample = p_ [ class_ <span class="pl-s"><span class="pl-pds">"</span>style<span class="pl-pds">"</span></span> ] $ em_ <span class="pl-s"><span class="pl-pds">"</span>Andy Warhol<span class="pl-pds">"</span></span>
+
+<span class="pl-en">main</span> <span class="pl-k">::</span> <span class="pl-c1">IO</span> <span class="pl-c1">()</span>
+main = <span class="pl-k">do</span>
+    <span class="pl-c1">Just</span> <span class="pl-c1">elem</span> &lt;- elemById <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>
+    render <span class="pl-c1">elem</span> sample</pre></div>
 
 <h2>
-<a id="notes" class="anchor" href="#notes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes</h2>
+<a id="is-it-right-for-me" class="anchor" href="#is-it-right-for-me" aria-hidden="true"><span class="octicon octicon-link"></span></a>Is it Right for Me?</h2>
 
-<p>Jordan Walke <a href="https://gist.github.com/jordwalke/67819c91df1552009b22">sketched out</a> a similar API for OCaml.</p>
+<p>React-Haskell is a great tool for building web UI from Haskell. However, you may want to consider the alternatives:</p>
 
-<p>We should try to adhere to React's <a href="https://gist.github.com/sebmarkbage/fcb1b6ab493b0c77d589">Virtual DOM Terminology</a> when possible.</p>
+<ul>
+<li>By writing plain React / JSX you can speed development by avoiding the GHCJS compilation step. This also has the advantage of being a bit more universal - more people use React through JSX than React-Haskell.</li>
+<li>
+<a href="https://github.com/fpco/ghcjs-react">ghcjs-react</a> is a very similar project.</li>
+<li>
+<a href="https://github.com/ryantrinkle/try-reflex">Reflex</a> is an FRP system built with GHCJS in mind.</li>
+</ul>
 
 <h2>
-<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+<a id="small-print" class="anchor" href="#small-print" aria-hidden="true"><span class="octicon octicon-link"></span></a>Small Print</h2>
 
 <p><a href="http://opensource.org/licenses/MIT">MIT License</a></p>
 
