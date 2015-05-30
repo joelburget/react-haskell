@@ -50,11 +50,6 @@ sample str = div_ $ do
     text str
 ```
 
-## Additional Resources
-
-* [Animating Web UI with React and Haskell](http://joelburget.com/react-haskell) (article)
-* [Writing a React JS front-end in Haskell](http://begriffs.com/posts/2015-01-12-reactjs-in-haskell.html) (video)
-
 ## Getting Started
 
 The first step is a working GHCJS installation. The easiest way is to download a virtual machine with GHCJS pre-installed. I recommend <a href="https://github.com/joelburget/ghcjs-box">ghcjs-box</a>.
@@ -86,6 +81,18 @@ main = do
     Just elem <- elemById "id"
     render elem sample
 ```
+
+## Next Steps
+
+### Reference
+
+* [haddocks](http://hackage.haskell.org/package/react-haskell)
+* [examples](https://github.com/joelburget/react-haskell/tree/master/example)
+
+### Additional Resources
+
+* [Animating Web UI with React and Haskell](http://joelburget.com/react-haskell) (article)
+* [Writing a React JS front-end in Haskell](http://begriffs.com/posts/2015-01-12-reactjs-in-haskell.html) (video)
 
 ## Is it Right for Me?
 
