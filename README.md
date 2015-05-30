@@ -57,15 +57,45 @@ sample str = div_ $ do
 
 ## Getting Started
 
-TODO
+The first step is a working GHCJS installation. The easiest way is to download a virtual machine with GHCJS pre-installed. I recommend <a href="https://github.com/joelburget/ghcjs-box">ghcjs-box</a>.
 
-## Notes
+Now that GHCJS is installed we can use cabal to create a project.
 
-Jordan Walke [sketched out](https://gist.github.com/jordwalke/67819c91df1552009b22) a similar API for OCaml.
+```bash
+$ mkdir project
+$ cd project
+$ cabal init # generate a .cabal file
+```
+Now edit the cabal file to include dependencies.
 
-We should try to adhere to React's [Virtual DOM Terminology](https://gist.github.com/sebmarkbage/fcb1b6ab493b0c77d589) when possible.
+```cabal
+build-depends:
+  base >= 4.8 && < 5,
+  ghcjs-base,
+  ghcjs-dom,
+  react-haskell >= 1.3
+```
+Now we can write `Main.hs`.
 
-## License
+```haskell
+sample :: React () ()
+sample = p_ [ class_ "style" ] $ em_ "Andy Warhol"
+
+main :: IO ()
+main = do
+    Just elem <- elemById "id"
+    render elem sample
+```
+
+## Is it Right for Me?
+
+React-Haskell is a great tool for building web UI from Haskell. However, you may want to consider the alternatives:
+
+* By writing plain React / JSX you can speed development by avoiding the GHCJS compilation step. This also has the advantage of being a bit more universal - more people use React through JSX than React-Haskell.
+* [ghcjs-react](https://github.com/fpco/ghcjs-react) is a very similar project.
+* [Reflex](https://github.com/ryantrinkle/try-reflex) is an FRP system built with GHCJS in mind.
+
+## Small Print
 
 [MIT License](http://opensource.org/licenses/MIT)
 
