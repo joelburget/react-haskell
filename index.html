@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>React-haskell by joelburget</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">React-haskell</h1>
+      <h2 class="project-tagline">React bindings for Haskell</h2>
+      <a href="https://github.com/joelburget/react-haskell" class="btn">View on GitHub</a>
+      <a href="https://github.com/joelburget/react-haskell/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/joelburget/react-haskell/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="react-haskell-" class="anchor" href="#react-haskell-" aria-hidden="true"><span class="octicon octicon-link"></span></a>React-Haskell <a href="https://hackage.haskell.org/package/react-haskell"><img src="https://img.shields.io/hackage/v/react-haskell.svg?style=flat-square" alt="Hackage"></a>
+</h1>
+
+<p>As crazy as it seems, using <a href="http://facebook.github.io/react">React</a> and <a href="https://www.haskell.org">Haskell</a> together just <em>may</em> be a good idea.</p>
+
+<p>I was driven to create this thing because I had a large existing Haskell codebase I wanted to put online. However, even without existing code, I think a lot of problems are better modeled in Haskell than JavaScript or  other languages. Or you might want to use some existing Haskell libraries.</p>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>Let's put a simple paragraph on the page:</p>
+
+<div class="highlight highlight-haskell"><pre><span class="pl-en">sample</span> <span class="pl-k">::</span> <span class="pl-k">React</span> <span class="pl-c1">()</span> <span class="pl-c1">()</span>
+sample = p_ [ class_ <span class="pl-s"><span class="pl-pds">"</span>style<span class="pl-pds">"</span></span> ] $ em_ <span class="pl-s"><span class="pl-pds">"</span>Andy Warhol<span class="pl-pds">"</span></span>
+
+<span class="pl-en">main</span> <span class="pl-k">::</span> <span class="pl-c1">IO</span> <span class="pl-c1">()</span>
+main = <span class="pl-k">do</span>
+    <span class="pl-c1">Just</span> <span class="pl-c1">elem</span> &lt;- elemById <span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>
+    render <span class="pl-c1">elem</span> sample</pre></div>
+
+<p>That creates a DOM node on the page that looks like:</p>
+
+<div class="highlight highlight-html"><pre>&lt;<span class="pl-ent">p</span> <span class="pl-e">class</span>=<span class="pl-s"><span class="pl-pds">"</span>style<span class="pl-pds">"</span></span>&gt;
+    &lt;<span class="pl-ent">em</span>&gt;Andy Warhol&lt;/<span class="pl-ent">em</span>&gt;
+&lt;/<span class="pl-ent">p</span>&gt;</pre></div>
+
+<p>We can make that a little more complicated with some more child nodes.</p>
+
+<div class="highlight highlight-haskell"><pre><span class="pl-en">sample</span> <span class="pl-k">::</span> <span class="pl-k">React</span> <span class="pl-c1">()</span> <span class="pl-c1">()</span>
+sample = div_ [ class_ <span class="pl-s"><span class="pl-pds">"</span>beautify<span class="pl-pds">"</span></span> ] $ <span class="pl-k">do</span>
+    <span class="pl-s"><span class="pl-pds">"</span>The Velvet Underground<span class="pl-pds">"</span></span>
+
+    input_
+
+    <span class="pl-s"><span class="pl-pds">"</span>Lou Reed<span class="pl-pds">"</span></span></pre></div>
+
+<p>But of course that input doesn't do anything. Let's change that.</p>
+
+<div class="highlight highlight-haskell"><pre><span class="pl-en">sample</span> <span class="pl-k">::</span> <span class="pl-k">JSString</span> <span class="pl-k">-&gt;</span> <span class="pl-k">React</span> <span class="pl-k">AppKey</span> <span class="pl-c1">()</span>
+sample str = div_ $ <span class="pl-k">do</span>
+    <span class="pl-s"><span class="pl-pds">"</span>Favorite artist:<span class="pl-pds">"</span></span>
+
+    input_ [ onChange (<span class="pl-c1">Just</span> . value . target) ]
+
+    text str</pre></div>
+
+<h2>
+<a id="additional-resources" class="anchor" href="#additional-resources" aria-hidden="true"><span class="octicon octicon-link"></span></a>Additional Resources</h2>
+
+<ul>
+<li>
+<a href="http://joelburget.com/react-haskell">Animating Web UI with React and Haskell</a> (article)</li>
+<li>
+<a href="http://begriffs.com/posts/2015-01-12-reactjs-in-haskell.html">Writing a React JS front-end in Haskell</a> (video)</li>
+</ul>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<p>TODO</p>
+
+<h2>
+<a id="notes" class="anchor" href="#notes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes</h2>
+
+<p>Jordan Walke <a href="https://gist.github.com/jordwalke/67819c91df1552009b22">sketched out</a> a similar API for OCaml.</p>
+
+<p>We should try to adhere to React's <a href="https://gist.github.com/sebmarkbage/fcb1b6ab493b0c77d589">Virtual DOM Terminology</a> when possible.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p><a href="http://opensource.org/licenses/MIT">MIT License</a></p>
+
+<p><a href="https://bitdeli.com/free" title="Bitdeli Badge"><img src="https://d2weczhvl823v0.cloudfront.net/joelburget/react-haskell/trend.png" alt="Bitdeli Badge"></a></p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/joelburget/react-haskell">React-haskell</a> is maintained by <a href="https://github.com/joelburget">joelburget</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
+
