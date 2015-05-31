@@ -9,6 +9,7 @@ import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
 import Data.Functor.Identity
+import Data.IORef
 import Data.Maybe
 import Data.Monoid
 import Data.String
@@ -211,13 +212,34 @@ data ReactType
 -- link to smart / dumb components
 -- https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0
 
+
+-- | A 'ReactClass' is a standalone component of a user interface which
+-- contains the state necessary to render and animate itself. Classes are
+-- a tool for scoping.
+--
+-- Use 'createClass' to construct.
+data ReactClass state sig anim = ReactClass
+    { classRender :: state -> React RtBuiltin state sig anim ()
+    , classTransition :: sig
+                      -> state
+                      -> (state, [AnimConfig sig anim])
+
+    , foreignClass :: ForeignClass
+
+    , stateRef :: IORef state
+    , animRef :: IORef anim
+    , runningAnimRef :: IORef [RunningAnim sig anim]
+    , transitionRef :: IORef [sig]
+    }
+
+
 -- phew, what a mouthful
 data ReactT :: ReactType -> * -> * -> * -> (* -> *) -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
-    ReactTClass    :: (anim -> m ([Child sig], a))
-                   -> ReactT RtClass    state sig anim m a
+    ReactTClass    :: ReactClass state sig anim
+                   -> ReactT RtClass state sig anim m a
 
     -- This could really store just the name and attrs
     ReactTBuiltin  :: (anim -> m ([Child sig], a))
@@ -229,7 +251,7 @@ data ReactT :: ReactType -> * -> * -> * -> (* -> *) -> * -> * where
 
 
 runReactT :: ReactT ty state sig anim m a -> anim -> m ([Child sig], a)
-runReactT (ReactTClass f) anim = f anim
+-- runReactT (ReactTClass cls) anim = (classRender cls) anim
 runReactT (ReactTBuiltin f) anim = f anim
 runReactT (ReactTSequence f) anim = f anim
 
