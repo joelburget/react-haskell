@@ -63,14 +63,14 @@ setIx arr i (Dict d) = do
 setIx arr i Null = return ()
 
 
-interpret :: Monad m
-          => ReactT ty state sig anim m ()
-          -> anim
+interpret :: ReactT ty state sig
           -> (sig -> IO ())
-          -> m (IO ForeignNode)
-interpret react anim cb = do
-    ~(child:_, ()) <- runReactT react anim
-    return $ interpret' cb child
+          -> IO ForeignNode
+interpret react cb =
+    -- TODO should be able to avoid this weird pattern match by not
+    -- interpreting sequences!
+    let child:_ = runReactT react
+    in interpret' cb child
 
 
 interpret' :: (signal -> IO ())

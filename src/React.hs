@@ -9,7 +9,7 @@ module React
     ( module X
 
     -- React.Anim
-    , Color(..)
+    -- , Color(..)
     -- , getAnimationState
     -- , Animatable(..) -- XXX
 
@@ -27,11 +27,11 @@ module React
 
     -- React.Types
     , ReactT(..)
-    , React
-    , React'
+    -- , React
+    -- , React'
     , Pure
     , RenderHandle(..)
-    , AnimConfig(..)
+    -- , AnimConfig(..)
     , Easing(..)
     , EventProperties(..)
     , Target(..)
@@ -58,7 +58,7 @@ module React
 -- store elem in monad
 -- escaping / dangerouslySetInnerHTML
 
-import React.Anim
+-- import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret

@@ -11,7 +11,6 @@ import Data.IORef
 import GHCJS.Foreign
 import GHCJS.Marshal
 
-import React.Anim
 import React.Imports
 import React.Types
 
@@ -20,17 +19,14 @@ import GHCJS.Types
 
 
 -- | 'ReactClass' smart constructor.
-createClass :: (state -> React RtBuiltin state sig anim ()) -- ^ render function
-            -> (sig -> state -> (state, [AnimConfig sig anim]))
+createClass :: (state -> ReactT RtBuiltin state sig) -- ^ render function
+            -> (sig -> state -> state)
             -- ^ transition function
             -> state -- ^ initial state
-            -> anim -- ^ initial animation state
             -> [sig] -- ^ signals to send on startup
-            -> IO (React RtClass state sig anim ())
-createClass render transition initialState initialAnim initialTrans = do
+            -> IO (ReactT RtClass state sig)
+createClass render transition initialState initialTrans = do
     stateRef <- newIORef initialState
-    animRef <- newIORef initialAnim
-    runningAnimRef <- newIORef []
     transitionRef <- newIORef initialTrans
 
     -- renderCb <- syncCallback1 AlwaysRetain True (return . render <=< fromJSRef)
@@ -45,6 +41,4 @@ createClass render transition initialState initialAnim initialTrans = do
         transition
         foreignClass
         stateRef
-        animRef
-        runningAnimRef
         transitionRef

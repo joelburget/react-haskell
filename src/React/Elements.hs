@@ -36,28 +36,26 @@ class TermParent result where
     termParent :: ForeignRender -> TermParentArg result -> result
 
 
-instance (Monad m, f ~ ReactT ty state sig anim m a) =>
-        TermParent (f -> ReactT RtBuiltin state sig anim m a) where
-    type TermParentArg (f -> ReactT RtBuiltin state sig anim m a) =
-        [AttrOrHandler sig]
+instance (f ~ ReactT ty state sig) =>
+        TermParent (f -> ReactT RtBuiltin state sig) where
+    type TermParentArg (f -> ReactT RtBuiltin state sig) = [AttrOrHandler sig]
 
     -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
     -- create a ReactTForeign?
-    termParent render attrs children = ReactTBuiltin $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
+    termParent render attrs children =
         let (hs, as) = separateAttrs attrs
-        return ([Static (Parent render as hs childNodes)], a)
+            childNodes = runReactT children
+        in ReactTBuiltin [Static (Parent render as hs childNodes)]
 
 
-instance Monad m => TermParent (ReactT RtBuiltin state sig anim m a) where
-    type TermParentArg (ReactT RtBuiltin state sig anim m a) =
-        ReactT RtBuiltin state sig anim m a
+instance TermParent (ReactT RtBuiltin state sig) where
+    type TermParentArg (ReactT RtBuiltin state sig) =
+        ReactT RtBuiltin state sig
 
     -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
     -- create a ReactTForeign?
-    termParent render children = ReactTBuiltin $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        return ([Static (Parent render [] [] childNodes)], a)
+    termParent render children = ReactTBuiltin $
+        [Static (Parent render [] [] (runReactT children))]
 
 
 foreignParent :: TermParent t
@@ -74,36 +72,32 @@ reactParent :: TermParent t
 reactParent name = termParent (js_React_DOM_parent name)
 
 
-termLeaf :: Monad m
-         => ForeignRender
+termLeaf :: ForeignRender
          -> [AttrOrHandler sig]
-         -> ReactT RtBuiltin state sig anim m ()
+         -> ReactT RtBuiltin state sig
 -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
 -- create a ReactTForeign?
-termLeaf render attrs = ReactTBuiltin $ \_ -> do
+termLeaf render attrs =
     let (hs, as) = separateAttrs attrs
-    return ([Static (Leaf render as hs)], ())
+    in ReactTBuiltin [Static (Leaf render as hs)]
 
 
-foreignLeaf :: Monad m
-            => ForeignRender
+foreignLeaf :: ForeignRender
             -> [AttrOrHandler sig]
-            -> ReactT RtBuiltin state sig anim m ()
+            -> ReactT RtBuiltin state sig
 foreignLeaf = termLeaf
 
 
-reactLeaf :: Monad m
-         => JSString
+reactLeaf :: JSString
          -> [AttrOrHandler sig]
-         -> ReactT RtBuiltin state sig animj m ()
+         -> ReactT RtBuiltin state sig
 reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
 
 -- TODO ToJSString a => ?
 -- Would this just be annoyingly ambiguous?
-text_ :: JSString -> React RtBuiltin state sig anim ()
-text_ str = ReactTBuiltin $ \_ ->
-    return ([Static $ Text (fromJSString str)], ())
+text_ :: JSString -> ReactT RtBuiltin state sig
+text_ str = ReactTBuiltin $ [Static $ Text (fromJSString str)]
 
 -- TODO generate these automatically
 a_ :: TermParent t => TermParentArg t -> t
@@ -380,49 +374,49 @@ video_ :: TermParent t => TermParentArg t -> t
 video_ = reactParent "video"
 
 
-area_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+area_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 area_ = reactLeaf "area"
 
-base_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+base_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 base_ = reactLeaf "base"
 
-br_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+br_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 br_ = reactLeaf "br"
 
-col_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+col_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 col_ = reactLeaf "col"
 
-embed_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+embed_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 embed_ = reactLeaf "embed"
 
-hr_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+hr_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 hr_ = reactLeaf "hr"
 
-img_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+img_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 img_ = reactLeaf "img"
 
-input_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+input_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 input_ = reactLeaf "input"
 
-keygen_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+keygen_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 keygen_ = reactLeaf "keygen"
 
-link_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+link_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 link_ = reactLeaf "link"
 
-meta_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+meta_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 meta_ = reactLeaf "meta"
 
-param_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+param_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 param_ = reactLeaf "param"
 
-source_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+source_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 source_ = reactLeaf "source"
 
-track_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+track_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 track_ = reactLeaf "track"
 
-wbr_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+wbr_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 wbr_ = reactLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
@@ -462,23 +456,23 @@ stop_ = reactParent "stop"
 tspan_ :: TermParent t => TermParentArg t -> t
 tspan_ = reactParent "tspan"
 
-circle_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+circle_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 circle_ = reactLeaf "circle"
 
-ellipse_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+ellipse_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 ellipse_ = reactLeaf "ellipse"
 
-line_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+line_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 line_ = reactLeaf "line"
 
-path_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+path_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 path_ = reactLeaf "path"
 
-polygon_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+polygon_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 polygon_ = reactLeaf "polygon"
 
-polyline_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+polyline_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 polyline_ = reactLeaf "polyline"
 
-rect_ :: Monad m => [AttrOrHandler sig] -> ReactT RtBuiltin state sig anim m ()
+rect_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
 rect_ = reactLeaf "rect"

@@ -49,7 +49,6 @@ source-repository head
 library
   exposed-modules: React
   other-modules:
-    React.Anim,
     React.Attrs,
     React.Class,
     React.Elements,

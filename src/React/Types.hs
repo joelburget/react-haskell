@@ -218,103 +218,38 @@ data ReactType
 -- a tool for scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass state sig anim = ReactClass
-    { classRender :: state -> React RtBuiltin state sig anim ()
-    , classTransition :: sig
-                      -> state
-                      -> (state, [AnimConfig sig anim])
+data ReactClass state sig = ReactClass
+    { classRender :: state -> ReactT RtBuiltin state sig
+    , classTransition :: sig -> state -> state
 
     , foreignClass :: ForeignClass
 
     , stateRef :: IORef state
-    , animRef :: IORef anim
-    , runningAnimRef :: IORef [RunningAnim sig anim]
     , transitionRef :: IORef [sig]
     }
 
 
 -- phew, what a mouthful
-data ReactT :: ReactType -> * -> * -> * -> (* -> *) -> * -> * where
+data ReactT :: ReactType -> * -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
-    ReactTClass    :: ReactClass state sig anim
-                   -> ReactT RtClass state sig anim m a
+    ReactTClass    :: ReactClass state sig -> ReactT RtClass state sig
 
     -- This could really store just the name and attrs
-    ReactTBuiltin  :: (anim -> m ([Child sig], a))
-                   -- TODO -> ReactT RtBuiltin  state sig Void m a
-                   -> ReactT RtBuiltin  state sig anim m a
+    ReactTBuiltin  :: [Child sig] -> ReactT RtBuiltin state sig
 
-    ReactTSequence :: (anim -> m ([Child sig], a))
-                   -> ReactT RtSequence state sig anim m a
+    ReactTSequence :: [Child sig] -> ReactT RtSequence state sig
 
 
-runReactT :: ReactT ty state sig anim m a -> anim -> m ([Child sig], a)
--- runReactT (ReactTClass cls) anim = (classRender cls) anim
-runReactT (ReactTBuiltin f) anim = f anim
-runReactT (ReactTSequence f) anim = f anim
-
--- newtype ReactT state sig anim m a = ReactT {
---     runReactT :: anim -> m ([Child sig], a)
---     }
-
-
--- newtype StaticReactT state sig anim m a =
---     StaticReactT { unStaticReactT :: ReactT state sig anim m a }
---     deriving (IsString, Monoid, Functor, Applicative, Monad)
-
-
--- newtype DynamicReactT state sig anim m a =
---     DynamicReactT { unDynamicReactT :: ReactT state sig anim m a }
---     deriving (IsString, Monoid, Functor, Applicative, Monad)
-
-
--- class GenericReactT result where
---     embed :: (anim -> m ([Child sig], a)) -> result state sig anim m a
---     unEmbed :: result state sig anim m a -> anim -> m ([Child sig], a)
-
-
--- -- instance GenericReactT ReactT where
--- --     embed = ReactT
--- --     unEmbed = runReactT
-
-
--- instance GenericReactT StaticReactT where
---     embed = StaticReactT . ReactT
---     unEmbed = runReactT . unStaticReactT
-
-
--- instance GenericReactT DynamicReactT where
---     embed = DynamicReactT . ReactT
---     unEmbed = runReactT . unDynamicReactT
-
-
--- -- Idea:
--- --
--- -- * You must use `dynamic_` to build a component with reorderable children.
--- --   - (by default we deal with dynamic values)
--- -- * Dynamic children must have a key. *
--- -- * Static children must not have a key. *
--- -- * Dynamic children are passed to createElement as an array.
--- -- * Static children are passed to createElement as parameters.
--- --
--- -- * I'm not sure it's possible to force the key thing.
--- dynamic_ :: ReactT state sig anim m a -> StaticReactT state sig anim m a
--- dynamic_ = StaticReactT
+runReactT :: ReactT ty state sig -> [Child sig]
+-- runReactT (ReactTClass cls) = (classRender cls)
+runReactT (ReactTBuiltin children) = children
+runReactT (ReactTSequence children) = children
 
 
 type Pure a = a () Void ()
 
-
-type React ty state sig anim = ReactT ty state sig anim Identity
-type React' ty state sig anim = ReactT ty state sig anim Identity ()
-
--- type StaticReact state sig anim = StaticReactT state sig anim Identity
--- type StaticReact' state sig anim = StaticReactT state sig anim Identity ()
-
--- type DynamicReact state sig anim = DynamicReactT state sig anim Identity
--- type DynamicReact' state sig anim = DynamicReactT state sig anim Identity ()
 
 
 -- instance (Monad m, Monoid a) => Monoid (ReactT RtSequence state sig anim m a) where
@@ -334,31 +269,27 @@ type React' ty state sig anim = ReactT ty state sig anim Identity ()
 --     (<*>) = ap
 
 
-instance (Monad m, a ~ ()) => IsString (ReactT RtBuiltin state sig anim m a) where
-    fromString str = ReactTBuiltin $ \_ -> return ([Static (Text str)], ())
+instance IsString (ReactT RtBuiltin state sig) where
+    fromString str = ReactTBuiltin [Static (Text str)]
 
 
-reactReturn :: Monad m => a -> ReactT RtSequence state sig anim m a
-reactReturn a = ReactTSequence $ \_ -> return ([], a)
+-- reactReturn :: a -> ReactT RtSequence state sig
+-- reactReturn a = ReactTSequence $ \_ -> return ([], a)
 
-reactSeq :: Monad m
-         => ReactT ty1 state sig anim m a
-         -> ReactT ty2 state sig anim m b
-         -> ReactT RtSequence state sig anim m b
-reactSeq f1 f2 = ReactTSequence $ \anim -> do
-    ~(c1, a) <- runReactT f1 anim
-    ~(c2, b) <- runReactT f2 anim
-    return (c1 <> c2, b)
+reactSeq :: ReactT ty1 state sig
+         -> ReactT ty2 state sig
+         -> ReactT RtSequence state sig
+reactSeq f1 f2 = ReactTSequence $ runReactT f1 <> runReactT f2
 
 
-reactBind :: Monad m
-          => ReactT ty1 state sig anim m a
-          -> (a -> ReactT ty2 state sig anim m b)
-          -> ReactT RtSequence state sig anim m b
-reactBind m f = ReactTSequence $ \anim -> do
-    ~(c1, a) <- runReactT m anim
-    ~(c2, b) <- runReactT (f a) anim
-    return (c1 <> c2, b)
+-- reactBind :: Monad m
+--           => ReactT ty1 state sig
+--           -> (a -> ReactT ty2 state sig)
+--           -> ReactT RtSequence state sig
+-- reactBind m f = ReactTSequence $ runReactT
+--     ~(c1, a) <- runReactT m anim
+--     ~(c2, b) <- runReactT (f a) anim
+--     return (c1 <> c2, b)
 
 
 -- attributes
