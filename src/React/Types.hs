@@ -95,8 +95,8 @@ data Child sig
     | Dynamic [(Int, ReactNode sig)]
 
 
--- keyed :: [(Int, ReactT state sig anim m a)] -> ReactT state sig anim m ()
--- keyed = mapM_ $ \(ix, m) -> ReactT $ \anim -> do
+-- keyed :: [(Int, React state sig anim m a)] -> React state sig anim m ()
+-- keyed = mapM_ $ \(ix, m) -> React $ \anim -> do
 --     (children, _) <- runReactT m anim
 --     -- ^ got a [Child sig], really need `ReactNode sig`
 --     return children
@@ -197,7 +197,7 @@ data RunningAnim sig anim = RunningAnim
 
 -- Idea:
 --
--- ReactT is the type representing
+-- React is the type representing
 -- * classes
 -- * builtins
 -- * sequences
@@ -219,7 +219,7 @@ data ReactType
 --
 -- Use 'createClass' to construct.
 data ReactClass state sig = ReactClass
-    { classRender :: state -> ReactT RtBuiltin state sig
+    { classRender :: state -> React RtBuiltin state sig
     , classTransition :: sig -> state -> state
 
     , foreignClass :: ForeignClass
@@ -230,19 +230,19 @@ data ReactClass state sig = ReactClass
 
 
 -- phew, what a mouthful
-data ReactT :: ReactType -> * -> * -> * where
+data React :: ReactType -> * -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
-    ReactTClass    :: ReactClass state sig -> ReactT RtClass state sig
+    ReactTClass    :: ReactClass state sig -> React RtClass state sig
 
     -- This could really store just the name and attrs
-    ReactTBuiltin  :: [Child sig] -> ReactT RtBuiltin state sig
+    ReactTBuiltin  :: [Child sig] -> React RtBuiltin state sig
 
-    ReactTSequence :: [Child sig] -> ReactT RtSequence state sig
+    ReactTSequence :: [Child sig] -> React RtSequence state sig
 
 
-runReactT :: ReactT ty state sig -> [Child sig]
+runReactT :: React ty state sig -> [Child sig]
 -- runReactT (ReactTClass cls) = (classRender cls)
 runReactT (ReactTBuiltin children) = children
 runReactT (ReactTSequence children) = children
@@ -252,7 +252,7 @@ type Pure a = a () Void ()
 
 
 
--- instance (Monad m, Monoid a) => Monoid (ReactT RtSequence state sig anim m a) where
+-- instance (Monad m, Monoid a) => Monoid (React RtSequence state sig anim m a) where
 --     mempty = ReactTSequence $ \_ -> return ([], mempty)
 --     mappend f1 f2 = ReactTSequence $ \anim -> do
 --         ~(c1, a) <- runReactT f1 anim
@@ -260,32 +260,32 @@ type Pure a = a () Void ()
 --         return (c1 <> c2, a <> b)
 
 
--- instance Monad m => Functor (ReactT ty state sig anim m) where
+-- instance Monad m => Functor (React ty state sig anim m) where
 --     fmap = liftM
 
 
--- instance Monad m => Applicative (ReactT ty state sig anim m) where
+-- instance Monad m => Applicative (React ty state sig anim m) where
 --     pure = return
 --     (<*>) = ap
 
 
-instance IsString (ReactT RtBuiltin state sig) where
+instance IsString (React RtBuiltin state sig) where
     fromString str = ReactTBuiltin [Static (Text str)]
 
 
--- reactReturn :: a -> ReactT RtSequence state sig
+-- reactReturn :: a -> React RtSequence state sig
 -- reactReturn a = ReactTSequence $ \_ -> return ([], a)
 
-reactSeq :: ReactT ty1 state sig
-         -> ReactT ty2 state sig
-         -> ReactT RtSequence state sig
+reactSeq :: React ty1 state sig
+         -> React ty2 state sig
+         -> React RtSequence state sig
 reactSeq f1 f2 = ReactTSequence $ runReactT f1 <> runReactT f2
 
 
 -- reactBind :: Monad m
---           => ReactT ty1 state sig
---           -> (a -> ReactT ty2 state sig)
---           -> ReactT RtSequence state sig
+--           => React ty1 state sig
+--           -> (a -> React ty2 state sig)
+--           -> React RtSequence state sig
 -- reactBind m f = ReactTSequence $ runReactT
 --     ~(c1, a) <- runReactT m anim
 --     ~(c2, b) <- runReactT (f a) anim

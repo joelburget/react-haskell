@@ -63,7 +63,7 @@ setIx arr i (Dict d) = do
 setIx arr i Null = return ()
 
 
-interpret :: ReactT ty state sig
+interpret :: React ty state sig
           -> (sig -> IO ())
           -> IO ForeignNode
 interpret react cb =

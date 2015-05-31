@@ -26,19 +26,19 @@ class TermParent result where
     -- | The argument to a parent term is either:
     --
     -- * a list of attributes (@[AttrOrHandler (Signal sig)]@), which leads
-    --   to a result type of @ReactT ty state sig m a -> ReactT ty state sig m
+    --   to a result type of @React ty state sig m a -> React ty state sig m
     --   a@.
     --
-    -- * or children (@ReactT ty state sig m a@), which leads to a result type
-    -- of @ReactT ty state sig m a@.
+    -- * or children (@React ty state sig m a@), which leads to a result type
+    -- of @React ty state sig m a@.
     type TermParentArg result :: *
 
     termParent :: ForeignRender -> TermParentArg result -> result
 
 
-instance (f ~ ReactT ty state sig) =>
-        TermParent (f -> ReactT RtBuiltin state sig) where
-    type TermParentArg (f -> ReactT RtBuiltin state sig) = [AttrOrHandler sig]
+instance (f ~ React ty state sig) =>
+        TermParent (f -> React RtBuiltin state sig) where
+    type TermParentArg (f -> React RtBuiltin state sig) = [AttrOrHandler sig]
 
     -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
     -- create a ReactTForeign?
@@ -48,9 +48,9 @@ instance (f ~ ReactT ty state sig) =>
         in ReactTBuiltin [Static (Parent render as hs childNodes)]
 
 
-instance TermParent (ReactT RtBuiltin state sig) where
-    type TermParentArg (ReactT RtBuiltin state sig) =
-        ReactT RtBuiltin state sig
+instance TermParent (React RtBuiltin state sig) where
+    type TermParentArg (React RtBuiltin state sig) =
+        React RtBuiltin state sig
 
     -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
     -- create a ReactTForeign?
@@ -74,7 +74,7 @@ reactParent name = termParent (js_React_DOM_parent name)
 
 termLeaf :: ForeignRender
          -> [AttrOrHandler sig]
-         -> ReactT RtBuiltin state sig
+         -> React RtBuiltin state sig
 -- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
 -- create a ReactTForeign?
 termLeaf render attrs =
@@ -84,19 +84,19 @@ termLeaf render attrs =
 
 foreignLeaf :: ForeignRender
             -> [AttrOrHandler sig]
-            -> ReactT RtBuiltin state sig
+            -> React RtBuiltin state sig
 foreignLeaf = termLeaf
 
 
 reactLeaf :: JSString
          -> [AttrOrHandler sig]
-         -> ReactT RtBuiltin state sig
+         -> React RtBuiltin state sig
 reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 
 
 -- TODO ToJSString a => ?
 -- Would this just be annoyingly ambiguous?
-text_ :: JSString -> ReactT RtBuiltin state sig
+text_ :: JSString -> React RtBuiltin state sig
 text_ str = ReactTBuiltin $ [Static $ Text (fromJSString str)]
 
 -- TODO generate these automatically
@@ -374,49 +374,49 @@ video_ :: TermParent t => TermParentArg t -> t
 video_ = reactParent "video"
 
 
-area_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+area_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 area_ = reactLeaf "area"
 
-base_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+base_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 base_ = reactLeaf "base"
 
-br_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+br_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 br_ = reactLeaf "br"
 
-col_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+col_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 col_ = reactLeaf "col"
 
-embed_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+embed_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 embed_ = reactLeaf "embed"
 
-hr_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+hr_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 hr_ = reactLeaf "hr"
 
-img_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+img_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 img_ = reactLeaf "img"
 
-input_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+input_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 input_ = reactLeaf "input"
 
-keygen_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+keygen_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 keygen_ = reactLeaf "keygen"
 
-link_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+link_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 link_ = reactLeaf "link"
 
-meta_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+meta_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 meta_ = reactLeaf "meta"
 
-param_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+param_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 param_ = reactLeaf "param"
 
-source_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+source_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 source_ = reactLeaf "source"
 
-track_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+track_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 track_ = reactLeaf "track"
 
-wbr_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+wbr_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 wbr_ = reactLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
@@ -456,23 +456,23 @@ stop_ = reactParent "stop"
 tspan_ :: TermParent t => TermParentArg t -> t
 tspan_ = reactParent "tspan"
 
-circle_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+circle_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 circle_ = reactLeaf "circle"
 
-ellipse_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+ellipse_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 ellipse_ = reactLeaf "ellipse"
 
-line_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+line_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 line_ = reactLeaf "line"
 
-path_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+path_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 path_ = reactLeaf "path"
 
-polygon_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+polygon_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 polygon_ = reactLeaf "polygon"
 
-polyline_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+polyline_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 polyline_ = reactLeaf "polyline"
 
-rect_ :: [AttrOrHandler sig] -> ReactT RtBuiltin state sig
+rect_ :: [AttrOrHandler sig] -> React RtBuiltin state sig
 rect_ = reactLeaf "rect"

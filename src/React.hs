@@ -26,7 +26,7 @@ module React
     , render
 
     -- React.Types
-    , ReactT(..)
+    , React(..)
     -- , React
     -- , React'
     , Pure

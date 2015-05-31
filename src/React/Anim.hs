@@ -155,7 +155,7 @@ easeDouble (EaseBezier x0 y0 x1 y1) t = js_bezier x0 y0 x1 y1 t
 easeDouble EaseInSine t = js_bezier 0.47 0 0.745 0.715 t
 easeDouble EaseOutSine t = js_bezier 0.39 0.575 0.565 1 t
 
--- getAnimationState :: Monad m => ReactT RtSequence state sig anim m anim
+-- getAnimationState :: Monad m => React RtSequence state sig anim m anim
 -- getAnimationState = ReactTSequence $ \anim -> return ([], anim)
 
 stepRunningAnims :: anim -> [(RunningAnim sig anim, Double)] -> anim
