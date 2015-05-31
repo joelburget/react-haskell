@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, DataKinds #-}
 module React.Class
     ( ReactClass(..)
     , createClass
@@ -25,7 +25,7 @@ import GHCJS.Types
 --
 -- Use 'createClass' to construct.
 data ReactClass state sig anim = ReactClass
-    { classRender :: state -> React state sig anim ()
+    { classRender :: state -> React RtClass state sig anim ()
     , classTransition :: sig
                       -> state
                       -> (state, [AnimConfig sig anim])
@@ -39,7 +39,7 @@ data ReactClass state sig anim = ReactClass
     }
 
 -- | 'ReactClass' smart constructor.
-createClass :: (state -> React state sig anim ()) -- ^ render function
+createClass :: (state -> React RtClass state sig anim ()) -- ^ render function
             -> (sig -> state -> (state, [AnimConfig sig anim]))
             -- ^ transition function
             -> state -- ^ initial state

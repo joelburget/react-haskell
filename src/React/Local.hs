@@ -2,7 +2,7 @@
   FlexibleContexts, IncoherentInstances, LambdaCase #-}
 -- Note on IncoherentInstances: the two instances below will both work fine
 -- for `GeneralizeSignal Void Void`. They should never be called.
-module React.Local (locally, GeneralizeSignal(..)) where
+module React.Local (GeneralizeSignal(..)) where
 
 import Control.Applicative
 import Data.Void
@@ -24,14 +24,14 @@ instance GeneralizeSignal Void a where
     generalizeSignal = absurd
 
 
-locally :: (Monad m, GeneralizeSignal sigloc siggen)
-        => ReactT stateloc sigloc anim m x
-        -> ReactT stategen siggen anim m x
-locally nested = result where
-    result = ReactT $ \anim -> do
-        let gensig = childConvert generalizeSignal
-        (children, x) <- runReactT nested anim
-        return (map gensig children, x)
+-- locally :: (Monad m, GeneralizeSignal sigloc siggen)
+--         => ReactT ty stateloc sigloc anim m x
+--         -> ReactT ty stategen siggen anim m x
+-- locally nested = result where
+--     result = ReactT $ \anim -> do
+--         let gensig = childConvert generalizeSignal
+--         (children, x) <- runReactT nested anim
+--         return (map gensig children, x)
 
 
 childConvert :: (sigloc -> siggen)

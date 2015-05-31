@@ -56,7 +56,6 @@ library
     React.Events,
     React.Imports,
     React.Interpret,
-    React.Local,
     React.Render,
     React.Types
   other-extensions:

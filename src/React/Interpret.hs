@@ -64,7 +64,7 @@ setIx arr i Null = return ()
 
 
 interpret :: Monad m
-          => ReactT state sig anim m ()
+          => ReactT ty state sig anim m ()
           -> anim
           -> (sig -> IO ())
           -> m (IO ForeignNode)

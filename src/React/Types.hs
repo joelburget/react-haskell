@@ -137,6 +137,9 @@ data Easing
     | EaseOutSine
     deriving (Show, Eq, Ord)
 
+ifThenElse b x y | b = x
+                 | otherwise = y
+
 -- | Properties that can animate.
 --
 -- Numeric values like 'width' and 'height', as well as colors.
@@ -205,10 +208,14 @@ data ReactType
     | RtBuiltin
     | RtSequence
 
+-- link to smart / dumb components
+-- https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0
+
 -- phew, what a mouthful
 data ReactT :: ReactType -> * -> * -> * -> (* -> *) -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
+    -- XXX store ForeignClass
     ReactTClass    :: (anim -> m ([Child sig], a))
                    -> ReactT RtClass    state sig anim m a
 
@@ -288,33 +295,48 @@ type React' ty state sig anim = ReactT ty state sig anim Identity ()
 -- type DynamicReact' state sig anim = DynamicReactT state sig anim Identity ()
 
 
-instance (Monad m, Monoid a) => Monoid (ReactT RtSequence state sig anim m a) where
-    mempty = ReactTSequence $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactTSequence $ \anim -> do
-        ~(c1, a) <- runReactT f1 anim
-        ~(c2, b) <- runReactT f2 anim
-        return (c1 <> c2, a <> b)
+-- instance (Monad m, Monoid a) => Monoid (ReactT RtSequence state sig anim m a) where
+--     mempty = ReactTSequence $ \_ -> return ([], mempty)
+--     mappend f1 f2 = ReactTSequence $ \anim -> do
+--         ~(c1, a) <- runReactT f1 anim
+--         ~(c2, b) <- runReactT f2 anim
+--         return (c1 <> c2, a <> b)
 
 
-instance Monad m => Functor (ReactT ty state sig anim m) where
-    fmap = liftM
+-- instance Monad m => Functor (ReactT ty state sig anim m) where
+--     fmap = liftM
 
 
-instance Monad m => Applicative (ReactT ty state sig anim m) where
-    pure = return
-    (<*>) = ap
+-- instance Monad m => Applicative (ReactT ty state sig anim m) where
+--     pure = return
+--     (<*>) = ap
 
 
 instance (Monad m, a ~ ()) => IsString (ReactT RtBuiltin state sig anim m a) where
     fromString str = ReactTBuiltin $ \_ -> return ([Static (Text str)], ())
 
 
-instance Monad m => Monad (ReactT RtSequence state sig anim m) where
-    return a = ReactTSequence $ \_ -> return ([], a)
-    m >>= f = ReactTSequence $ \anim -> do
-        ~(c1, a) <- runReactT m anim
-        ~(c2, b) <- runReactT (f a) anim
-        return (c1 <> c2, b)
+reactReturn :: Monad m => a -> ReactT RtSequence state sig anim m a
+reactReturn a = ReactTSequence $ \_ -> return ([], a)
+
+reactSeq :: Monad m
+         => ReactT ty1 state sig anim m a
+         -> ReactT ty2 state sig anim m b
+         -> ReactT RtSequence state sig anim m b
+reactSeq f1 f2 = ReactTSequence $ \anim -> do
+    ~(c1, a) <- runReactT f1 anim
+    ~(c2, b) <- runReactT f2 anim
+    return (c1 <> c2, b)
+
+
+reactBind :: Monad m
+          => ReactT ty1 state sig anim m a
+          -> (a -> ReactT ty2 state sig anim m b)
+          -> ReactT RtSequence state sig anim m b
+reactBind m f = ReactTSequence $ \anim -> do
+    ~(c1, a) <- runReactT m anim
+    ~(c2, b) <- runReactT (f a) anim
+    return (c1 <> c2, b)
 
 
 -- attributes

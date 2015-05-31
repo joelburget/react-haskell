@@ -10,16 +10,16 @@ module React
 
     -- React.Anim
     , Color(..)
-    , getAnimationState
-    , Animatable(..) -- XXX
+    -- , getAnimationState
+    -- , Animatable(..) -- XXX
 
     -- React.Class
     , ReactClass()
     , createClass
 
     -- React.Local
-    , locally
-    , GeneralizeSignal(..)
+    -- , locally
+    -- , GeneralizeSignal(..)
 
     -- React.Render
     , cancelRender
@@ -62,7 +62,7 @@ import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret
-import React.Local
+-- import React.Local
 import React.Render
 import React.Types
 

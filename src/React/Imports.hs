@@ -28,7 +28,7 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __GHCJS__
-foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: JSFun (IO (React state sig anim ())) -> IO ForeignClass
+foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: JSFun (IO (React ty state sig anim ())) -> IO ForeignClass
 #else
 js_createClass :: JSFun (IO (React state sig anim ()))
                -> IO ForeignClass
