@@ -8,11 +8,6 @@
 module React
     ( module X
 
-    -- React.Anim
-    -- , Color(..)
-    -- , getAnimationState
-    -- , Animatable(..) -- XXX
-
     -- React.Class
     , ReactClass()
     , createClass
@@ -33,8 +28,6 @@ module React
     -- , React'
     , Pure
     , RenderHandle(..)
-    -- , AnimConfig(..)
-    , Easing(..)
     , EventProperties(..)
     , Target(..)
     , ModifierKeys(..)
@@ -60,7 +53,6 @@ module React
 -- store elem in monad
 -- escaping / dangerouslySetInnerHTML
 
--- import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret
