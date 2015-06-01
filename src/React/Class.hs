@@ -20,8 +20,7 @@ import GHCJS.Types
 
 -- | 'ReactClass' smart constructor.
 createClass :: (state -> React RtBuiltin state sig) -- ^ render function
-            -> (sig -> state -> state)
-            -- ^ transition function
+            -> (sig -> state -> state) -- ^ transition function
             -> state -- ^ initial state
             -> [sig] -- ^ signals to send on startup
             -> IO (React RtClass state sig)
