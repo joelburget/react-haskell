@@ -55,6 +55,7 @@ library
     React.Events,
     React.Imports,
     React.Interpret,
+    React.Rebindable,
     React.Render,
     React.Types
   other-extensions:

@@ -1,12 +1,13 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms  #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms, RebindableSyntax, DataKinds  #-}
 module Main where
 -- TODO:
 -- * persistence
 -- * routing
 
+import Prelude hiding ((>>), (=<<), return)
+
 import Control.Applicative
-import Control.Monad
-import Prelude hiding (div)
+import Data.String
 
 import GHCJS.Foreign
 import GHCJS.Types
@@ -40,7 +41,7 @@ data PageState = PageState
 $(makeLenses ''Todo)
 $(makeLenses ''PageState)
 
-type TodoMvc a = a PageState Transition ()
+type TodoMvc = React RtBuiltin PageState Transition
 
 initialPageState :: PageState
 initialPageState = PageState
@@ -58,9 +59,6 @@ data Transition
     | Destroy Int
     | ToggleAll
     | ClearCompleted
-
-transition' :: Transition -> PageState -> (PageState, [AnimConfig Transition ()])
-transition' t s = (transition t s, [])
 
 transition :: Transition -> PageState -> PageState
 transition (Typing str) = handleTyping str
@@ -152,10 +150,9 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- autofocus input attribute. Pressing Enter creates the todo, appends it
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
-header :: PageState -> TodoMvc React'
+header :: PageState -> TodoMvc
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
-    traceM "header"
-    h1_ "todos"
+    h1_ [] "todos"
     input_ [ id_ "new-todo"
            , placeholder_ "What needs to be done?"
            , autofocus_ True
@@ -164,40 +161,39 @@ header PageState{_typingValue} = header_ [ id_ "header" ] $ do
            , onKeyDown emitKeydown
            ]
 
-todoView :: PageState -> Int -> TodoMvc React'
-todoView PageState{_todos} i = do
-    traceM "todoView"
+todoView :: PageState -> Int -> TodoMvc
+todoView PageState{_todos} i =
     let Todo{_text, _status} = _todos !! i
-    li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
-        div_ [ class_ "view" ] $ do
-            input_ [ class_ "toggle"
-                   , type_ "checkbox"
-                   , checked_ (_status == Completed)
-                   , onClick (const (Just (Check i)))
-                   ]
-            label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
-            button_ [ class_ "destroy"
-                    , onClick (const (Just (Destroy i)))
-                    ] $ return ()
+    in li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
+           div_ [ class_ "view" ] $ do
+               input_ [ class_ "toggle"
+                      , type_ "checkbox"
+                      , checked_ (_status == Completed)
+                      , onClick (const (Just (Check i)))
+                      ]
+               label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
+               button_ [ class_ "destroy"
+                       , onClick (const (Just (Destroy i)))
+                       ] ""
 
-        input_ [ class_ "edit", value_ _text ]
+           input_ [ class_ "edit", value_ _text ]
 
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: PageState -> TodoMvc React'
+mainBody :: PageState -> TodoMvc
 mainBody st@PageState{_todos} =
     section_ [ id_ "main" ] $ do
-        traceM "mainBody"
         input_ [ id_ "toggle-all", type_ "checkbox" ]
         label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
             "Mark all as complete"
 
-        ul_ [ id_ "todo-list" ] $ forM_ [0 .. length _todos - 1] (todoView st)
+        ul_ [ id_ "todo-list" ] $ case length _todos of
+            0 -> ""
+            _ -> foldr (>>) "" $ map (todoView st) [0 .. length _todos - 1]
 
-innerFooter :: PageState -> TodoMvc React'
+innerFooter :: PageState -> TodoMvc
 innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
-    traceM "innerFooter"
     let activeCount = length (todosWithStatus Active _todos)
     let inactiveCount = length (todosWithStatus Completed _todos)
 
@@ -206,7 +202,7 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
     -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
     -- left"
     span_ [ id_ "todo-count" ] $ do
-        strong_ (text_ (toJSString (show activeCount)))
+        strong_ [] (text_ (toJSString (show activeCount)))
 
         if activeCount == 1 then " item left" else " items left"
 
@@ -214,22 +210,20 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
         button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
             text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
 
-outerFooter :: TodoMvc React'
+outerFooter :: TodoMvc
 outerFooter = footer_ [ id_ "info" ] $ do
     -- TODO react complains about these things not having keys even though
     -- they're statically defined. figure out how to fix this.
-    traceM "outerFooter"
-    p_ "Double-click to edit a todo"
-    p_ $ do
+    p_ [] "Double-click to edit a todo"
+    p_ [] $ do
         "Created by "
         a_ [ href_ "http://joelburget.com" ] "Joel Burget"
-    p_ $ do
+    p_ [] $ do
         "Part of "
         a_ [ href_ "http://todomvc.com" ] "TodoMVC"
 
-wholePage :: PageState -> TodoMvc React'
-wholePage s@PageState{_todos} = div_ $ do
-    traceM "wholePage"
+wholePage :: PageState -> TodoMvc
+wholePage s@PageState{_todos} = div_ [] $ do
     section_ [ id_ "todoapp" ] $ do
         header s
 
@@ -239,8 +233,8 @@ wholePage s@PageState{_todos} = div_ $ do
             innerFooter s
     outerFooter
 
-todoMvcClass :: IO (TodoMvc ReactClass)
-todoMvcClass = createClass wholePage transition' initialPageState () []
+todoMvcClass :: IO (React RtClass PageState Transition)
+todoMvcClass = createClass wholePage transition initialPageState []
 
 main = do
     Just doc <- currentDocument

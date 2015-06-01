@@ -27,6 +27,8 @@ module React
 
     -- React.Types
     , React(..)
+    , ReactType(..)
+    , reactSeq
     -- , React
     -- , React'
     , Pure
@@ -69,3 +71,4 @@ import React.Types
 import React.Attrs as X
 import React.Elements as X
 import React.Events as X
+import React.Rebindable as X

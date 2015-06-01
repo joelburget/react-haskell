@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, NamedFieldPuns, GADTs #-}
 
 module React.Render
     ( render
@@ -52,9 +52,9 @@ updateCb ref update = modifyIORef ref (update:)
 
 -- XXX don't think the handle remains valid. fix this with a ref.
 render :: Elem
-       -> ReactClass state sig
+       -> React ty state sig
        -> IO RenderHandle
-render elem cls@ReactClass{transitionRef} = do
+render elem (ReactTClass cls@ReactClass{transitionRef}) = do
     let renderCb :: JSRef Double -> IO ()
         renderCb timeRef = do
             Just time <- fromJSRef timeRef
@@ -71,6 +71,21 @@ render elem cls@ReactClass{transitionRef} = do
         raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
 
     doRender elem 0 cls
+    raf
+render elem description@(ReactTBuiltin _) = render' elem description
+render elem description@(ReactTSequence _) = render' elem description
+
+render' :: Elem -> React ty state sig -> IO RenderHandle
+render' elem render = do
+    let renderCb :: JSRef Double -> IO ()
+        renderCb timeRef = do
+            foreignNode <- interpret render undefined
+            js_render foreignNode elem
+            raf
+            return ()
+        raf :: IO RenderHandle
+        raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
+    -- renderCb 0
     raf
 
 

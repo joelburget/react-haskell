@@ -272,6 +272,9 @@ type Pure a = a () Void ()
 instance IsString (React RtBuiltin state sig) where
     fromString str = ReactTBuiltin [Static (Text str)]
 
+-- instance IsString (React RtSequence state sig) where
+--     fromString str = ReactTSequence [Static (Text str)]
+
 
 -- reactReturn :: a -> React RtSequence state sig
 -- reactReturn a = ReactTSequence $ \_ -> return ([], a)

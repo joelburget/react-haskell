@@ -22,11 +22,11 @@ import Chain
 
 import GHCJS.Foreign
 
-doRender :: ReactClass a b c -> JSString -> Document -> IO ()
+doRender :: React a b c -> JSString -> Document -> IO ()
 doRender cls nodeName doc = void $ join $
     render <$> (fromJust <$> documentGetElementById doc nodeName) <*> pure cls
 
-doRender' :: IO (ReactClass a b c) -> JSString -> Document -> IO ()
+doRender' :: IO (React a b c) -> JSString -> Document -> IO ()
 doRender' cls str doc = join $ doRender <$> cls <*> pure str <*> pure doc
 
 main :: IO ()
