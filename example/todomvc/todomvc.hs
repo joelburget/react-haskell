@@ -152,7 +152,7 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- and then check that it's not empty before creating a new todo."
 header :: PageState -> TodoMvc
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
-    h1_ [] "todos"
+    h1_ [] $ text_ "todos"
     input_ [ id_ "new-todo"
            , placeholder_ "What needs to be done?"
            , autofocus_ True
@@ -174,7 +174,7 @@ todoView PageState{_todos} i =
                label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
                button_ [ class_ "destroy"
                        , onClick (const (Just (Destroy i)))
-                       ] ""
+                       ] $ text_ ""
 
            input_ [ class_ "edit", value_ _text ]
 
@@ -186,11 +186,12 @@ mainBody st@PageState{_todos} =
     section_ [ id_ "main" ] $ do
         input_ [ id_ "toggle-all", type_ "checkbox" ]
         label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
-            "Mark all as complete"
+            $ text_ "Mark all as complete"
 
+        let blah = text_ "" >> text_ ""
         ul_ [ id_ "todo-list" ] $ case length _todos of
-            0 -> ""
-            _ -> foldr (>>) "" $ map (todoView st) [0 .. length _todos - 1]
+            0 -> blah
+            _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
 
 innerFooter :: PageState -> TodoMvc
 innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
@@ -204,7 +205,7 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
     span_ [ id_ "todo-count" ] $ do
         strong_ [] (text_ (toJSString (show activeCount)))
 
-        if activeCount == 1 then " item left" else " items left"
+        text_ $ if activeCount == 1 then " item left" else " items left"
 
     unless (inactiveCount == 0) $
         button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
@@ -214,13 +215,13 @@ outerFooter :: TodoMvc
 outerFooter = footer_ [ id_ "info" ] $ do
     -- TODO react complains about these things not having keys even though
     -- they're statically defined. figure out how to fix this.
-    p_ [] "Double-click to edit a todo"
+    p_ [] $ text_ "Double-click to edit a todo"
     p_ [] $ do
-        "Created by "
-        a_ [ href_ "http://joelburget.com" ] "Joel Burget"
+        text_ "Created by "
+        a_ [ href_ "http://joelburget.com" ] $ text_ "Joel Burget"
     p_ [] $ do
-        "Part of "
-        a_ [ href_ "http://todomvc.com" ] "TodoMVC"
+        text_ "Part of "
+        a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
 
 wholePage :: PageState -> TodoMvc
 wholePage s@PageState{_todos} = div_ [] $ do

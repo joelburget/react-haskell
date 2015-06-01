@@ -18,7 +18,7 @@ import React.Types
 -- create a ReactTForeign?
 termParent :: ForeignRender
            -> [AttrOrHandler sig]
-           -> React RtSequence state sig
+           -> React ty state sig
            -> React RtBuiltin state sig
 termParent render attrs children =
     let (hs, as) = separateAttrs attrs
@@ -28,14 +28,14 @@ termParent render attrs children =
 
 foreignParent :: ForeignRender
               -> [AttrOrHandler sig]
-              -> React RtSequence state sig
+              -> React ty state sig
               -> React RtBuiltin state sig
 foreignParent = termParent
 
 
 reactParent :: JSString
             -> [AttrOrHandler sig]
-            -> React RtSequence state sig
+            -> React ty state sig
             -> React RtBuiltin state sig
 reactParent name = termParent (js_React_DOM_parent name)
 
@@ -68,277 +68,277 @@ text_ :: JSString -> React RtBuiltin state sig
 text_ str = ReactTBuiltin $ [Static $ Text (fromJSString str)]
 
 -- TODO generate these automatically
-a_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+a_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 a_ = reactParent "a"
 
-abbr_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+abbr_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 abbr_ = reactParent "abbr"
 
-address_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+address_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 address_ = reactParent "address"
 
-article_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+article_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 article_ = reactParent "article"
 
-aside_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+aside_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 aside_ = reactParent "aside"
 
-audio_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+audio_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 audio_ = reactParent "audio"
 
-b_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+b_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 b_ = reactParent "b"
 
-bdi_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+bdi_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 bdi_ = reactParent "bdi"
 
-bdo_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+bdo_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 bdo_ = reactParent "bdo"
 
-big_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+big_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 big_ = reactParent "big"
 
-blockquote_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+blockquote_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 blockquote_ = reactParent "blockquote"
 
-body_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+body_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 body_ = reactParent "body"
 
-button_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+button_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 button_ = reactParent "button"
 
-canvas_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+canvas_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 canvas_ = reactParent "canvas"
 
-caption_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+caption_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 caption_ = reactParent "caption"
 
-cite_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+cite_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 cite_ = reactParent "cite"
 
-code_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+code_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 code_ = reactParent "code"
 
-colgroup_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+colgroup_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 colgroup_ = reactParent "colgroup"
 
-data_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+data_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 data_ = reactParent "data"
 
-datalist_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+datalist_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 datalist_ = reactParent "datalist"
 
-dd_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+dd_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 dd_ = reactParent "dd"
 
-del_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+del_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 del_ = reactParent "del"
 
-details_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+details_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 details_ = reactParent "details"
 
-dfn_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+dfn_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 dfn_ = reactParent "dfn"
 
-div_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+div_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 div_ = reactParent "div"
 
-dl_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+dl_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 dl_ = reactParent "dl"
 
-dt_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+dt_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 dt_ = reactParent "dt"
 
-em_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+em_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 em_ = reactParent "em"
 
-fieldset_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+fieldset_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 fieldset_ = reactParent "fieldset"
 
-figcaption_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+figcaption_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 figcaption_ = reactParent "figcaption"
 
-figure_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+figure_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 figure_ = reactParent "figure"
 
-footer_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+footer_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 footer_ = reactParent "footer"
 
-form_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+form_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 form_ = reactParent "form"
 
-h1_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h1_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h1_ = reactParent "h1"
 
-h2_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h2_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h2_ = reactParent "h2"
 
-h3_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h3_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h3_ = reactParent "h3"
 
-h4_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h4_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h4_ = reactParent "h4"
 
-h5_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h5_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h5_ = reactParent "h5"
 
-h6_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+h6_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 h6_ = reactParent "h6"
 
-head_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+head_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 head_ = reactParent "head"
 
-header_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+header_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 header_ = reactParent "header"
 
-html_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+html_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 html_ = reactParent "html"
 
-i_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+i_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 i_ = reactParent "i"
 
-iframe_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+iframe_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 iframe_ = reactParent "iframe"
 
-ins_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+ins_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 ins_ = reactParent "ins"
 
-kbd_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+kbd_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 kbd_ = reactParent "kbd"
 
-label_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+label_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 label_ = reactParent "label"
 
-legend_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+legend_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 legend_ = reactParent "legend"
 
-li_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+li_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 li_ = reactParent "li"
 
-main_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+main_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 main_ = reactParent "main"
 
-map_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+map_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 map_ = reactParent "map"
 
-mark_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+mark_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 mark_ = reactParent "mark"
 
-menu_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+menu_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 menu_ = reactParent "menu"
 
-menuitem_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+menuitem_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 menuitem_ = reactParent "menuitem"
 
-meter_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+meter_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 meter_ = reactParent "meter"
 
-nav_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+nav_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 nav_ = reactParent "nav"
 
-noscript_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+noscript_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 noscript_ = reactParent "noscript"
 
-object_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+object_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 object_ = reactParent "object"
 
-ol_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+ol_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 ol_ = reactParent "ol"
 
-optgroup_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+optgroup_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 optgroup_ = reactParent "optgroup"
 
-option_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+option_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 option_ = reactParent "option"
 
-output_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+output_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 output_ = reactParent "output"
 
-p_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+p_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 p_ = reactParent "p"
 
-pre_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+pre_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 pre_ = reactParent "pre"
 
-progress_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+progress_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 progress_ = reactParent "progress"
 
-q_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+q_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 q_ = reactParent "q"
 
-rp_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+rp_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 rp_ = reactParent "rp"
 
-rt_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+rt_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 rt_ = reactParent "rt"
 
-ruby_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+ruby_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 ruby_ = reactParent "ruby"
 
-s_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+s_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 s_ = reactParent "signal"
 
-samp_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+samp_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 samp_ = reactParent "samp"
 
-section_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+section_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 section_ = reactParent "section"
 
-select_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+select_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 select_ = reactParent "select"
 
-small_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+small_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 small_ = reactParent "small"
 
-span_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+span_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 span_ = reactParent "span"
 
-strong_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+strong_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 strong_ = reactParent "strong"
 
-sub_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+sub_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 sub_ = reactParent "sub"
 
-summary_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+summary_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 summary_ = reactParent "summary"
 
-sup_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+sup_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 sup_ = reactParent "sup"
 
-table_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+table_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 table_ = reactParent "table"
 
-tbody_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+tbody_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 tbody_ = reactParent "tbody"
 
-td_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+td_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 td_ = reactParent "td"
 
-tfoot_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+tfoot_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 tfoot_ = reactParent "tfoot"
 
-th_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+th_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 th_ = reactParent "th"
 
-thead_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+thead_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 thead_ = reactParent "thead"
 
-time_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+time_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 time_ = reactParent "time"
 
-tr_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+tr_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 tr_ = reactParent "tr"
 
-u_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+u_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 u_ = reactParent "u"
 
-ul_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+ul_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 ul_ = reactParent "ul"
 
-var_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+var_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 var_ = reactParent "var"
 
-video_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+video_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 video_ = reactParent "video"
 
 
@@ -394,34 +394,34 @@ wbr_ = reactLeaf "wbr"
 
 -- svg!
 
-svg_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+svg_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 svg_ = reactParent "svg"
 
-defs_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+defs_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 defs_ = reactParent "defs"
 
-g_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+g_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 g_ = reactParent "g"
 
-linearGradient_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+linearGradient_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 linearGradient_ = reactParent "linearGradient"
 
-mask_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+mask_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 mask_ = reactParent "mask"
 
-pattern_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+pattern_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 pattern_ = reactParent "pattern"
 
-radialGradient_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+radialGradient_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 radialGradient_ = reactParent "radialGradient"
 
-stop_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+stop_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 stop_ = reactParent "stop"
 
--- text_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+-- text_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 -- text_ = reactParent "text"
 
-tspan_ :: [AttrOrHandler sig] -> React RtSequence state sig -> React RtBuiltin state sig
+tspan_ :: [AttrOrHandler sig] -> React ty state sig -> React RtBuiltin state sig
 tspan_ = reactParent "tspan"
 
 circle_ :: [AttrOrHandler sig] -> React RtBuiltin state sig

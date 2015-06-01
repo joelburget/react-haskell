@@ -78,7 +78,14 @@ interpret' :: (signal -> IO ())
            -> IO ForeignNode
 interpret' cb = \case
     Static node -> interpret'' cb node
-    Dynamic nodes -> undefined
+    Dynamic nodes -> do
+        -- TODO this is all really gross. Have the imported functions operate
+        -- directly on JSRefs, not RawAttrs.
+        arr@(RawAttrs arr') <- js_empty_arr
+        forM_ nodes $ \(i, node) -> do
+            ForeignNode node' <- interpret'' cb node
+            js_set_ix_Arr arr i (RawAttrs node')
+        return (ForeignNode (castRef arr'))
 
 interpret'' :: (signal -> IO ())
             -> ReactNode signal

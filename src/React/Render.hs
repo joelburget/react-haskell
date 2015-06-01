@@ -79,7 +79,7 @@ render' :: Elem -> React ty state sig -> IO RenderHandle
 render' elem render = do
     let renderCb :: JSRef Double -> IO ()
         renderCb timeRef = do
-            foreignNode <- interpret render undefined
+            foreignNode <- interpret render (const (return ())) -- XXX
             js_render foreignNode elem
             raf
             return ()
