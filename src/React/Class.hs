@@ -18,7 +18,7 @@ import React.Types
 import GHCJS.Types
 
 
--- | 'ReactClass' smart constructor.
+-- | 'React RtClass' smart constructor.
 createClass :: (state -> React RtBuiltin state sig) -- ^ render function
             -> (sig -> state -> state) -- ^ transition function
             -> state -- ^ initial state
