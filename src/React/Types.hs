@@ -250,49 +250,13 @@ runReactT (ReactTSequence children) = children
 
 type Pure a = a () Void ()
 
-
-
--- instance (Monad m, Monoid a) => Monoid (React RtSequence state sig anim m a) where
---     mempty = ReactTSequence $ \_ -> return ([], mempty)
---     mappend f1 f2 = ReactTSequence $ \anim -> do
---         ~(c1, a) <- runReactT f1 anim
---         ~(c2, b) <- runReactT f2 anim
---         return (c1 <> c2, a <> b)
-
-
--- instance Monad m => Functor (React ty state sig anim m) where
---     fmap = liftM
-
-
--- instance Monad m => Applicative (React ty state sig anim m) where
---     pure = return
---     (<*>) = ap
-
-
 instance IsString (React RtBuiltin state sig) where
     fromString str = ReactTBuiltin [Static (Text str)]
-
--- instance IsString (React RtSequence state sig) where
---     fromString str = ReactTSequence [Static (Text str)]
-
-
--- reactReturn :: a -> React RtSequence state sig
--- reactReturn a = ReactTSequence $ \_ -> return ([], a)
 
 reactSeq :: React ty1 state sig
          -> React ty2 state sig
          -> React RtSequence state sig
 reactSeq f1 f2 = ReactTSequence $ runReactT f1 <> runReactT f2
-
-
--- reactBind :: Monad m
---           => React ty1 state sig
---           -> (a -> React ty2 state sig)
---           -> React RtSequence state sig
--- reactBind m f = ReactTSequence $ runReactT
---     ~(c1, a) <- runReactT m anim
---     ~(c2, b) <- runReactT (f a) anim
---     return (c1 <> c2, b)
 
 
 -- attributes
