@@ -78,9 +78,6 @@ toggleStatus Completed = Active
 
 foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
 
--- trim :: JSString -> JSString
--- trim = unsafePerformIO . ffi "(function(str) { return str.trim(); })"
-
 -- this traversal is in lens but lens-family has a weird ix which isn't
 -- what we want. definition just copied from lens.
 -- TODO(joel) just use lens?
