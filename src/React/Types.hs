@@ -122,10 +122,11 @@ data ReactClass state sig = ReactClass
     { classRender :: state -> React RtBuiltin state sig
     , classTransition :: sig -> state -> state
 
-    , foreignClass :: ForeignClass
+    -- The IO action should occur only once
+    , foreignClass :: IO ForeignClass
 
-    , stateRef :: IORef state
-    , transitionRef :: IORef [sig]
+    -- , stateRef :: IORef state
+    -- , transitionRef :: IORef [sig]
     }
 
 

@@ -231,7 +231,7 @@ wholePage s@PageState{_todos} = div_ [] $ do
             innerFooter s
     outerFooter
 
-todoMvcClass :: IO (React RtClass PageState Transition)
+todoMvcClass :: React RtClass PageState Transition
 todoMvcClass = createClass wholePage transition initialPageState []
 
 main = do
@@ -239,5 +239,4 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    cls <- todoMvcClass
-    render elem cls
+    render elem todoMvcClass

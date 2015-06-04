@@ -21,21 +21,27 @@ createClass :: (state -> React RtBuiltin state sig) -- ^ render function
             -> (sig -> state -> state) -- ^ transition function
             -> state -- ^ initial state
             -> [sig] -- ^ signals to send on startup
-            -> IO (React RtClass state sig)
-createClass render transition initialState initialTrans = do
-    stateRef <- newIORef initialState
-    transitionRef <- newIORef initialTrans
+            -> React RtClass state sig
+createClass render transition initialState initialTrans =
+    -- stateRef <- newIORef initialState
+    -- transitionRef <- newIORef initialTrans
 
-    -- renderCb <- syncCallback1 AlwaysRetain True (return . render <=< fromJSRef)
-    renderCb <- syncCallback AlwaysRetain True $ do
-        state <- readIORef stateRef
-        return $ render state
+    -- -- renderCb <- syncCallback1 AlwaysRetain True (return . render <=< fromJSRef)
 
-    foreignClass <- js_createClass renderCb
+    -- XXX how to get object without going to IO?
+    let foreignObj = do
+            obj <- newObj
+            renderCb <- syncCallback1 AlwaysRetain True $ \propsRef -> do
+                -- state <- readIORef stateRef
+                props <- undefined propsRef
+                return $ render props
+            setProp ("render" :: JSString) renderCb obj
+            return obj
+        foreignClass = js_createClass <$> foreignObj
 
-    return $ ReactTClass $ ReactClass
+    in ReactTClass $ ReactClass
         render
         transition
         foreignClass
-        stateRef
-        transitionRef
+        -- stateRef
+        -- transitionRef

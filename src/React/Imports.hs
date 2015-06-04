@@ -28,17 +28,18 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __GHCJS__
-foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: JSFun (IO (React ty state sig)) -> IO ForeignClass
+foreign import javascript unsafe "js_createClass" js_createClass :: JSRef JSAny -> ForeignClass
 #else
-js_createClass :: JSFun (IO (React state sig))
-               -> IO ForeignClass
+js_createClass :: JSRef JSAny -> ForeignClass
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
 
+-- foreign import javascript unsafe "React.createClass({ render: $1 })" js_createClass :: JSFun (IO (React ty state sig)) -> IO ForeignClass
+
 #ifdef __GHCJS__
-foreign import javascript unsafe "window.requestAnimationFrame($1)" js_raf :: JSFun (JSRef Double -> IO ()) -> IO RenderHandle
+foreign import javascript unsafe "window.requestAnimationFrame($1)" js_raf :: JSFun (IO ()) -> IO RenderHandle
 #else
-js_raf :: JSFun (JSRef Double -> IO ()) -> IO RenderHandle
+js_raf :: JSFun (IO ()) -> IO RenderHandle
 js_raf = error "cannot evaluate js_raf in ghc"
 #endif
 

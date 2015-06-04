@@ -28,22 +28,22 @@ import React.Interpret
 import React.Types
 
 
-doRender :: Elem -> Double -> ReactClass state sig -> IO ()
-doRender elem time ReactClass{ classRender,
-                               classTransition,
-                               transitionRef,
-                               stateRef } = do
+doRender :: Elem -> ReactClass state sig -> IO ()
+doRender elem ReactClass{ classRender,
+                               classTransition } = do
+                               -- transitionRef,
+                               -- stateRef } = do
 
-    transitions <- readIORef transitionRef
-    prevState <- readIORef stateRef
+    -- transitions <- readIORef transitionRef
+    -- prevState <- readIORef stateRef
 
-    let newState = foldl (flip classTransition) prevState transitions
+    -- let newState = foldl (flip classTransition) prevState transitions
 
-    foreignNode <- interpret (classRender newState) (updateCb transitionRef)
+    foreignNode <- interpret (classRender undefined) (updateCb undefined)
     js_render foreignNode elem
 
-    writeIORef stateRef newState
-    writeIORef transitionRef []
+    -- writeIORef stateRef newState
+    -- writeIORef transitionRef []
 
 
 updateCb :: IORef [signal] -> signal -> IO ()
@@ -54,37 +54,31 @@ updateCb ref update = modifyIORef ref (update:)
 render :: Elem
        -> React ty state sig
        -> IO RenderHandle
-render elem (ReactTClass cls@ReactClass{transitionRef}) = do
-    let renderCb :: JSRef Double -> IO ()
-        renderCb timeRef = do
-            Just time <- fromJSRef timeRef
-            transitions <- readIORef transitionRef
-
-            -- only rerender when dirty
-            when (length transitions > 0) $
-                doRender elem time cls
-
+render elem (ReactTClass cls) = do
+    let renderCb :: IO ()
+        renderCb = do
+            doRender elem cls
             raf
             return ()
 
         raf :: IO RenderHandle
-        raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
+        raf = js_raf =<< syncCallback AlwaysRetain True renderCb
 
-    doRender elem 0 cls
+    doRender elem cls
     raf
 render elem description@(ReactTBuiltin _) = render' elem description
 render elem description@(ReactTSequence _) = render' elem description
 
 render' :: Elem -> React ty state sig -> IO RenderHandle
 render' elem render = do
-    let renderCb :: JSRef Double -> IO ()
-        renderCb timeRef = do
+    let renderCb :: IO ()
+        renderCb = do
             foreignNode <- interpret render (const (return ())) -- XXX
             js_render foreignNode elem
             raf
             return ()
         raf :: IO RenderHandle
-        raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
+        raf = js_raf =<< syncCallback AlwaysRetain True renderCb
     -- renderCb 0
     raf
 
