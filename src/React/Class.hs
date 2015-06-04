@@ -17,12 +17,13 @@ import React.Types
 
 
 -- | 'React RtClass' smart constructor.
-createClass :: (state -> React RtBuiltin state sig) -- ^ render function
+createClass :: JSString
+            -> (state -> React RtBuiltin state sig) -- ^ render function
             -> (sig -> state -> state) -- ^ transition function
             -> state -- ^ initial state
             -> [sig] -- ^ signals to send on startup
             -> React RtClass state sig
-createClass render transition initialState initialTrans =
+createClass name render transition initialState initialTrans =
     -- stateRef <- newIORef initialState
     -- transitionRef <- newIORef initialTrans
 
@@ -35,9 +36,10 @@ createClass render transition initialState initialTrans =
                 -- state <- readIORef stateRef
                 return render
             setProp ("render" :: JSString) renderCb obj
+            setProp ("displayName" :: JSString) name obj
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactTClass $ ReactClass render transition foreignClass initialState
+    in ReactTClass $ ReactClass render transition foreignClass name initialState
         -- stateRef
         -- transitionRef

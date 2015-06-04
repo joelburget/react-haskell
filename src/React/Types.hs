@@ -125,6 +125,7 @@ data ReactClass state sig = ReactClass
     -- The IO action should occur only once
     , foreignClass :: IO ForeignClass
 
+    , className :: JSString
     , initialState :: state
 
     -- , stateRef :: IORef state

@@ -232,7 +232,7 @@ wholePage s@PageState{_todos} = div_ [] $ do
     outerFooter
 
 todoMvcClass :: React RtClass PageState Transition
-todoMvcClass = createClass wholePage transition initialPageState []
+todoMvcClass = createClass "WholePage" wholePage transition initialPageState []
 
 main = do
     Just doc <- currentDocument
