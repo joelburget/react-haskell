@@ -3,7 +3,6 @@ module React.Rebindable where
 
 import React.Types
 
--- TODO give these a proper home
 (>>) :: React ty1 state sig
      -> React ty2 state sig
      -> React RtSequence state sig
