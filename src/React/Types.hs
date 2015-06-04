@@ -125,6 +125,8 @@ data ReactClass state sig = ReactClass
     -- The IO action should occur only once
     , foreignClass :: IO ForeignClass
 
+    , initialState :: state
+
     -- , stateRef :: IORef state
     -- , transitionRef :: IORef [sig]
     }

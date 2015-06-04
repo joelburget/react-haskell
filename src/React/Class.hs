@@ -38,6 +38,6 @@ createClass render transition initialState initialTrans =
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactTClass $ ReactClass render transition foreignClass
+    in ReactTClass $ ReactClass render transition foreignClass initialState
         -- stateRef
         -- transitionRef

@@ -28,46 +28,15 @@ import React.Interpret
 import React.Types
 
 
-doRender :: Elem -> ReactClass state sig -> IO ()
-doRender elem ReactClass{ classRender,
-                               classTransition } = do
-                               -- transitionRef,
-                               -- stateRef } = do
-
-    -- transitions <- readIORef transitionRef
-    -- prevState <- readIORef stateRef
-
-    -- let newState = foldl (flip classTransition) prevState transitions
-
-    foreignNode <- interpret (classRender undefined) (updateCb undefined)
-    js_render foreignNode elem
-
-    -- writeIORef stateRef newState
-    -- writeIORef transitionRef []
-
-
-updateCb :: IORef [signal] -> signal -> IO ()
-updateCb ref update = modifyIORef ref (update:)
-
-
 -- XXX don't think the handle remains valid. fix this with a ref.
 render :: Elem
        -> React ty state sig
        -> IO RenderHandle
-render elem (ReactTClass cls) = do
-    let renderCb :: IO ()
-        renderCb = do
-            doRender elem cls
-            raf
-            return ()
-
-        raf :: IO RenderHandle
-        raf = js_raf =<< syncCallback AlwaysRetain True renderCb
-
-    doRender elem cls
-    raf
+render elem (ReactTClass cls) =
+    render' elem ((classRender cls) (initialState cls))
 render elem description@(ReactTBuiltin _) = render' elem description
 render elem description@(ReactTSequence _) = render' elem description
+
 
 render' :: Elem -> React ty state sig -> IO RenderHandle
 render' elem render = do
@@ -81,6 +50,10 @@ render' elem render = do
         raf = js_raf =<< syncCallback AlwaysRetain True renderCb
     -- renderCb 0
     raf
+
+
+updateCb :: IORef [signal] -> signal -> IO ()
+updateCb ref update = modifyIORef ref (update:)
 
 
 cancelRender :: RenderHandle -> IO ()
