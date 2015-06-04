@@ -10,12 +10,10 @@ import Data.IORef
 
 import GHCJS.Foreign
 import GHCJS.Marshal
+import GHCJS.Types
 
 import React.Imports
 import React.Types
-
-
-import GHCJS.Types
 
 
 -- | 'React RtClass' smart constructor.
