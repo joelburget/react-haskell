@@ -31,17 +31,13 @@ createClass render transition initialState initialTrans =
     -- XXX how to get object without going to IO?
     let foreignObj = do
             obj <- newObj
-            renderCb <- syncCallback1 AlwaysRetain True $ \propsRef -> do
+            renderCb <- syncCallback AlwaysRetain True $ do
                 -- state <- readIORef stateRef
-                props <- undefined propsRef
-                return $ render props
+                return render
             setProp ("render" :: JSString) renderCb obj
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactTClass $ ReactClass
-        render
-        transition
-        foreignClass
+    in ReactTClass $ ReactClass render transition foreignClass
         -- stateRef
         -- transitionRef
