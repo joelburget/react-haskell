@@ -18,11 +18,11 @@ import React.Types
 
 -- | 'React RtClass' smart constructor.
 createClass :: JSString
-            -> (state -> React RtBuiltin state sig) -- ^ render function
+            -> (state -> React RtBuiltin sig) -- ^ render function
             -> (sig -> state -> state) -- ^ transition function
             -> state -- ^ initial state
             -> [sig] -- ^ signals to send on startup
-            -> React RtClass state sig
+            -> React RtClass sig
 createClass name render transition initialState initialTrans =
     -- stateRef <- newIORef initialState
     -- transitionRef <- newIORef initialTrans

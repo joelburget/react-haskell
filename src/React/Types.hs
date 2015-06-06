@@ -119,7 +119,7 @@ data ReactType
 --
 -- Use 'createClass' to construct.
 data ReactClass state sig = ReactClass
-    { classRender :: state -> React RtBuiltin state sig
+    { classRender :: state -> React RtBuiltin sig
     , classTransition :: sig -> state -> state
 
     -- The IO action should occur only once
@@ -134,33 +134,29 @@ data ReactClass state sig = ReactClass
 
 
 -- phew, what a mouthful
-data React :: ReactType -> * -> * -> * where
+data React :: ReactType -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
-    ReactTClass    :: ReactClass state sig -> React RtClass state sig
+    ReactTClass    :: ReactClass state sig -> React RtClass sig
 
     -- This could really store just the name and attrs
-    ReactTBuiltin  :: [Child sig] -> React RtBuiltin state sig
+    ReactTBuiltin  :: [Child sig] -> React RtBuiltin sig
 
-    ReactTSequence :: [Child sig] -> React RtSequence state sig
+    ReactTSequence :: [Child sig] -> React RtSequence sig
 
 
-runReactT :: React ty state sig -> [Child sig]
--- runReactT (ReactTClass cls) = (classRender cls)
+runReactT :: React ty sig -> [Child sig]
+-- XXX
+runReactT (ReactTClass cls) = runReactT ((classRender cls) (initialState cls))
 runReactT (ReactTBuiltin children) = children
 runReactT (ReactTSequence children) = children
 
 
 type Pure a = a () Void ()
 
-instance IsString (React RtBuiltin state sig) where
+instance IsString (React RtBuiltin sig) where
     fromString str = ReactTBuiltin [Static (Text str)]
-
-reactSeq :: React ty1 state sig
-         -> React ty2 state sig
-         -> React RtSequence state sig
-reactSeq f1 f2 = ReactTSequence $ runReactT f1 <> runReactT f2
 
 
 -- attributes

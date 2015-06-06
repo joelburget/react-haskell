@@ -30,7 +30,7 @@ import React.Types
 
 -- XXX don't think the handle remains valid. fix this with a ref.
 render :: Elem
-       -> React ty state sig
+       -> React ty sig
        -> IO ()
 render elem (ReactTClass cls) =
     render' elem ((classRender cls) (initialState cls))
@@ -38,7 +38,7 @@ render elem description@(ReactTBuiltin _) = render' elem description
 render elem description@(ReactTSequence _) = render' elem description
 
 
-render' :: Elem -> React ty state sig -> IO ()
+render' :: Elem -> React ty sig -> IO ()
 render' elem render = do
     let renderCb :: IO ()
         renderCb = do

@@ -42,7 +42,7 @@ data PageState = PageState
 $(makeLenses ''Todo)
 $(makeLenses ''PageState)
 
-type TodoMvc = React RtBuiltin PageState Transition
+type TodoMvc = React RtBuiltin Transition
 
 initialPageState :: PageState
 initialPageState = PageState
@@ -209,7 +209,7 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
         button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
             text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
 
-outerFooterRender :: () -> React RtBuiltin () Void
+outerFooterRender :: () -> React RtBuiltin Void
 outerFooterRender () = footer_ [ id_ "info" ] $ do
     -- TODO react complains about these things not having keys even though
     -- they're statically defined. figure out how to fix this.
@@ -221,7 +221,7 @@ outerFooterRender () = footer_ [ id_ "info" ] $ do
         text_ "Part of "
         a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
 
-outerFooter :: React RtClass () Void
+outerFooter :: React RtClass Void
 outerFooter = createClass "OuterFooter" outerFooterRender absurd () []
 
 wholePageRender :: PageState -> TodoMvc
@@ -233,9 +233,9 @@ wholePageRender s@PageState{_todos} = div_ [] $ do
         unless (null _todos) $ do
             mainBody s
             innerFooter s
-    outerFooter
+    locally outerFooter
 
-wholePage :: React RtClass PageState Transition
+wholePage :: React RtClass Transition
 wholePage = createClass "WholePage" wholePageRender transition initialPageState []
 
 main = do

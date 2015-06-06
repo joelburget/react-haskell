@@ -13,8 +13,8 @@ module React
     , createClass
 
     -- React.Local
-    -- , locally
-    -- , GeneralizeSignal(..)
+    , locally
+    , GeneralizeSignal(..)
 
     -- React.Render
     , cancelRender
@@ -23,7 +23,6 @@ module React
     -- React.Types
     , React(..)
     , ReactType(..)
-    , reactSeq
     -- , React
     -- , React'
     , Pure
@@ -56,7 +55,7 @@ module React
 import React.Class
 -- import React.Imports
 -- import React.Interpret
--- import React.Local
+import React.Local
 import React.Render
 import React.Types
 
