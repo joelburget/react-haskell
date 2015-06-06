@@ -8,6 +8,7 @@ import Prelude hiding ((>>), (=<<), return)
 
 import Control.Applicative
 import Data.String
+import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Types
@@ -208,8 +209,8 @@ innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
         button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
             text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
 
-outerFooter :: TodoMvc
-outerFooter = footer_ [ id_ "info" ] $ do
+outerFooterRender :: () -> React RtBuiltin () Void
+outerFooterRender () = footer_ [ id_ "info" ] $ do
     -- TODO react complains about these things not having keys even though
     -- they're statically defined. figure out how to fix this.
     p_ [] $ text_ "Double-click to edit a todo"
@@ -220,8 +221,11 @@ outerFooter = footer_ [ id_ "info" ] $ do
         text_ "Part of "
         a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
 
-wholePage :: PageState -> TodoMvc
-wholePage s@PageState{_todos} = div_ [] $ do
+outerFooter :: React RtClass () Void
+outerFooter = createClass "OuterFooter" outerFooterRender absurd () []
+
+wholePageRender :: PageState -> TodoMvc
+wholePageRender s@PageState{_todos} = div_ [] $ do
     section_ [ id_ "todoapp" ] $ do
         header s
 
@@ -231,12 +235,12 @@ wholePage s@PageState{_todos} = div_ [] $ do
             innerFooter s
     outerFooter
 
-todoMvcClass :: React RtClass PageState Transition
-todoMvcClass = createClass "WholePage" wholePage transition initialPageState []
+wholePage :: React RtClass PageState Transition
+wholePage = createClass "WholePage" wholePageRender transition initialPageState []
 
 main = do
     Just doc <- currentDocument
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render elem todoMvcClass
+    render elem wholePage

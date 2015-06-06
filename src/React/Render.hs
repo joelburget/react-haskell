@@ -31,25 +31,25 @@ import React.Types
 -- XXX don't think the handle remains valid. fix this with a ref.
 render :: Elem
        -> React ty state sig
-       -> IO RenderHandle
+       -> IO ()
 render elem (ReactTClass cls) =
     render' elem ((classRender cls) (initialState cls))
 render elem description@(ReactTBuiltin _) = render' elem description
 render elem description@(ReactTSequence _) = render' elem description
 
 
-render' :: Elem -> React ty state sig -> IO RenderHandle
+render' :: Elem -> React ty state sig -> IO ()
 render' elem render = do
     let renderCb :: IO ()
         renderCb = do
             foreignNode <- interpret render (const (return ())) -- XXX
             js_render foreignNode elem
-            raf
+            -- raf
             return ()
-        raf :: IO RenderHandle
-        raf = js_raf =<< syncCallback AlwaysRetain True renderCb
-    -- renderCb 0
-    raf
+        -- raf :: IO RenderHandle
+        -- raf = js_raf =<< syncCallback AlwaysRetain True renderCb
+    renderCb
+    -- raf
 
 
 updateCb :: IORef [signal] -> signal -> IO ()
