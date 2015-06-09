@@ -231,7 +231,7 @@ outerFooter = React.createClass $ statelessClass
     }
 
 -- XXX doesn't sig have to be Void here - IE no signal can escape?
-wholePage :: ReactClass () PageState Transition
+wholePage :: ReactClass () PageState Void
 wholePage = createClass $ statefulClass
     { name = "WholePage"
     , transition = pageTransition

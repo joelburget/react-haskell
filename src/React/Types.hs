@@ -118,9 +118,9 @@ data ReactType
 -- scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass props state sig = ReactClass
-    { classRender :: props -> state -> React RtBuiltin sig
-    , classTransition :: sig -> state -> state
+data ReactClass props state sig = forall insig. ReactClass
+    { classRender :: props -> state -> React RtBuiltin insig
+    , classTransition :: insig -> state -> (state, sig)
 
     -- The IO action should occur only once
     , foreignClass :: IO ForeignClass
@@ -131,6 +131,15 @@ data ReactClass props state sig = ReactClass
 
     -- , stateRef :: IORef state
     -- , transitionRef :: IORef [sig]
+    }
+
+
+data ClassConfig props state sig = forall insig. ClassConfig
+    { renderFn :: props -> state -> React RtBuiltin insig
+    , getInitialState :: state
+    , name :: JSString
+    , transition :: insig -> state -> (state, sig)
+    , startupSignals :: [insig]
     }
 
 
@@ -153,13 +162,6 @@ data React :: ReactType -> * -> * where
 createFactory :: ReactClass props state sig
               -> (props -> React RtClass sig)
 createFactory = flip ReactComponent
-
-
-runReact :: React ty sig -> [Child sig]
--- XXX
-runReact (ReactComponent props cls) = runReact ((classRender cls) props (initialState cls))
-runReact (ReactBuiltin children) = children
-runReact (ReactSequence children) = children
 
 
 type Pure a = a () Void ()

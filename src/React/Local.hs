@@ -39,6 +39,14 @@ locally :: GeneralizeSignal sigloc siggen
 locally = ReactSequence . generalizeChildren . runReact
 
 
+runReact :: React ty sig -> [Child sig]
+-- XXX
+runReact (ReactComponent props (ReactClass render _ _ _ state)) =
+    runReact (render props state)
+runReact (ReactBuiltin children) = children
+runReact (ReactSequence children) = children
+
+
 generalizeChildren :: GeneralizeSignal sigloc siggen
                    => [Child sigloc]
                    -> [Child siggen]

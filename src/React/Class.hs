@@ -19,15 +19,6 @@ import React.Imports
 import React.Types
 
 
-data ClassConfig props state sig = ClassConfig
-    { renderFn :: props -> state -> React RtBuiltin sig
-    , getInitialState :: state
-    , name :: JSString
-    , transition :: sig -> state -> state
-    , startupSignals :: [sig]
-    }
-
-
 statelessClass :: ClassConfig props () sig
 statelessClass = ClassConfig
     { name = "Anonymous Stateless Class"
