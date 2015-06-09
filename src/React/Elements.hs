@@ -8,7 +8,6 @@ import React.Imports
 import React.Types
 
 
-
 -- | Parent nodes always take a list of arguments and children.
 -- @
 -- span_ [class_ "example"] $ ... children ...

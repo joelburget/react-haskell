@@ -61,15 +61,15 @@ data Transition
     | ToggleAll
     | ClearCompleted
 
-transition :: Transition -> PageState -> PageState
-transition (Typing str) = handleTyping str
-transition (HeaderKey Enter) = handleEnter
-transition (HeaderKey Escape) = handleEsc
-transition (Check i) = handleItemCheck i
-transition DoubleClick = handleLabelDoubleClick
-transition (Destroy i) = handleDestroy i
-transition ToggleAll = handleToggleAll
-transition ClearCompleted = clearCompleted
+pageTransition :: Transition -> PageState -> PageState
+pageTransition (Typing str) = handleTyping str
+pageTransition (HeaderKey Enter) = handleEnter
+pageTransition (HeaderKey Escape) = handleEsc
+pageTransition (Check i) = handleItemCheck i
+pageTransition DoubleClick = handleLabelDoubleClick
+pageTransition (Destroy i) = handleDestroy i
+pageTransition ToggleAll = handleToggleAll
+pageTransition ClearCompleted = clearCompleted
 
 -- UTILITY
 
@@ -179,64 +179,73 @@ todoView PageState{_todos} i =
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: PageState -> TodoMvc
-mainBody st@PageState{_todos} =
-    section_ [ id_ "main" ] $ do
-        input_ [ id_ "toggle-all", type_ "checkbox" ]
-        label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
-            $ text_ "Mark all as complete"
+mainBody :: ReactClass PageState Void Transition
+mainBody = createClass $ statelessClass
+    { name = "MainBody"
+    , renderFn = \st@PageState{_todos} _ ->
+          section_ [ id_ "main" ] $ do
+              input_ [ id_ "toggle-all", type_ "checkbox" ]
+              label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
+                  $ text_ "Mark all as complete"
 
-        let blah = text_ "" >> text_ ""
-        ul_ [ id_ "todo-list" ] $ case length _todos of
-            0 -> blah
-            _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
+              let blah = text_ "" >> text_ ""
+              ul_ [ id_ "todo-list" ] $ case length _todos of
+                  0 -> blah
+                  _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
+    }
 
-innerFooter :: PageState -> TodoMvc
-innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
-    let activeCount = length (todosWithStatus Active _todos)
-    let inactiveCount = length (todosWithStatus Completed _todos)
+innerFooter :: ReactClass PageState Void Transition
+innerFooter = createClass $ statelessClass
+    { name = "InnerFooter"
+    , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
+          let activeCount = length (todosWithStatus Active _todos)
+          let inactiveCount = length (todosWithStatus Completed _todos)
 
-    -- "Displays the number of active todos in a pluralized form. Make sure
-    -- the number is wrapped by a <strong> tag. Also make sure to pluralize
-    -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
-    -- left"
-    span_ [ id_ "todo-count" ] $ do
-        strong_ [] (text_ (toJSString (show activeCount)))
+          -- "Displays the number of active todos in a pluralized form. Make sure
+          -- the number is wrapped by a <strong> tag. Also make sure to pluralize
+          -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
+          -- left"
+          span_ [ id_ "todo-count" ] $ do
+              strong_ [] (text_ (toJSString (show activeCount)))
 
-        text_ $ if activeCount == 1 then " item left" else " items left"
+              text_ $ if activeCount == 1 then " item left" else " items left"
 
-    unless (inactiveCount == 0) $
-        button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
-            text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
+          unless (inactiveCount == 0) $
+              button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
+                  text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
+    }
 
-outerFooterRender :: () -> React RtBuiltin Void
-outerFooterRender () = footer_ [ id_ "info" ] $ do
-    -- TODO react complains about these things not having keys even though
-    -- they're statically defined. figure out how to fix this.
-    p_ [] $ text_ "Double-click to edit a todo"
-    p_ [] $ do
-        text_ "Created by "
-        a_ [ href_ "http://joelburget.com" ] $ text_ "Joel Burget"
-    p_ [] $ do
-        text_ "Part of "
-        a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
+outerFooter :: ReactClass Void Void Void
+outerFooter = React.createClass $ statelessClass
+    { name = "OuterFooter"
+    , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
+          -- TODO react complains about these things not having keys even though
+          -- they're statically defined. figure out how to fix this.
+          p_ [] $ text_ "Double-click to edit a todo"
+          p_ [] $ do
+              text_ "Created by "
+              a_ [ href_ "http://joelburget.com" ] $ text_ "Joel Burget"
+          p_ [] $ do
+              text_ "Part of "
+              a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
+    }
 
-outerFooter :: React RtClass Void
-outerFooter = createClass "OuterFooter" outerFooterRender absurd () []
+-- XXX doesn't sig have to be Void here - IE no signal can escape?
+wholePage :: ReactClass Void PageState Transition
+wholePage = createClass $ statefulClass
+    { name = "WholePage"
+    , transition = pageTransition
+    , getInitialState = initialPageState
+    , renderFn = \_ s@PageState{_todos} -> div_ [] $ do
+          section_ [ id_ "todoapp" ] $ do
+              header s
 
-wholePageRender :: PageState -> TodoMvc
-wholePageRender s@PageState{_todos} = div_ [] $ do
-    section_ [ id_ "todoapp" ] $ do
-        header s
-
-        -- "When there are no todos, #main and #footer should be hidden."
-        unless (null _todos) $ do
-            mainBody s
-            innerFooter s
-    locally outerFooter
-
-wholePage :: React RtClass Transition
-wholePage = createClass "WholePage" wholePageRender transition initialPageState []
+              -- "When there are no todos, #main and #footer should be hidden."
+              unless (null _todos) $ do
+                  mainBody s undefined
+                  innerFooter s undefined
+          locally (outerFooter undefined undefined)
+    }
 
 main = do
     Just doc <- currentDocument

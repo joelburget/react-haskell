@@ -118,13 +118,14 @@ data ReactType
 -- scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass state sig = ReactClass
-    { classRender :: state -> React RtBuiltin sig
+data ReactClass props state sig = ReactClass
+    { classRender :: props -> state -> React RtBuiltin sig
     , classTransition :: sig -> state -> state
 
     -- The IO action should occur only once
     , foreignClass :: IO ForeignClass
 
+    -- TODO(joel) this conflicts weirdly with `className` from React.
     , className :: JSString
     , initialState :: state
 
@@ -138,17 +139,19 @@ data React :: ReactType -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
-    ReactTClass    :: ReactClass state sig -> React RtClass sig
+    -- ReactComponent
+    ReactTClass    :: props -> ReactClass props state sig -> React RtClass sig
 
     -- This could really store just the name and attrs
     ReactTBuiltin  :: [Child sig] -> React RtBuiltin sig
 
+    -- ReactFragment
     ReactTSequence :: [Child sig] -> React RtSequence sig
 
 
 runReactT :: React ty sig -> [Child sig]
 -- XXX
-runReactT (ReactTClass cls) = runReactT ((classRender cls) (initialState cls))
+runReactT (ReactTClass props cls) = runReactT ((classRender cls) props (initialState cls))
 runReactT (ReactTBuiltin children) = children
 runReactT (ReactTSequence children) = children
 

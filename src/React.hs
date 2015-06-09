@@ -10,7 +10,10 @@ module React
 
     -- React.Class
     , ReactClass()
+    , ClassConfig(..)
     , createClass
+    , statelessClass
+    , statefulClass
 
     -- React.Local
     , locally

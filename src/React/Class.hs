@@ -1,12 +1,16 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings, DataKinds #-}
 module React.Class
     ( ReactClass(..)
+    , ClassConfig(..)
     , createClass
+    , statefulClass
+    , statelessClass
     ) where
 
 
 import Control.Monad
 import Data.IORef
+import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Marshal
@@ -16,30 +20,56 @@ import React.Imports
 import React.Types
 
 
+data ClassConfig props state sig = ClassConfig
+    { renderFn :: props -> state -> React RtBuiltin sig
+    , getInitialState :: state
+    , name :: JSString
+    , transition :: sig -> state -> state
+    , startupSignals :: [sig]
+    }
+
+
+statelessClass :: ClassConfig props Void sig
+statelessClass = ClassConfig
+    { name = "Anonymous Stateless Class"
+    , renderFn = \_ _ -> "give this class a `render`!"
+    , getInitialState = error "stateless classes don't  call getInitialState"
+    , transition = flip const
+    , startupSignals = []
+    }
+
+
+statefulClass :: ClassConfig props state sig
+statefulClass = ClassConfig
+    { name = "Anonymous Stateful Class"
+    , renderFn = \_ _ -> "give this class a `render`!"
+    , getInitialState = error "must define `getInitialState`!"
+    , transition = flip const
+    , startupSignals = []
+    }
+
+
 -- | 'React RtClass' smart constructor.
-createClass :: JSString
-            -> (state -> React RtBuiltin sig) -- ^ render function
-            -> (sig -> state -> state) -- ^ transition function
-            -> state -- ^ initial state
-            -> [sig] -- ^ signals to send on startup
-            -> React RtClass sig
-createClass name render transition initialState initialTrans =
-    -- stateRef <- newIORef initialState
-    -- transitionRef <- newIORef initialTrans
+createClass :: ClassConfig props state sig -> ReactClass props state sig
+createClass ClassConfig{renderFn,
+                        getInitialState,
+                        name,
+                        transition,
+                        startupSignals} =
 
-    -- -- renderCb <- syncCallback1 AlwaysRetain True (return . render <=< fromJSRef)
-
-    -- XXX how to get object without going to IO?
     let foreignObj = do
             obj <- newObj
             renderCb <- syncCallback AlwaysRetain True $ do
                 -- state <- readIORef stateRef
-                return render
+                return renderFn
             setProp ("render" :: JSString) renderCb obj
             setProp ("displayName" :: JSString) name obj
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactTClass $ ReactClass render transition foreignClass name initialState
-        -- stateRef
-        -- transitionRef
+    in ReactClass
+           renderFn
+           transition
+           foreignClass
+           name
+           getInitialState
