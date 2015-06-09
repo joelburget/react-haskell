@@ -11,13 +11,13 @@ import React.Local
 --      => React ty1 sig1
 --      -> React ty2 sig2
 --      -> React RtSequence sigMax
--- f1 >> f2 = ReactTSequence $
---     (generalizeChildren (runReactT f1)) <>
---     (generalizeChildren (runReactT f2))
+-- f1 >> f2 = ReactSequence $
+--     (generalizeChildren (runReact f1)) <>
+--     (generalizeChildren (runReact f2))
 (>>) :: React ty1 sig
      -> React ty2 sig
      -> React RtSequence sig
-f1 >> f2 = ReactTSequence $ runReactT f1 <> runReactT f2
+f1 >> f2 = ReactSequence $ runReact f1 <> runReact f2
 
 
 return :: React ty sig -> React ty sig
@@ -30,7 +30,7 @@ class When a where
     when :: Bool -> a -> a
 
 instance When (React RtSequence sig) where
-    when False _  = ReactTSequence []
+    when False _  = ReactSequence []
     when True seq = seq
 
 instance When (React RtBuiltin sig) where

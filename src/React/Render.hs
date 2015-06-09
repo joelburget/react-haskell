@@ -33,10 +33,10 @@ import React.Types
 render :: Elem
        -> React ty sig
        -> IO ()
-render elem (ReactTClass props cls) =
+render elem (ReactComponent props cls) =
     render' elem ((classRender cls) props (initialState cls))
-render elem description@(ReactTBuiltin _) = render' elem description
-render elem description@(ReactTSequence _) = render' elem description
+render elem description@(ReactBuiltin _) = render' elem description
+render elem description@(ReactSequence _) = render' elem description
 
 
 render' :: Elem -> React ty sig -> IO ()

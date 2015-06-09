@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds #-}
+-- TODO(joel) rename to React.DOM?
 module React.Elements where
 
 import GHCJS.Foreign
@@ -13,16 +14,17 @@ import React.Types
 -- span_ [class_ "example"] $ ... children ...
 -- @
 --
--- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
--- create a ReactTForeign?
+-- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
+-- create a ReactForeign?
+-- TODO(joel) this is essentially createElement
 termParent :: ForeignRender
            -> [AttrOrHandler sig]
            -> React ty sig
            -> React RtBuiltin sig
 termParent render attrs children =
     let (hs, as) = separateAttrs attrs
-        childNodes = runReactT children
-    in ReactTBuiltin [Static (Parent render as hs childNodes)]
+        childNodes = runReact children
+    in ReactBuiltin [Static (Parent render as hs childNodes)]
 
 
 foreignParent :: ForeignRender
@@ -42,11 +44,11 @@ reactParent name = termParent (js_React_DOM_parent name)
 termLeaf :: ForeignRender
          -> [AttrOrHandler sig]
          -> React RtBuiltin sig
--- TODO questionable whether foreign nodes should use ReactTBuiltin. Maybe
--- create a ReactTForeign?
+-- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
+-- create a ReactForeign?
 termLeaf render attrs =
     let (hs, as) = separateAttrs attrs
-    in ReactTBuiltin [Static (Leaf render as hs)]
+    in ReactBuiltin [Static (Leaf render as hs)]
 
 
 foreignLeaf :: ForeignRender
@@ -64,7 +66,7 @@ reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
 -- TODO ToJSString a => ?
 -- Would this just be annoyingly ambiguous?
 text_ :: JSString -> React RtBuiltin sig
-text_ str = ReactTBuiltin $ [Static $ Text (fromJSString str)]
+text_ str = ReactBuiltin $ [Static $ Text (fromJSString str)]
 
 -- TODO generate these automatically
 a_ :: [AttrOrHandler sig] -> React ty sig -> React RtBuiltin sig

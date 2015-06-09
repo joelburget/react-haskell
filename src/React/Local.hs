@@ -36,7 +36,7 @@ instance GeneralizeSignal Void a where
 locally :: GeneralizeSignal sigloc siggen
         => React ty sigloc
         -> React RtSequence siggen
-locally = ReactTSequence . generalizeChildren . runReactT
+locally = ReactSequence . generalizeChildren . runReact
 
 
 generalizeChildren :: GeneralizeSignal sigloc siggen

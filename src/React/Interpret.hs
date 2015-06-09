@@ -69,7 +69,7 @@ interpret :: React ty sig
 interpret react cb =
     -- TODO should be able to avoid this weird pattern match by not
     -- interpreting sequences!
-    let child:_ = runReactT react
+    let child:_ = runReact react
     in interpret' cb child
 
 

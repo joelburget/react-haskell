@@ -140,26 +140,26 @@ data React :: ReactType -> * -> * where
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
     -- ReactComponent
-    ReactTClass    :: props -> ReactClass props state sig -> React RtClass sig
+    ReactComponent    :: props -> ReactClass props state sig -> React RtClass sig
 
     -- This could really store just the name and attrs
-    ReactTBuiltin  :: [Child sig] -> React RtBuiltin sig
+    ReactBuiltin  :: [Child sig] -> React RtBuiltin sig
 
     -- ReactFragment
-    ReactTSequence :: [Child sig] -> React RtSequence sig
+    ReactSequence :: [Child sig] -> React RtSequence sig
 
 
-runReactT :: React ty sig -> [Child sig]
+runReact :: React ty sig -> [Child sig]
 -- XXX
-runReactT (ReactTClass props cls) = runReactT ((classRender cls) props (initialState cls))
-runReactT (ReactTBuiltin children) = children
-runReactT (ReactTSequence children) = children
+runReact (ReactComponent props cls) = runReact ((classRender cls) props (initialState cls))
+runReact (ReactBuiltin children) = children
+runReact (ReactSequence children) = children
 
 
 type Pure a = a () Void ()
 
 instance IsString (React RtBuiltin sig) where
-    fromString str = ReactTBuiltin [Static (Text str)]
+    fromString str = ReactBuiltin [Static (Text str)]
 
 
 -- attributes
