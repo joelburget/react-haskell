@@ -38,6 +38,7 @@ module React
     , ChangeEvent(..)
     , FocusEvent(..)
     , ForeignRender
+    , createFactory
 
     -- XXX(joel)
     , JSON(..)

@@ -10,7 +10,6 @@ module React.Class
 
 import Control.Monad
 import Data.IORef
-import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Marshal
@@ -29,11 +28,11 @@ data ClassConfig props state sig = ClassConfig
     }
 
 
-statelessClass :: ClassConfig props Void sig
+statelessClass :: ClassConfig props () sig
 statelessClass = ClassConfig
     { name = "Anonymous Stateless Class"
     , renderFn = \_ _ -> "give this class a `render`!"
-    , getInitialState = error "stateless classes don't  call getInitialState"
+    , getInitialState = ()
     , transition = flip const
     , startupSignals = []
     }
@@ -47,6 +46,9 @@ statefulClass = ClassConfig
     , transition = flip const
     , startupSignals = []
     }
+
+
+-- type SmartComponent = ReactClass
 
 
 -- | 'React RtClass' smart constructor.

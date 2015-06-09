@@ -179,7 +179,7 @@ todoView PageState{_todos} i =
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: ReactClass PageState Void Transition
+mainBody :: ReactClass PageState () Transition
 mainBody = createClass $ statelessClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
@@ -194,7 +194,7 @@ mainBody = createClass $ statelessClass
                   _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
     }
 
-innerFooter :: ReactClass PageState Void Transition
+innerFooter :: ReactClass PageState () Transition
 innerFooter = createClass $ statelessClass
     { name = "InnerFooter"
     , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
@@ -215,7 +215,7 @@ innerFooter = createClass $ statelessClass
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
     }
 
-outerFooter :: ReactClass Void Void Void
+outerFooter :: ReactClass () () Void
 outerFooter = React.createClass $ statelessClass
     { name = "OuterFooter"
     , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
@@ -231,7 +231,7 @@ outerFooter = React.createClass $ statelessClass
     }
 
 -- XXX doesn't sig have to be Void here - IE no signal can escape?
-wholePage :: ReactClass Void PageState Transition
+wholePage :: ReactClass () PageState Transition
 wholePage = createClass $ statefulClass
     { name = "WholePage"
     , transition = pageTransition
@@ -242,14 +242,19 @@ wholePage = createClass $ statefulClass
 
               -- "When there are no todos, #main and #footer should be hidden."
               unless (null _todos) $ do
-                  mainBody s undefined
-                  innerFooter s undefined
-          locally (outerFooter undefined undefined)
+                  mainBody' s
+                  innerFooter' s
+          locally (outerFooter' ())
     }
+
+wholePage'   = createFactory wholePage
+outerFooter' = createFactory outerFooter
+innerFooter' = createFactory innerFooter
+mainBody'    = createFactory mainBody
 
 main = do
     Just doc <- currentDocument
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render elem wholePage
+    render elem (wholePage' ())

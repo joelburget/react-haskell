@@ -149,6 +149,12 @@ data React :: ReactType -> * -> * where
     ReactSequence :: [Child sig] -> React RtSequence sig
 
 
+-- TODO(joel) move this somewhere
+createFactory :: ReactClass props state sig
+              -> (props -> React RtClass sig)
+createFactory = flip ReactComponent
+
+
 runReact :: React ty sig -> [Child sig]
 -- XXX
 runReact (ReactComponent props cls) = runReact ((classRender cls) props (initialState cls))
