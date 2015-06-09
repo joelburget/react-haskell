@@ -34,17 +34,9 @@ instance GeneralizeSignal Void a where
 
 
 locally :: GeneralizeSignal sigloc siggen
-        => React ty sigloc
-        -> React RtSequence siggen
+        => ReactElement ty sigloc
+        -> ReactElement RtSequence siggen
 locally = ReactSequence . generalizeChildren . runReact
-
-
-runReact :: React ty sig -> [Child sig]
--- XXX
-runReact (ReactComponent props (ReactClass render _ _ _ state)) =
-    runReact (render props state)
-runReact (ReactBuiltin children) = children
-runReact (ReactSequence children) = children
 
 
 generalizeChildren :: GeneralizeSignal sigloc siggen

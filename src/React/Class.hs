@@ -42,7 +42,7 @@ statefulClass = ClassConfig
 -- type SmartComponent = ReactClass
 
 
--- | 'React RtClass' smart constructor.
+-- | 'ReactElement RtClass' smart constructor.
 createClass :: ClassConfig props state sig -> ReactClass props state sig
 createClass ClassConfig{renderFn,
                         getInitialState,

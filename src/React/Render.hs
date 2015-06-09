@@ -31,7 +31,7 @@ import React.Types
 -- XXX don't think the handle remains valid. fix this with a ref.
 -- XXX doesn't sig have to be Void here - IE no signal can escape?
 render :: Elem
-       -> React ty sig
+       -> ReactElement ty sig
        -> IO ()
 render elem (ReactComponent props cls) =
     render' elem ((classRender cls) props (initialState cls))
@@ -39,7 +39,7 @@ render elem description@(ReactBuiltin _) = render' elem description
 render elem description@(ReactSequence _) = render' elem description
 
 
-render' :: Elem -> React ty sig -> IO ()
+render' :: Elem -> ReactElement ty sig -> IO ()
 render' elem render = do
     let renderCb :: IO ()
         renderCb = do

@@ -83,9 +83,9 @@ data ReactNode signal
 -- A child is either a sequence of static nodes or *one* dynamic node. This
 -- representation is motivated by ...
 --
--- React.createElement("div", null, a, [b, c], d)
+-- ReactElement.createElement("div", null, a, [b, c], d)
 --
--- Now React can infer that `a` and `d` are static, while `b` and `c` are
+-- Now ReactElement can infer that `a` and `d` are static, while `b` and `c` are
 -- dynamic.
 --
 -- XXX
@@ -97,7 +97,7 @@ data Child sig
 
 -- Idea:
 --
--- React is the type representing
+-- ReactElement is the type representing
 -- * classes
 -- * builtins
 -- * sequences
@@ -119,13 +119,13 @@ data ReactType
 --
 -- Use 'createClass' to construct.
 data ReactClass props state sig = forall insig. ReactClass
-    { classRender :: props -> state -> React RtBuiltin insig
+    { classRender :: props -> state -> ReactElement RtBuiltin insig
     , classTransition :: insig -> state -> (state, sig)
 
     -- The IO action should occur only once
     , foreignClass :: IO ForeignClass
 
-    -- TODO(joel) this conflicts weirdly with `className` from React.
+    -- TODO(joel) this conflicts weirdly with `className` from ReactElement.
     , className :: JSString
     , initialState :: state
 
@@ -135,7 +135,7 @@ data ReactClass props state sig = forall insig. ReactClass
 
 
 data ClassConfig props state sig = forall insig. ClassConfig
-    { renderFn :: props -> state -> React RtBuiltin insig
+    { renderFn :: props -> state -> ReactElement RtBuiltin insig
     , getInitialState :: state
     , name :: JSString
     , transition :: insig -> state -> (state, sig)
@@ -144,29 +144,37 @@ data ClassConfig props state sig = forall insig. ClassConfig
 
 
 -- phew, what a mouthful
-data React :: ReactType -> * -> * where
+data ReactElement :: ReactType -> * -> * where
 
     -- even this could maybe just store the class name and attrs?
     -- XXX store ForeignClass
     -- ReactComponent
-    ReactComponent    :: props -> ReactClass props state sig -> React RtClass sig
+    ReactComponent    :: props -> ReactClass props state sig -> ReactElement RtClass sig
 
     -- This could really store just the name and attrs
-    ReactBuiltin  :: [Child sig] -> React RtBuiltin sig
+    ReactBuiltin  :: [Child sig] -> ReactElement RtBuiltin sig
 
     -- ReactFragment
-    ReactSequence :: [Child sig] -> React RtSequence sig
+    ReactSequence :: [Child sig] -> ReactElement RtSequence sig
+
+
+runReact :: ReactElement ty sig -> [Child sig]
+-- XXX
+runReact (ReactComponent props (ReactClass render _ _ _ state)) =
+    runReact (render props state)
+runReact (ReactBuiltin children) = children
+runReact (ReactSequence children) = children
 
 
 -- TODO(joel) move this somewhere
 createFactory :: ReactClass props state sig
-              -> (props -> React RtClass sig)
+              -> (props -> ReactElement RtClass sig)
 createFactory = flip ReactComponent
 
 
 type Pure a = a () Void ()
 
-instance IsString (React RtBuiltin sig) where
+instance IsString (ReactElement RtBuiltin sig) where
     fromString str = ReactBuiltin [Static (Text str)]
 
 
