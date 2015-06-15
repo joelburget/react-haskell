@@ -2,12 +2,23 @@
 -- TODO(joel) rename to React.DOM?
 module React.Elements where
 
+import Data.Aeson as Aeson
+import Data.String
 import GHCJS.Foreign
+import GHCJS.Marshal
 import GHCJS.Types
 
 import React.Imports
 import React.Types
 
+
+attrsToJson :: [Attr] -> JSON
+attrsToJson = Aeson.toJSON . map unAttr where
+    unAttr (Attr name json) = (name, json)
+
+
+attrsToJSAny :: [Attr] -> IO JSAny
+attrsToJSAny attrs = castRef <$> toJSRef (attrsToJson attrs)
 
 -- | Parent nodes always take a list of arguments and children.
 -- @
@@ -17,376 +28,362 @@ import React.Types
 -- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
 -- create a ReactForeign?
 -- TODO(joel) this is essentially createElement
-termParent :: ForeignRender
-           -> [AttrOrHandler sig]
-           -> ReactElement ty sig
-           -> ReactElement RtBuiltin sig
-termParent render attrs children =
-    let (hs, as) = separateAttrs attrs
-        childNodes = runReact children
-    in ReactBuiltin [Static (Parent render as hs childNodes)]
+domParent :: JSString
+          -> [Attr]
+          -> ReactNode sig
+          -> ReactNode sig
+domParent name attrs children =
+    DomElement (ReactDOMElement name (attrsToJson attrs) children "" Nothing)
 
 
-foreignParent :: ForeignRender
-              -> [AttrOrHandler sig]
-              -> ReactElement ty sig
-              -> ReactElement RtBuiltin sig
-foreignParent = termParent
+classParent :: ReactClass props state sig
+            -- -> [Attr]
+            -> ReactNode sig
+            -> props
+            -> ReactNode sig
+classParent (ReactClass cls) children props =
+    ComponentElement (ReactComponentElement cls (attrsToJSAny []) children "" Nothing)
 
 
-reactParent :: JSString
-            -> [AttrOrHandler sig]
-            -> ReactElement ty sig
-            -> ReactElement RtBuiltin sig
-reactParent name = termParent (js_React_DOM_parent name)
+domLeaf :: JSString
+        -> [Attr]
+        -> ReactNode sig
+domLeaf name attrs =
+    DomElement (ReactDOMElement name (attrsToJson attrs) mempty "" Nothing)
 
 
-termLeaf :: ForeignRender
-         -> [AttrOrHandler sig]
-         -> ReactElement RtBuiltin sig
--- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
--- create a ReactForeign?
-termLeaf render attrs =
-    let (hs, as) = separateAttrs attrs
-    in ReactBuiltin [Static (Leaf render as hs)]
+classLeaf :: ReactClass props state sig
+          -- -> [Attr]
+          -> props
+          -> ReactNode sig
+classLeaf (ReactClass cls) props =
+    ComponentElement (ReactComponentElement cls (attrsToJSAny []) mempty "" Nothing)
 
 
-foreignLeaf :: ForeignRender
-            -> [AttrOrHandler sig]
-            -> ReactElement RtBuiltin sig
-foreignLeaf = termLeaf
-
-
-reactLeaf :: JSString
-         -> [AttrOrHandler sig]
-         -> ReactElement RtBuiltin sig
-reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
-
-
--- TODO ToJSString a => ?
--- Would this just be annoyingly ambiguous?
-text_ :: JSString -> ReactElement RtBuiltin sig
-text_ str = ReactBuiltin $ [Static $ Text (fromJSString str)]
+-- -- TODO ToJSString a => ?
+-- -- Would this just be annoyingly ambiguous?
+text_ :: String -> ReactNode sig
+text_ = fromString
 
 -- TODO generate these automatically
-a_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-a_ = reactParent "a"
+a_ :: [Attr] -> ReactNode sig -> ReactNode sig
+a_ = domParent "a"
 
-abbr_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-abbr_ = reactParent "abbr"
+abbr_ :: [Attr] -> ReactNode sig -> ReactNode sig
+abbr_ = domParent "abbr"
 
-address_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-address_ = reactParent "address"
+address_ :: [Attr] -> ReactNode sig -> ReactNode sig
+address_ = domParent "address"
 
-article_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-article_ = reactParent "article"
+article_ :: [Attr] -> ReactNode sig -> ReactNode sig
+article_ = domParent "article"
 
-aside_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-aside_ = reactParent "aside"
+aside_ :: [Attr] -> ReactNode sig -> ReactNode sig
+aside_ = domParent "aside"
 
-audio_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-audio_ = reactParent "audio"
+audio_ :: [Attr] -> ReactNode sig -> ReactNode sig
+audio_ = domParent "audio"
 
-b_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-b_ = reactParent "b"
+b_ :: [Attr] -> ReactNode sig -> ReactNode sig
+b_ = domParent "b"
 
-bdi_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-bdi_ = reactParent "bdi"
+bdi_ :: [Attr] -> ReactNode sig -> ReactNode sig
+bdi_ = domParent "bdi"
 
-bdo_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-bdo_ = reactParent "bdo"
+bdo_ :: [Attr] -> ReactNode sig -> ReactNode sig
+bdo_ = domParent "bdo"
 
-big_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-big_ = reactParent "big"
+big_ :: [Attr] -> ReactNode sig -> ReactNode sig
+big_ = domParent "big"
 
-blockquote_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-blockquote_ = reactParent "blockquote"
+blockquote_ :: [Attr] -> ReactNode sig -> ReactNode sig
+blockquote_ = domParent "blockquote"
 
-body_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-body_ = reactParent "body"
+body_ :: [Attr] -> ReactNode sig -> ReactNode sig
+body_ = domParent "body"
 
-button_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-button_ = reactParent "button"
+button_ :: [Attr] -> ReactNode sig -> ReactNode sig
+button_ = domParent "button"
 
-canvas_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-canvas_ = reactParent "canvas"
+canvas_ :: [Attr] -> ReactNode sig -> ReactNode sig
+canvas_ = domParent "canvas"
 
-caption_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-caption_ = reactParent "caption"
+caption_ :: [Attr] -> ReactNode sig -> ReactNode sig
+caption_ = domParent "caption"
 
-cite_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-cite_ = reactParent "cite"
+cite_ :: [Attr] -> ReactNode sig -> ReactNode sig
+cite_ = domParent "cite"
 
-code_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-code_ = reactParent "code"
+code_ :: [Attr] -> ReactNode sig -> ReactNode sig
+code_ = domParent "code"
 
-colgroup_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-colgroup_ = reactParent "colgroup"
+colgroup_ :: [Attr] -> ReactNode sig -> ReactNode sig
+colgroup_ = domParent "colgroup"
 
-data_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-data_ = reactParent "data"
+data_ :: [Attr] -> ReactNode sig -> ReactNode sig
+data_ = domParent "data"
 
-datalist_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-datalist_ = reactParent "datalist"
+datalist_ :: [Attr] -> ReactNode sig -> ReactNode sig
+datalist_ = domParent "datalist"
 
-dd_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-dd_ = reactParent "dd"
+dd_ :: [Attr] -> ReactNode sig -> ReactNode sig
+dd_ = domParent "dd"
 
-del_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-del_ = reactParent "del"
+del_ :: [Attr] -> ReactNode sig -> ReactNode sig
+del_ = domParent "del"
 
-details_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-details_ = reactParent "details"
+details_ :: [Attr] -> ReactNode sig -> ReactNode sig
+details_ = domParent "details"
 
-dfn_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-dfn_ = reactParent "dfn"
+dfn_ :: [Attr] -> ReactNode sig -> ReactNode sig
+dfn_ = domParent "dfn"
 
-div_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-div_ = reactParent "div"
+div_ :: [Attr] -> ReactNode sig -> ReactNode sig
+div_ = domParent "div"
 
-dl_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-dl_ = reactParent "dl"
+dl_ :: [Attr] -> ReactNode sig -> ReactNode sig
+dl_ = domParent "dl"
 
-dt_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-dt_ = reactParent "dt"
+dt_ :: [Attr] -> ReactNode sig -> ReactNode sig
+dt_ = domParent "dt"
 
-em_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-em_ = reactParent "em"
+em_ :: [Attr] -> ReactNode sig -> ReactNode sig
+em_ = domParent "em"
 
-fieldset_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-fieldset_ = reactParent "fieldset"
+fieldset_ :: [Attr] -> ReactNode sig -> ReactNode sig
+fieldset_ = domParent "fieldset"
 
-figcaption_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-figcaption_ = reactParent "figcaption"
+figcaption_ :: [Attr] -> ReactNode sig -> ReactNode sig
+figcaption_ = domParent "figcaption"
 
-figure_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-figure_ = reactParent "figure"
+figure_ :: [Attr] -> ReactNode sig -> ReactNode sig
+figure_ = domParent "figure"
 
-footer_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-footer_ = reactParent "footer"
+footer_ :: [Attr] -> ReactNode sig -> ReactNode sig
+footer_ = domParent "footer"
 
-form_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-form_ = reactParent "form"
+form_ :: [Attr] -> ReactNode sig -> ReactNode sig
+form_ = domParent "form"
 
-h1_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h1_ = reactParent "h1"
+h1_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h1_ = domParent "h1"
 
-h2_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h2_ = reactParent "h2"
+h2_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h2_ = domParent "h2"
 
-h3_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h3_ = reactParent "h3"
+h3_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h3_ = domParent "h3"
 
-h4_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h4_ = reactParent "h4"
+h4_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h4_ = domParent "h4"
 
-h5_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h5_ = reactParent "h5"
+h5_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h5_ = domParent "h5"
 
-h6_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-h6_ = reactParent "h6"
+h6_ :: [Attr] -> ReactNode sig -> ReactNode sig
+h6_ = domParent "h6"
 
-head_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-head_ = reactParent "head"
+head_ :: [Attr] -> ReactNode sig -> ReactNode sig
+head_ = domParent "head"
 
-header_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-header_ = reactParent "header"
+header_ :: [Attr] -> ReactNode sig -> ReactNode sig
+header_ = domParent "header"
 
-html_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-html_ = reactParent "html"
+html_ :: [Attr] -> ReactNode sig -> ReactNode sig
+html_ = domParent "html"
 
-i_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-i_ = reactParent "i"
+i_ :: [Attr] -> ReactNode sig -> ReactNode sig
+i_ = domParent "i"
 
-iframe_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-iframe_ = reactParent "iframe"
+iframe_ :: [Attr] -> ReactNode sig -> ReactNode sig
+iframe_ = domParent "iframe"
 
-ins_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-ins_ = reactParent "ins"
+ins_ :: [Attr] -> ReactNode sig -> ReactNode sig
+ins_ = domParent "ins"
 
-kbd_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-kbd_ = reactParent "kbd"
+kbd_ :: [Attr] -> ReactNode sig -> ReactNode sig
+kbd_ = domParent "kbd"
 
-label_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-label_ = reactParent "label"
+label_ :: [Attr] -> ReactNode sig -> ReactNode sig
+label_ = domParent "label"
 
-legend_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-legend_ = reactParent "legend"
+legend_ :: [Attr] -> ReactNode sig -> ReactNode sig
+legend_ = domParent "legend"
 
-li_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-li_ = reactParent "li"
+li_ :: [Attr] -> ReactNode sig -> ReactNode sig
+li_ = domParent "li"
 
-main_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-main_ = reactParent "main"
+main_ :: [Attr] -> ReactNode sig -> ReactNode sig
+main_ = domParent "main"
 
-map_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-map_ = reactParent "map"
+map_ :: [Attr] -> ReactNode sig -> ReactNode sig
+map_ = domParent "map"
 
-mark_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-mark_ = reactParent "mark"
+mark_ :: [Attr] -> ReactNode sig -> ReactNode sig
+mark_ = domParent "mark"
 
-menu_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-menu_ = reactParent "menu"
+menu_ :: [Attr] -> ReactNode sig -> ReactNode sig
+menu_ = domParent "menu"
 
-menuitem_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-menuitem_ = reactParent "menuitem"
+menuitem_ :: [Attr] -> ReactNode sig -> ReactNode sig
+menuitem_ = domParent "menuitem"
 
-meter_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-meter_ = reactParent "meter"
+meter_ :: [Attr] -> ReactNode sig -> ReactNode sig
+meter_ = domParent "meter"
 
-nav_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-nav_ = reactParent "nav"
+nav_ :: [Attr] -> ReactNode sig -> ReactNode sig
+nav_ = domParent "nav"
 
-noscript_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-noscript_ = reactParent "noscript"
+noscript_ :: [Attr] -> ReactNode sig -> ReactNode sig
+noscript_ = domParent "noscript"
 
-object_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-object_ = reactParent "object"
+object_ :: [Attr] -> ReactNode sig -> ReactNode sig
+object_ = domParent "object"
 
-ol_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-ol_ = reactParent "ol"
+ol_ :: [Attr] -> ReactNode sig -> ReactNode sig
+ol_ = domParent "ol"
 
-optgroup_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-optgroup_ = reactParent "optgroup"
+optgroup_ :: [Attr] -> ReactNode sig -> ReactNode sig
+optgroup_ = domParent "optgroup"
 
-option_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-option_ = reactParent "option"
+option_ :: [Attr] -> ReactNode sig -> ReactNode sig
+option_ = domParent "option"
 
-output_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-output_ = reactParent "output"
+output_ :: [Attr] -> ReactNode sig -> ReactNode sig
+output_ = domParent "output"
 
-p_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-p_ = reactParent "p"
+p_ :: [Attr] -> ReactNode sig -> ReactNode sig
+p_ = domParent "p"
 
-pre_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-pre_ = reactParent "pre"
+pre_ :: [Attr] -> ReactNode sig -> ReactNode sig
+pre_ = domParent "pre"
 
-progress_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-progress_ = reactParent "progress"
+progress_ :: [Attr] -> ReactNode sig -> ReactNode sig
+progress_ = domParent "progress"
 
-q_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-q_ = reactParent "q"
+q_ :: [Attr] -> ReactNode sig -> ReactNode sig
+q_ = domParent "q"
 
-rp_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-rp_ = reactParent "rp"
+rp_ :: [Attr] -> ReactNode sig -> ReactNode sig
+rp_ = domParent "rp"
 
-rt_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-rt_ = reactParent "rt"
+rt_ :: [Attr] -> ReactNode sig -> ReactNode sig
+rt_ = domParent "rt"
 
-ruby_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-ruby_ = reactParent "ruby"
+ruby_ :: [Attr] -> ReactNode sig -> ReactNode sig
+ruby_ = domParent "ruby"
 
-s_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-s_ = reactParent "signal"
+s_ :: [Attr] -> ReactNode sig -> ReactNode sig
+s_ = domParent "signal"
 
-samp_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-samp_ = reactParent "samp"
+samp_ :: [Attr] -> ReactNode sig -> ReactNode sig
+samp_ = domParent "samp"
 
-section_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-section_ = reactParent "section"
+section_ :: [Attr] -> ReactNode sig -> ReactNode sig
+section_ = domParent "section"
 
-select_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-select_ = reactParent "select"
+select_ :: [Attr] -> ReactNode sig -> ReactNode sig
+select_ = domParent "select"
 
-small_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-small_ = reactParent "small"
+small_ :: [Attr] -> ReactNode sig -> ReactNode sig
+small_ = domParent "small"
 
-span_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-span_ = reactParent "span"
+span_ :: [Attr] -> ReactNode sig -> ReactNode sig
+span_ = domParent "span"
 
-strong_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-strong_ = reactParent "strong"
+strong_ :: [Attr] -> ReactNode sig -> ReactNode sig
+strong_ = domParent "strong"
 
-sub_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-sub_ = reactParent "sub"
+sub_ :: [Attr] -> ReactNode sig -> ReactNode sig
+sub_ = domParent "sub"
 
-summary_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-summary_ = reactParent "summary"
+summary_ :: [Attr] -> ReactNode sig -> ReactNode sig
+summary_ = domParent "summary"
 
-sup_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-sup_ = reactParent "sup"
+sup_ :: [Attr] -> ReactNode sig -> ReactNode sig
+sup_ = domParent "sup"
 
-table_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-table_ = reactParent "table"
+table_ :: [Attr] -> ReactNode sig -> ReactNode sig
+table_ = domParent "table"
 
-tbody_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-tbody_ = reactParent "tbody"
+tbody_ :: [Attr] -> ReactNode sig -> ReactNode sig
+tbody_ = domParent "tbody"
 
-td_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-td_ = reactParent "td"
+td_ :: [Attr] -> ReactNode sig -> ReactNode sig
+td_ = domParent "td"
 
-tfoot_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-tfoot_ = reactParent "tfoot"
+tfoot_ :: [Attr] -> ReactNode sig -> ReactNode sig
+tfoot_ = domParent "tfoot"
 
-th_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-th_ = reactParent "th"
+th_ :: [Attr] -> ReactNode sig -> ReactNode sig
+th_ = domParent "th"
 
-thead_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-thead_ = reactParent "thead"
+thead_ :: [Attr] -> ReactNode sig -> ReactNode sig
+thead_ = domParent "thead"
 
-time_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-time_ = reactParent "time"
+time_ :: [Attr] -> ReactNode sig -> ReactNode sig
+time_ = domParent "time"
 
-tr_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-tr_ = reactParent "tr"
+tr_ :: [Attr] -> ReactNode sig -> ReactNode sig
+tr_ = domParent "tr"
 
-u_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-u_ = reactParent "u"
+u_ :: [Attr] -> ReactNode sig -> ReactNode sig
+u_ = domParent "u"
 
-ul_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-ul_ = reactParent "ul"
+ul_ :: [Attr] -> ReactNode sig -> ReactNode sig
+ul_ = domParent "ul"
 
-var_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-var_ = reactParent "var"
+var_ :: [Attr] -> ReactNode sig -> ReactNode sig
+var_ = domParent "var"
 
-video_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-video_ = reactParent "video"
+video_ :: [Attr] -> ReactNode sig -> ReactNode sig
+video_ = domParent "video"
 
 
-area_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-area_ = reactLeaf "area"
+area_ :: [Attr] -> ReactNode sig
+area_ = domLeaf "area"
 
-base_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-base_ = reactLeaf "base"
+base_ :: [Attr] -> ReactNode sig
+base_ = domLeaf "base"
 
-br_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-br_ = reactLeaf "br"
+br_ :: [Attr] -> ReactNode sig
+br_ = domLeaf "br"
 
-col_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-col_ = reactLeaf "col"
+col_ :: [Attr] -> ReactNode sig
+col_ = domLeaf "col"
 
-embed_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-embed_ = reactLeaf "embed"
+embed_ :: [Attr] -> ReactNode sig
+embed_ = domLeaf "embed"
 
-hr_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-hr_ = reactLeaf "hr"
+hr_ :: [Attr] -> ReactNode sig
+hr_ = domLeaf "hr"
 
-img_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-img_ = reactLeaf "img"
+img_ :: [Attr] -> ReactNode sig
+img_ = domLeaf "img"
 
-input_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-input_ = reactLeaf "input"
+input_ :: [Attr] -> ReactNode sig
+input_ = domLeaf "input"
 
-keygen_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-keygen_ = reactLeaf "keygen"
+keygen_ :: [Attr] -> ReactNode sig
+keygen_ = domLeaf "keygen"
 
-link_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-link_ = reactLeaf "link"
+link_ :: [Attr] -> ReactNode sig
+link_ = domLeaf "link"
 
-meta_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-meta_ = reactLeaf "meta"
+meta_ :: [Attr] -> ReactNode sig
+meta_ = domLeaf "meta"
 
-param_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-param_ = reactLeaf "param"
+param_ :: [Attr] -> ReactNode sig
+param_ = domLeaf "param"
 
-source_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-source_ = reactLeaf "source"
+source_ :: [Attr] -> ReactNode sig
+source_ = domLeaf "source"
 
-track_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-track_ = reactLeaf "track"
+track_ :: [Attr] -> ReactNode sig
+track_ = domLeaf "track"
 
-wbr_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-wbr_ = reactLeaf "wbr"
+wbr_ :: [Attr] -> ReactNode sig
+wbr_ = domLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
 -- style :: RawAttrs -> JSString -> IO ForeignNode
@@ -395,53 +392,53 @@ wbr_ = reactLeaf "wbr"
 
 -- svg!
 
-svg_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-svg_ = reactParent "svg"
+svg_ :: [Attr] -> ReactNode sig -> ReactNode sig
+svg_ = domParent "svg"
 
-defs_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-defs_ = reactParent "defs"
+defs_ :: [Attr] -> ReactNode sig -> ReactNode sig
+defs_ = domParent "defs"
 
-g_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-g_ = reactParent "g"
+g_ :: [Attr] -> ReactNode sig -> ReactNode sig
+g_ = domParent "g"
 
-linearGradient_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-linearGradient_ = reactParent "linearGradient"
+linearGradient_ :: [Attr] -> ReactNode sig -> ReactNode sig
+linearGradient_ = domParent "linearGradient"
 
-mask_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-mask_ = reactParent "mask"
+mask_ :: [Attr] -> ReactNode sig -> ReactNode sig
+mask_ = domParent "mask"
 
-pattern_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-pattern_ = reactParent "pattern"
+pattern_ :: [Attr] -> ReactNode sig -> ReactNode sig
+pattern_ = domParent "pattern"
 
-radialGradient_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-radialGradient_ = reactParent "radialGradient"
+radialGradient_ :: [Attr] -> ReactNode sig -> ReactNode sig
+radialGradient_ = domParent "radialGradient"
 
-stop_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-stop_ = reactParent "stop"
+stop_ :: [Attr] -> ReactNode sig -> ReactNode sig
+stop_ = domParent "stop"
 
--- text_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
--- text_ = reactParent "text"
+-- text_ :: [Attr] -> ReactNode sig -> ReactNode sig
+-- text_ = domParent "text"
 
-tspan_ :: [AttrOrHandler sig] -> ReactElement ty sig -> ReactElement RtBuiltin sig
-tspan_ = reactParent "tspan"
+tspan_ :: [Attr] -> ReactNode sig -> ReactNode sig
+tspan_ = domParent "tspan"
 
-circle_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-circle_ = reactLeaf "circle"
+circle_ :: [Attr] -> ReactNode sig
+circle_ = domLeaf "circle"
 
-ellipse_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-ellipse_ = reactLeaf "ellipse"
+ellipse_ :: [Attr] -> ReactNode sig
+ellipse_ = domLeaf "ellipse"
 
-line_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-line_ = reactLeaf "line"
+line_ :: [Attr] -> ReactNode sig
+line_ = domLeaf "line"
 
-path_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-path_ = reactLeaf "path"
+path_ :: [Attr] -> ReactNode sig
+path_ = domLeaf "path"
 
-polygon_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-polygon_ = reactLeaf "polygon"
+polygon_ :: [Attr] -> ReactNode sig
+polygon_ = domLeaf "polygon"
 
-polyline_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-polyline_ = reactLeaf "polyline"
+polyline_ :: [Attr] -> ReactNode sig
+polyline_ = domLeaf "polyline"
 
-rect_ :: [AttrOrHandler sig] -> ReactElement RtBuiltin sig
-rect_ = reactLeaf "rect"
+rect_ :: [Attr] -> ReactNode sig
+rect_ = domLeaf "rect"

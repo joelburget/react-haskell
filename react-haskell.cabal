@@ -54,8 +54,6 @@ library
     React.Elements,
     React.Events,
     React.Imports,
-    React.Interpret,
-    React.Local,
     React.Rebindable,
     React.Render,
     React.Types
@@ -79,6 +77,8 @@ library
     ghcjs-base >= 0.1,
     ghcjs-prim >= 0.1.0.0,
     ghcjs-dom >= 0.1,
-    void == 0.7
+    void == 0.7,
+    aeson,
+    text
   hs-source-dirs:      src
   default-language:    Haskell2010

@@ -1,10 +1,11 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings, DataKinds #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, DataKinds,
+    ExistentialQuantification #-}
 module React.Class
     ( ReactClass(..)
     , ClassConfig(..)
     , createClass
-    , statefulClass
-    , statelessClass
+    , smartClass
+    , dumbClass
     ) where
 
 
@@ -19,22 +20,31 @@ import React.Imports
 import React.Types
 
 
-statelessClass :: ClassConfig props () sig
-statelessClass = ClassConfig
+data ClassConfig props state insig exsig = ClassConfig
+    { renderFn :: props -> state -> ReactNode insig
+    , getInitialState :: state
+    , name :: JSString
+    , transition :: (state, insig) -> (state, exsig)
+    , startupSignals :: [insig]
+    }
+
+
+dumbClass :: ClassConfig props () sig sig
+dumbClass = ClassConfig
     { name = "Anonymous Stateless Class"
     , renderFn = \_ _ -> "give this class a `render`!"
     , getInitialState = ()
-    , transition = flip const
+    , transition = id
     , startupSignals = []
     }
 
 
-statefulClass :: ClassConfig props state sig
-statefulClass = ClassConfig
+smartClass :: ClassConfig props state insig exsig
+smartClass = ClassConfig
     { name = "Anonymous Stateful Class"
     , renderFn = \_ _ -> "give this class a `render`!"
     , getInitialState = error "must define `getInitialState`!"
-    , transition = flip const
+    , transition = error "must define `transition`!"
     , startupSignals = []
     }
 
@@ -42,8 +52,8 @@ statefulClass = ClassConfig
 -- type SmartComponent = ReactClass
 
 
--- | 'ReactElement RtClass' smart constructor.
-createClass :: ClassConfig props state sig -> ReactClass props state sig
+createClass :: ClassConfig props state insig exsig
+            -> ReactClass props state exsig
 createClass ClassConfig{renderFn,
                         getInitialState,
                         name,
@@ -60,9 +70,9 @@ createClass ClassConfig{renderFn,
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactClass
-           renderFn
-           transition
-           foreignClass
-           name
-           getInitialState
+    in ReactClass foreignClass
+           -- renderFn
+           -- transition
+           -- foreignClass
+           -- name
+           -- getInitialState

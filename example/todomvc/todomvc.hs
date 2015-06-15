@@ -42,8 +42,6 @@ data PageState = PageState
 $(makeLenses ''Todo)
 $(makeLenses ''PageState)
 
-type TodoMvc = React RtBuiltin Transition
-
 initialPageState :: PageState
 initialPageState = PageState
     [Todo "abc" Active, Todo "xyz" Completed,
@@ -148,7 +146,7 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- autofocus input attribute. Pressing Enter creates the todo, appends it
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
-header :: PageState -> TodoMvc
+header :: PageState -> ReactElement
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
     h1_ [] $ text_ "todos"
     input_ [ id_ "new-todo"
@@ -159,7 +157,7 @@ header PageState{_typingValue} = header_ [ id_ "header" ] $ do
            , onKeyDown emitKeydown
            ]
 
-todoView :: PageState -> Int -> TodoMvc
+todoView :: PageState -> Int -> ReactElement
 todoView PageState{_todos} i =
     let Todo{_text, _status} = _todos !! i
     in li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
@@ -180,7 +178,7 @@ todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
 mainBody :: ReactClass PageState () Transition
-mainBody = createClass $ statelessClass
+mainBody = createClass $ dumbClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
           section_ [ id_ "main" ] $ do
@@ -195,7 +193,7 @@ mainBody = createClass $ statelessClass
     }
 
 innerFooter :: ReactClass PageState () Transition
-innerFooter = createClass $ statelessClass
+innerFooter = createClass $ dumbClass
     { name = "InnerFooter"
     , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
           let activeCount = length (todosWithStatus Active _todos)
@@ -216,7 +214,7 @@ innerFooter = createClass $ statelessClass
     }
 
 outerFooter :: ReactClass () () Void
-outerFooter = React.createClass $ statelessClass
+outerFooter = React.createClass $ dumbClass
     { name = "OuterFooter"
     , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
           -- TODO react complains about these things not having keys even though
@@ -232,7 +230,7 @@ outerFooter = React.createClass $ statelessClass
 
 -- XXX doesn't sig have to be Void here - IE no signal can escape?
 wholePage :: ReactClass () PageState Void
-wholePage = createClass $ statefulClass
+wholePage = createClass $ smartClass
     { name = "WholePage"
     , transition = pageTransition
     , getInitialState = initialPageState
@@ -244,13 +242,13 @@ wholePage = createClass $ statefulClass
               unless (null _todos) $ do
                   mainBody' s
                   innerFooter' s
-          locally (outerFooter' ())
+          outerFooter' ()
     }
 
-wholePage'   = createFactory wholePage
-outerFooter' = createFactory outerFooter
-innerFooter' = createFactory innerFooter
-mainBody'    = createFactory mainBody
+wholePage'   = classLeaf wholePage
+outerFooter' = classLeaf outerFooter
+innerFooter' = classLeaf innerFooter
+mainBody'    = classLeaf mainBody
 
 main = do
     Just doc <- currentDocument

@@ -1,89 +1,90 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Attrs where
 
+import Data.Text (Text)
 import GHCJS.Types
 
 import React.Types
 
-key_ :: JSString -> AttrOrHandler signal
-key_ = mkStaticAttr "key" Str
+key_ :: Text -> AttrOrHandler signal
+key_ = mkStaticAttr "key"
 
-class_ :: JSString -> AttrOrHandler signal
-class_ = mkStaticAttr "className" Str
+class_ :: Text -> AttrOrHandler signal
+class_ = mkStaticAttr "className"
 
-href_ :: JSString -> AttrOrHandler signal
-href_ = mkStaticAttr "href" Str
+href_ :: Text -> AttrOrHandler signal
+href_ = mkStaticAttr "href"
 
-id_ :: JSString -> AttrOrHandler signal
-id_ = mkStaticAttr "id" Str
+id_ :: Text -> AttrOrHandler signal
+id_ = mkStaticAttr "id"
 
-src_ :: JSString -> AttrOrHandler signal
-src_ = mkStaticAttr "src" Str
+src_ :: Text -> AttrOrHandler signal
+src_ = mkStaticAttr "src"
 
 style_ :: JSON -> AttrOrHandler signal
-style_ = mkStaticAttr "style" id
+style_ = mkStaticAttr "style"
 
-value_ :: JSString -> AttrOrHandler signal
-value_ = mkStaticAttr "value" Str
+value_ :: Text -> AttrOrHandler signal
+value_ = mkStaticAttr "value"
 
-placeholder_ :: JSString -> AttrOrHandler signal
-placeholder_ = mkStaticAttr "placeholder" Str
+placeholder_ :: Text -> AttrOrHandler signal
+placeholder_ = mkStaticAttr "placeholder"
 
-for_ :: JSString -> AttrOrHandler signal
-for_ = mkStaticAttr "htmlFor" Str
+for_ :: Text -> AttrOrHandler signal
+for_ = mkStaticAttr "htmlFor"
 
-type_ :: JSString -> AttrOrHandler signal
-type_ = mkStaticAttr "type" Str
+type_ :: Text -> AttrOrHandler signal
+type_ = mkStaticAttr "type"
 
 checked_ :: Bool -> AttrOrHandler signal
-checked_ = mkStaticAttr "checked" Bool
+checked_ = mkStaticAttr "checked"
 
 autofocus_ :: Bool -> AttrOrHandler signal
-autofocus_ = mkStaticAttr "autoFocus" Bool
+autofocus_ = mkStaticAttr "autoFocus"
 
 width_ :: Double -> AttrOrHandler signal
-width_ = mkStaticAttr "width" Num
+width_ = mkStaticAttr "width"
 
 height_ :: Double -> AttrOrHandler signal
-height_ = mkStaticAttr "height" Num
+height_ = mkStaticAttr "height"
 
 -- svg!
 
 cx_ :: Double -> AttrOrHandler signal
-cx_ = mkStaticAttr "cx" Num
+cx_ = mkStaticAttr "cx"
 
 cy_ :: Double -> AttrOrHandler signal
-cy_ = mkStaticAttr "cy" Num
+cy_ = mkStaticAttr "cy"
 
 d_ :: Double -> AttrOrHandler signal
-d_ = mkStaticAttr "d" Num
+d_ = mkStaticAttr "d"
 
 dx_ :: Double -> AttrOrHandler signal
-dx_ = mkStaticAttr "dx" Num
+dx_ = mkStaticAttr "dx"
 
 dy_ :: Double -> AttrOrHandler signal
-dy_ = mkStaticAttr "dy" Num
+dy_ = mkStaticAttr "dy"
 
 x_ :: Double -> AttrOrHandler signal
-x_ = mkStaticAttr "x" Num
+x_ = mkStaticAttr "x"
 
 y_ :: Double -> AttrOrHandler signal
-y_ = mkStaticAttr "y" Num
+y_ = mkStaticAttr "y"
 
 r_ :: Double -> AttrOrHandler signal
-r_ = mkStaticAttr "r" Num
+r_ = mkStaticAttr "r"
 
-fill_ :: JSString -> AttrOrHandler signal
-fill_ = mkStaticAttr "fill" Str
+fill_ :: Text -> AttrOrHandler signal
+fill_ = mkStaticAttr "fill"
 
-viewBox_ :: JSString -> AttrOrHandler signal
-viewBox_ = mkStaticAttr "viewBox" Str
+viewBox_ :: Text -> AttrOrHandler signal
+viewBox_ = mkStaticAttr "viewBox"
 
-points_ :: JSString -> AttrOrHandler signal
-points_ = mkStaticAttr "points" Str
+points_ :: Text -> AttrOrHandler signal
+points_ = mkStaticAttr "points"
 
-transform_ :: JSString -> AttrOrHandler signal
-transform_ = mkStaticAttr "transform" Str
+transform_ :: Text -> AttrOrHandler signal
+transform_ = mkStaticAttr "transform"
 
 -- fillOpacity fontFamily fontSize fx fy gradientTransform
 -- gradientUnits markerEnd markerMid markerStart offset opacity

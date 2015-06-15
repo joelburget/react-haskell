@@ -12,23 +12,14 @@ module React
     , ReactClass()
     , ClassConfig(..)
     , createClass
-    , statelessClass
-    , statefulClass
-
-    -- React.Local
-    , locally
-    , GeneralizeSignal(..)
+    , smartClass
+    , dumbClass
 
     -- React.Render
     , cancelRender
     , render
 
     -- React.Types
-    , React(..)
-    , ReactType(..)
-    -- , React
-    -- , React'
-    , Pure
     , RenderHandle(..)
     , EventProperties(..)
     , Target(..)
@@ -38,10 +29,9 @@ module React
     , ChangeEvent(..)
     , FocusEvent(..)
     , ForeignRender
-    , createFactory
 
-    -- XXX(joel)
-    , JSON(..)
+    , ReactType(..)
+    , ReactNode
 
     -- XXX(joel)
     , AttrOrHandler()
@@ -59,7 +49,7 @@ module React
 import React.Class
 -- import React.Imports
 -- import React.Interpret
-import React.Local
+-- import React.Local
 import React.Render
 import React.Types
 

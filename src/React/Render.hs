@@ -24,33 +24,22 @@ import React.Class
 import React.Elements
 import React.Events
 import React.Imports
-import React.Interpret
+-- import React.Interpret
 import React.Types
 
 
--- XXX don't think the handle remains valid. fix this with a ref.
--- XXX doesn't sig have to be Void here - IE no signal can escape?
-render :: Elem
-       -> ReactElement ty sig
-       -> IO ()
-render elem (ReactComponent props cls) =
-    render' elem ((classRender cls) props (initialState cls))
-render elem description@(ReactBuiltin _) = render' elem description
-render elem description@(ReactSequence _) = render' elem description
+render :: ReactNode sig -> Elem -> IO ()
+render node elem = do
+    node' <- castRef <$> toJSRef node
+    js_render node' elem
 
 
-render' :: Elem -> ReactElement ty sig -> IO ()
-render' elem render = do
-    let renderCb :: IO ()
-        renderCb = do
-            foreignNode <- interpret render (const (return ())) -- XXX
-            js_render foreignNode elem
-            -- raf
-            return ()
-        -- raf :: IO RenderHandle
-        -- raf = js_raf =<< syncCallback AlwaysRetain True renderCb
-    renderCb
-    -- raf
+-- renderCb :: IO ()
+-- renderCb = do
+--     foreignNode <- interpret render (const (return ())) -- XXX
+--     js_render foreignNode elem
+--     -- raf
+--     return ()
 
 
 updateCb :: IORef [signal] -> signal -> IO ()

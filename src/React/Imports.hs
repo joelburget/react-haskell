@@ -14,9 +14,9 @@ import React.Types
 type Elem = Element
 
 #ifdef __GHCJS__
-foreign import javascript unsafe "React.render($1, $2)" js_render :: ForeignNode -> Elem -> IO ()
+foreign import javascript unsafe "React.render($1, $2)" js_render :: JSRef () -> Elem -> IO ()
 #else
-js_render :: ForeignNode -> Elem -> IO ()
+js_render :: JSRef () -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 #endif
 
@@ -28,9 +28,9 @@ js_bezier = error "cannot evaluate js_bezier in ghc"
 #endif
 
 #ifdef __GHCJS__
-foreign import javascript unsafe "js_createClass" js_createClass :: JSRef JSAny -> ForeignClass
+foreign import javascript unsafe "js_createClass" js_createClass :: JSRef JSAny -> JSAny
 #else
-js_createClass :: JSRef JSAny -> ForeignClass
+js_createClass :: JSRef JSAny -> JSAny
 js_createClass = error "cannot evaluate js_createClass in ghc"
 #endif
 

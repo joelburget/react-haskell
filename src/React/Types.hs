@@ -1,8 +1,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
     ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
-    DeriveGeneric, DataKinds, GADTs #-}
+    DeriveGeneric, DataKinds, GADTs, OverloadedStrings, CPP #-}
+
+#ifdef __GHCJS__
 {-# LANGUAGE JavaScriptFFI #-}
+#endif
+
 module React.Types where
 
 import Control.Applicative
@@ -13,9 +17,11 @@ import Data.IORef
 import Data.Maybe
 import Data.Monoid
 import Data.String
+import Data.Text
 import GHC.Generics
 import System.IO.Unsafe
 
+import qualified Data.Aeson as Aeson
 import Data.Void
 import GHCJS.Foreign
 import GHCJS.Marshal
@@ -24,22 +30,29 @@ import Lens.Family2
 
 import Debug.Trace
 
+#ifdef __GHCJS__
+foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))" js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
+#else
+js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
+js_react_createElement_DOM = error "cannot evaluate js_react_createElement_DOM in ghc"
+#endif
+
+#ifdef __GHCJS__
+foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))" js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
+#else
+js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
+js_react_createElement_Class = error "cannot evaluate js_react_createElement_Class in ghc"
+#endif
+
 instance Show JSString where
     show = fromJSString
 
 type JSAny = JSRef ()
 
--- XXX
-data JSON
-  = Num  Double
-  | Str  JSString
-  | Bool Bool
-  | Arr  [JSON]
-  | Dict [(JSString, JSON)]
-  | Null
+type JSON = Aeson.Value
 
-instance IsString JSON where
-  fromString = Str . fromString
+-- instance IsString JSON where
+--   fromString = Str . fromString
 
 newtype ForeignNode = ForeignNode JSAny
 newtype RawAttrs = RawAttrs JSAny
@@ -70,47 +83,10 @@ type RawEvent = JSRef RawEvent_
 
 type Attrs = [(JSString, JSON)]
 
--- it'd be super cool to restrict `Pre` to a string somehow (restrict the
--- underlying monad so it can only set attrs and string?)
-
-data ReactNode signal
-    = Parent ForeignRender Attrs [EventHandler signal] [Child signal]
-    | Leaf ForeignRender Attrs [EventHandler signal]
-    -- | Pre Attrs Handlers [ReactNode]
-    | Text String -- TODO(joel) JSString?
-
-
--- A child is either a sequence of static nodes or *one* dynamic node. This
--- representation is motivated by ...
---
--- ReactElement.createElement("div", null, a, [b, c], d)
---
--- Now ReactElement can infer that `a` and `d` are static, while `b` and `c` are
--- dynamic.
---
--- XXX
-
-data Child sig
-    = Static (ReactNode sig)
-    | Dynamic [(Int, ReactNode sig)]
-
-
--- Idea:
---
--- ReactElement is the type representing
--- * classes
--- * builtins
--- * sequences
---
--- Use a phantom type to only allow rendering of first two.
-
 data ReactType
     = RtClass
     | RtBuiltin
     | RtSequence
-
--- link to smart / dumb components
--- https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0
 
 
 -- | A 'ReactClass' is a standalone component of a user interface which
@@ -118,64 +94,98 @@ data ReactType
 -- scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass props state sig = forall insig. ReactClass
-    { classRender :: props -> state -> ReactElement RtBuiltin insig
-    , classTransition :: insig -> state -> (state, sig)
-
-    -- The IO action should occur only once
-    , foreignClass :: IO ForeignClass
-
-    -- TODO(joel) this conflicts weirdly with `className` from ReactElement.
-    , className :: JSString
-    , initialState :: state
-
-    -- , stateRef :: IORef state
-    -- , transitionRef :: IORef [sig]
+data ReactClass props state sig = ReactClass
+    { foreignClass :: IO JSAny
     }
 
+    -- { classRender :: props -> state -> ReactElement RtBuiltin insig
+    -- , classTransition :: insig -> state -> (state, sig)
 
-data ClassConfig props state sig = forall insig. ClassConfig
-    { renderFn :: props -> state -> ReactElement RtBuiltin insig
-    , getInitialState :: state
-    , name :: JSString
-    , transition :: insig -> state -> (state, sig)
-    , startupSignals :: [insig]
+    -- -- The IO action should occur only once
+    -- , foreignClass :: IO ForeignClass
+
+    -- -- TODO(joel) this conflicts weirdly with `className` from ReactElement.
+    -- , className :: JSString
+    -- , initialState :: state
+
+    -- -- , stateRef :: IORef state
+    -- -- , transitionRef :: IORef [sig]
+    -- }
+
+
+
+-- TODO use phantom type to indicate renderability? Only sequence is not.
+data ReactNode sig
+    = ComponentElement (ReactComponentElement sig)
+    | DomElement (ReactDOMElement sig)
+    | NodeText JSString
+    | NodeSequence [ReactNode sig]
+
+
+instance Monoid (ReactNode sig) where
+    mempty = NodeSequence []
+
+    (NodeSequence xs) `mappend` (NodeSequence ys) = NodeSequence (xs <> ys)
+    (NodeSequence xs) `mappend` y = NodeSequence (xs <> [y])
+    x `mappend` (NodeSequence ys) = NodeSequence (x : ys)
+    x `mappend` y = NodeSequence [x, y]
+
+
+instance ToJSRef (ReactNode sig) where
+    toJSRef (ComponentElement elem) = castRef <$> toJSRef elem
+    toJSRef (DomElement elem) = castRef <$> toJSRef elem
+    toJSRef (NodeText str) = castRef <$> toJSRef str
+    toJSRef (NodeSequence seq) = castRef <$> toJSRefListOf seq
+
+
+instance IsString (ReactNode sig) where
+    fromString str = NodeText (fromString str)
+
+
+data ReactComponentElement sig = ReactComponentElement
+    { reComType :: IO JSAny
+    , reComProps :: IO JSAny
+    , reComChildren :: ReactNode sig
+    , reComKey :: JSString
+    , reComRef :: Maybe JSString
     }
 
+instance ToJSRef (ReactComponentElement sig) where
+    toJSRef (ReactComponentElement ty props children key ref) = do
+        propsObj <- props
 
--- phew, what a mouthful
-data ReactElement :: ReactType -> * -> * where
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp propsObj
 
-    -- even this could maybe just store the class name and attrs?
-    -- XXX store ForeignClass
-    -- ReactComponent
-    ReactComponent    :: props -> ReactClass props state sig -> ReactElement RtClass sig
+        refProp <- toJSRef ref
+        setProp ("ref" :: String) refProp propsObj
 
-    -- This could really store just the name and attrs
-    ReactBuiltin  :: [Child sig] -> ReactElement RtBuiltin sig
+        ty' <- ty
+        children' <- castRef <$> toJSRef children
 
-    -- ReactFragment
-    ReactSequence :: [Child sig] -> ReactElement RtSequence sig
+        castRef <$> js_react_createElement_Class ty' propsObj children'
 
+data ReactDOMElement sig = ReactDOMElement
+    { reDomType :: JSString
+    , reDomProps :: JSON
+    , reDomChildren :: ReactNode sig
+    , reDomKey :: JSString
+    , reDomRef :: Maybe JSString
+    }
 
-runReact :: ReactElement ty sig -> [Child sig]
--- XXX
-runReact (ReactComponent props (ReactClass render _ _ _ state)) =
-    runReact (render props state)
-runReact (ReactBuiltin children) = children
-runReact (ReactSequence children) = children
+instance ToJSRef (ReactDOMElement sig) where
+    toJSRef (ReactDOMElement ty props children key ref) = do
+        propsObj <- castRef <$> toJSRef props
 
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp propsObj
 
--- TODO(joel) move this somewhere
-createFactory :: ReactClass props state sig
-              -> (props -> ReactElement RtClass sig)
-createFactory = flip ReactComponent
+        refProp <- toJSRef ref
+        setProp ("ref" :: String) refProp propsObj
 
+        children' <- castRef <$> toJSRef children
 
-type Pure a = a () Void ()
-
-instance IsString (ReactElement RtBuiltin sig) where
-    fromString str = ReactBuiltin [Static (Text str)]
+        castRef <$> js_react_createElement_DOM ty propsObj children'
 
 
 -- attributes
@@ -184,9 +194,11 @@ data AttrOrHandler signal
     = StaticAttr JSString JSON
     | Handler (EventHandler signal)
 
+data Attr = Attr Text JSON
 
-mkStaticAttr :: JSString -> (a -> JSON) -> a -> AttrOrHandler signal
-mkStaticAttr name f a = StaticAttr name (f a)
+
+mkStaticAttr :: Aeson.ToJSON a => JSString -> a -> AttrOrHandler signal
+mkStaticAttr name = StaticAttr name . Aeson.toJSON
 
 
 mkEventHandler :: (FromJSRef signal, NFData signal)

@@ -2,7 +2,7 @@
   FlexibleContexts, IncoherentInstances, LambdaCase, DataKinds #-}
 -- Note on IncoherentInstances: the two instances below will both work fine
 -- for `GeneralizeSignal Void Void`. They should never be called.
-module React.Local (GeneralizeSignal(..), generalizeChildren, locally) where
+module React.Local (GeneralizeSignal(..), locally) where
 
 import Control.Applicative
 import Data.Void
