@@ -12,11 +12,13 @@ module React.Types where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
+import qualified Data.HashMap.Strict as H
 import Data.IORef
+import Data.List (partition)
 import Data.Maybe
 import Data.Monoid
 import Data.String
-import Data.Text
+import Data.Text (Text)
 import GHC.Generics
 import System.IO.Unsafe
 
@@ -41,6 +43,13 @@ js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
 js_react_createElement_Class = error "cannot evaluate js_react_createElement_Class in ghc"
 #endif
 
+#ifdef __GHCJS__
+foreign import javascript unsafe "js_set_handler" js_set_handler :: JSString -> (JSFun (RawEvent -> IO ())) -> JSAny -> IO ()
+#else
+js_set_handler :: JSString -> (JSFun (RawEvent -> IO ())) -> JSAny -> IO ()
+js_set_handler = error "cannot evaluate js_set_handler in ghc"
+#endif
+
 instance Show JSString where
     show = fromJSString
 
@@ -60,14 +69,26 @@ type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 newtype RenderHandle = RenderHandle Int
 
 data EvtType
-    = ChangeEvt
-    | KeyDownEvt
-    | KeyPressEvt
-    | KeyUpEvt
-    | ClickEvt
-    | DoubleClickEvt
-    | MouseEnterEvt
-    | MouseLeaveEvt
+   = ChangeEvt
+   | KeyDownEvt
+   | KeyPressEvt
+   | KeyUpEvt
+   | ClickEvt
+   | DoubleClickEvt
+   | MouseEnterEvt
+   | MouseLeaveEvt
+
+
+jsName :: EvtType -> JSString
+jsName ChangeEvt = "onChange"
+jsName KeyDownEvt = "onKeyDown"
+jsName KeyPressEvt = "onKeyPress"
+jsName KeyUpEvt = "onKeyUp"
+jsName ClickEvt = "onClick"
+jsName DoubleClickEvt = "onDoubleClick"
+jsName MouseEnterEvt = "onMouseEnter"
+jsName MouseLeaveEvt = "onMouseLeave"
+
 
 data EventHandler signal = EventHandler
     { handler :: RawEvent -> Maybe signal
@@ -77,8 +98,6 @@ data EventHandler signal = EventHandler
 -- newtype RawEvent = RawEvent JSAny
 data RawEvent_
 type RawEvent = JSRef RawEvent_
-
-data Attr = Attr Text JSON
 
 data ReactType
     = RtClass
@@ -128,79 +147,141 @@ instance Monoid (ReactNode sig) where
     x `mappend` y = NodeSequence [x, y]
 
 
-instance ToJSRef (ReactNode sig) where
-    toJSRef (ComponentElement elem) = castRef <$> toJSRef elem
-    toJSRef (DomElement elem)       = castRef <$> toJSRef elem
-    toJSRef (NodeText str)          = castRef <$> toJSRef str
-    toJSRef (NodeSequence seq)      = castRef <$> toJSRefListOf seq
+reactNodeToJSAny :: (sig -> IO ()) -> ReactNode sig -> IO JSAny
+reactNodeToJSAny sigHandler (ComponentElement elem) =
+    componentToJSAny sigHandler elem
+reactNodeToJSAny sigHandler (DomElement elem)       =
+    domToJSAny sigHandler elem
+reactNodeToJSAny sigHandler (NodeText str)          =
+    castRef <$> toJSRef str
+reactNodeToJSAny sigHandler (NodeSequence seq)      = do
+    jsNodes <- mapM (reactNodeToJSAny sigHandler) seq
+    castRef <$> toArray jsNodes
 
 
 instance IsString (ReactNode sig) where
     fromString str = NodeText (fromString str)
 
 
+attrsToJson :: [Attr] -> JSON
+attrsToJson = Aeson.toJSON . H.fromList . map unAttr where
+    unAttr (Attr name json) = (name, json)
+
+
+separateAttrs :: [AttrOrHandler sig] -> ([Attr], [EventHandler sig])
+separateAttrs attrHandlers = (map makeA as, map makeH hs) where
+    (as, hs) = partition isAttr attrHandlers
+
+    isAttr :: AttrOrHandler sig -> Bool
+    isAttr (StaticAttr _ _) = True
+    isAttr _ = False
+
+    makeA :: AttrOrHandler sig -> Attr
+    makeA (StaticAttr t j) = Attr t j
+
+    makeH :: AttrOrHandler sig -> EventHandler sig
+    makeH (Handler h) = h
+
+
+attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
+attrHandlerToJSAny sigHandler attrHandlers = do
+    let (attrs, handlers) = separateAttrs attrHandlers
+    starter <- castRef <$> toJSRef (attrsToJson attrs)
+
+    forM_ handlers $ makeHandler starter . unHandler sigHandler
+    return starter
+
+
+data AttrOrHandler signal
+    = StaticAttr Text JSON
+    | Handler (EventHandler signal)
+
+data Attr = Attr Text JSON
+
+
 data ReactComponentElement sig = ReactComponentElement
     { reComType :: IO JSAny
-    , reComProps :: IO JSAny
+    , reComAttrs :: [AttrOrHandler sig]
     , reComChildren :: ReactNode sig
     , reComKey :: JSString
     , reComRef :: Maybe JSString
     }
 
-instance ToJSRef (ReactComponentElement sig) where
-    toJSRef (ReactComponentElement ty props children key ref) = do
-        propsObj <- props
 
-        keyProp <- toJSRef key
-        setProp ("key" :: String) keyProp propsObj
+componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
+componentToJSAny sigHandler (ReactComponentElement ty props children key ref) = do
+    propsObj <- attrHandlerToJSAny sigHandler props
 
-        refProp <- toJSRef ref
-        setProp ("ref" :: String) refProp propsObj
+    keyProp <- toJSRef key
+    setProp ("key" :: String) keyProp propsObj
 
-        ty' <- ty
-        children' <- castRef <$> toJSRef children
+    refProp <- toJSRef ref
+    setProp ("ref" :: String) refProp propsObj
 
-        castRef <$> js_react_createElement_Class ty' propsObj children'
+    ty' <- ty
+    children' <- reactNodeToJSAny sigHandler children
+
+    castRef <$> js_react_createElement_Class ty' propsObj children'
+
 
 data ReactDOMElement sig = ReactDOMElement
     { reDomType :: JSString
-    , reDomProps :: JSON
+    , reDomProps :: [AttrOrHandler sig]
     , reDomChildren :: ReactNode sig
     , reDomKey :: JSString
     , reDomRef :: Maybe JSString
     }
 
-instance ToJSRef (ReactDOMElement sig) where
-    toJSRef (ReactDOMElement ty props children key ref) = do
-        propsObj <- castRef <$> toJSRef props
 
-        keyProp <- toJSRef key
-        setProp ("key" :: String) keyProp propsObj
+domToJSAny :: (sig -> IO ()) -> ReactDOMElement sig -> IO JSAny
+domToJSAny sigHandler (ReactDOMElement ty props children key ref) = do
+    propsObj <- attrHandlerToJSAny sigHandler props
 
-        refProp <- toJSRef ref
-        setProp ("ref" :: String) refProp propsObj
+    keyProp <- toJSRef key
+    setProp ("key" :: String) keyProp propsObj
 
-        children' <- castRef <$> toJSRef children
+    refProp <- toJSRef ref
+    setProp ("ref" :: String) refProp propsObj
 
-        castRef <$> js_react_createElement_DOM ty propsObj children'
+    children' <- reactNodeToJSAny sigHandler children
+
+    castRef <$> js_react_createElement_DOM ty propsObj children'
 
 
 -- attributes
 
-data AttrOrHandler signal
-    = StaticAttr JSString JSON
-    | Handler (EventHandler signal)
+unHandler :: (s -> IO ())
+          -> EventHandler s
+          -> (RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\e -> act <$> handle e, ty)
 
 
+makeHandler :: JSAny
+            -- ^ object to set this attribute on
+            -> (RawEvent -> Maybe (IO ()), EvtType)
+            -- ^ handler
+            -> IO ()
+makeHandler obj (handle, evtTy) = do
+    handle' <- handlerToJs handle
+    js_set_handler (jsName evtTy) handle' obj
 
-mkStaticAttr :: Aeson.ToJSON a => Text -> a -> Attr
-mkStaticAttr name = Attr name . Aeson.toJSON
+
+-- | Make a javascript callback to synchronously execute the handler
+handlerToJs :: (RawEvent -> Maybe (IO ())) -> IO (JSFun (RawEvent -> IO ()))
+handlerToJs handle = syncCallback1 AlwaysRetain True $ \evt ->
+    case handle evt of
+        Nothing -> return ()
+        Just x -> x
 
 
-mkEventHandler :: (FromJSRef signal, NFData signal)
+mkStaticAttr :: Aeson.ToJSON a => Text -> a -> AttrOrHandler sig
+mkStaticAttr name = StaticAttr name . Aeson.toJSON
+
+
+mkEventHandler :: (FromJSRef evt, NFData evt)
                => EvtType
-               -> (signal -> Maybe signal')
-               -> AttrOrHandler signal'
+               -> (evt -> Maybe signal)
+               -> AttrOrHandler signal
 mkEventHandler ty handle =
     -- XXX unsafe as fuck
     let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of

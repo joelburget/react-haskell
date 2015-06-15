@@ -2,6 +2,7 @@
 
 module React.Render
     ( render
+    , debugRender
     , cancelRender
     ) where
 
@@ -14,6 +15,7 @@ import Data.List
 import Data.Maybe
 import Data.Monoid
 import Data.String
+import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Marshal
@@ -28,9 +30,15 @@ import React.Imports
 import React.Types
 
 
-render :: ReactNode sig -> Elem -> IO ()
+render :: ReactNode Void -> Elem -> IO ()
 render node elem = do
-    node' <- castRef <$> toJSRef node
+    node' <- reactNodeToJSAny undefined node
+    js_render node' elem
+
+
+debugRender :: Show sig => ReactNode sig -> Elem -> IO ()
+debugRender node elem = do
+    node' <- reactNodeToJSAny print node
     js_render node' elem
 
 

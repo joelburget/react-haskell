@@ -6,84 +6,84 @@ import GHCJS.Types
 
 import React.Types
 
-key_ :: Text -> Attr
+key_ :: Text -> AttrOrHandler sig
 key_ = mkStaticAttr "key"
 
-class_ :: Text -> Attr
+class_ :: Text -> AttrOrHandler sig
 class_ = mkStaticAttr "className"
 
-href_ :: Text -> Attr
+href_ :: Text -> AttrOrHandler sig
 href_ = mkStaticAttr "href"
 
-id_ :: Text -> Attr
+id_ :: Text -> AttrOrHandler sig
 id_ = mkStaticAttr "id"
 
-src_ :: Text -> Attr
+src_ :: Text -> AttrOrHandler sig
 src_ = mkStaticAttr "src"
 
-style_ :: JSON -> Attr
+style_ :: JSON -> AttrOrHandler sig
 style_ = mkStaticAttr "style"
 
-value_ :: Text -> Attr
+value_ :: Text -> AttrOrHandler sig
 value_ = mkStaticAttr "value"
 
-placeholder_ :: Text -> Attr
+placeholder_ :: Text -> AttrOrHandler sig
 placeholder_ = mkStaticAttr "placeholder"
 
-for_ :: Text -> Attr
+for_ :: Text -> AttrOrHandler sig
 for_ = mkStaticAttr "htmlFor"
 
-type_ :: Text -> Attr
+type_ :: Text -> AttrOrHandler sig
 type_ = mkStaticAttr "type"
 
-checked_ :: Bool -> Attr
+checked_ :: Bool -> AttrOrHandler sig
 checked_ = mkStaticAttr "checked"
 
-autofocus_ :: Bool -> Attr
+autofocus_ :: Bool -> AttrOrHandler sig
 autofocus_ = mkStaticAttr "autoFocus"
 
-width_ :: Double -> Attr
+width_ :: Double -> AttrOrHandler sig
 width_ = mkStaticAttr "width"
 
-height_ :: Double -> Attr
+height_ :: Double -> AttrOrHandler sig
 height_ = mkStaticAttr "height"
 
 -- svg!
 
-cx_ :: Double -> Attr
+cx_ :: Double -> AttrOrHandler sig
 cx_ = mkStaticAttr "cx"
 
-cy_ :: Double -> Attr
+cy_ :: Double -> AttrOrHandler sig
 cy_ = mkStaticAttr "cy"
 
-d_ :: Double -> Attr
+d_ :: Double -> AttrOrHandler sig
 d_ = mkStaticAttr "d"
 
-dx_ :: Double -> Attr
+dx_ :: Double -> AttrOrHandler sig
 dx_ = mkStaticAttr "dx"
 
-dy_ :: Double -> Attr
+dy_ :: Double -> AttrOrHandler sig
 dy_ = mkStaticAttr "dy"
 
-x_ :: Double -> Attr
+x_ :: Double -> AttrOrHandler sig
 x_ = mkStaticAttr "x"
 
-y_ :: Double -> Attr
+y_ :: Double -> AttrOrHandler sig
 y_ = mkStaticAttr "y"
 
-r_ :: Double -> Attr
+r_ :: Double -> AttrOrHandler sig
 r_ = mkStaticAttr "r"
 
-fill_ :: Text -> Attr
+fill_ :: Text -> AttrOrHandler sig
 fill_ = mkStaticAttr "fill"
 
-viewBox_ :: Text -> Attr
+viewBox_ :: Text -> AttrOrHandler sig
 viewBox_ = mkStaticAttr "viewBox"
 
-points_ :: Text -> Attr
+points_ :: Text -> AttrOrHandler sig
 points_ = mkStaticAttr "points"
 
-transform_ :: Text -> Attr
+transform_ :: Text -> AttrOrHandler sig
 transform_ = mkStaticAttr "transform"
 
 -- fillOpacity fontFamily fontSize fx fy gradientTransform

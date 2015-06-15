@@ -23,9 +23,9 @@ page = createClass $ smartClass
 
 page' = classLeaf page
 
-page2 :: ReactNode Void
+page2 :: ReactNode String
 page2 = div_ [ class_ "parent" ] $ do
-    span_ [ class_ "hooray" ] "spanish"
+    span_ [ class_ "hooray", onClick (const (Just "clicked!")) ] "spanish"
     "hello world!"
 
 main :: IO ()
@@ -34,5 +34,5 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render page2 elem
+    debugRender page2 elem
     -- render (page' ()) elem

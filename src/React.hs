@@ -18,6 +18,7 @@ module React
     -- React.Render
     , cancelRender
     , render
+    , debugRender
 
     -- React.Types
     , RenderHandle(..)
