@@ -12,7 +12,6 @@ module React.Types where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
-import Data.Functor.Identity
 import Data.IORef
 import Data.Maybe
 import Data.Monoid
@@ -22,11 +21,9 @@ import GHC.Generics
 import System.IO.Unsafe
 
 import qualified Data.Aeson as Aeson
-import Data.Void
 import GHCJS.Foreign
 import GHCJS.Marshal
 import GHCJS.Types
-import Lens.Family2
 
 import Debug.Trace
 
