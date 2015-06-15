@@ -81,7 +81,7 @@ data EventHandler signal = EventHandler
 data RawEvent_
 type RawEvent = JSRef RawEvent_
 
-type Attrs = [(JSString, JSON)]
+data Attr = Attr Text JSON
 
 data ReactType
     = RtClass
@@ -133,9 +133,9 @@ instance Monoid (ReactNode sig) where
 
 instance ToJSRef (ReactNode sig) where
     toJSRef (ComponentElement elem) = castRef <$> toJSRef elem
-    toJSRef (DomElement elem) = castRef <$> toJSRef elem
-    toJSRef (NodeText str) = castRef <$> toJSRef str
-    toJSRef (NodeSequence seq) = castRef <$> toJSRefListOf seq
+    toJSRef (DomElement elem)       = castRef <$> toJSRef elem
+    toJSRef (NodeText str)          = castRef <$> toJSRef str
+    toJSRef (NodeSequence seq)      = castRef <$> toJSRefListOf seq
 
 
 instance IsString (ReactNode sig) where
@@ -176,6 +176,9 @@ data ReactDOMElement sig = ReactDOMElement
 instance ToJSRef (ReactDOMElement sig) where
     toJSRef (ReactDOMElement ty props children key ref) = do
         propsObj <- castRef <$> toJSRef props
+        print props
+        print key
+        print ref
 
         keyProp <- toJSRef key
         setProp ("key" :: String) keyProp propsObj
@@ -194,11 +197,10 @@ data AttrOrHandler signal
     = StaticAttr JSString JSON
     | Handler (EventHandler signal)
 
-data Attr = Attr Text JSON
 
 
-mkStaticAttr :: Aeson.ToJSON a => JSString -> a -> AttrOrHandler signal
-mkStaticAttr name = StaticAttr name . Aeson.toJSON
+mkStaticAttr :: Aeson.ToJSON a => Text -> a -> Attr
+mkStaticAttr name = Attr name . Aeson.toJSON
 
 
 mkEventHandler :: (FromJSRef signal, NFData signal)
@@ -212,14 +214,6 @@ mkEventHandler ty handle =
             Nothing -> trace "mkEventHandler nothing" $ Nothing
     -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
-
-
-separateAttrs :: [AttrOrHandler signal] -> ([EventHandler signal], Attrs)
-separateAttrs [] = ([], [])
-separateAttrs (StaticAttr k v:xs) =
-    let (hs, as) = separateAttrs xs in (hs, (k, v):as)
-separateAttrs (Handler h:xs) =
-    let (hs, as) = separateAttrs xs in (h:hs, as)
 
 
 -- | Low level properties common to all events

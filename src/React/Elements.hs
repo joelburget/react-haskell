@@ -3,6 +3,7 @@
 module React.Elements where
 
 import Data.Aeson as Aeson
+import qualified Data.HashMap.Strict as H
 import Data.String
 import GHCJS.Foreign
 import GHCJS.Marshal
@@ -13,12 +14,13 @@ import React.Types
 
 
 attrsToJson :: [Attr] -> JSON
-attrsToJson = Aeson.toJSON . map unAttr where
+attrsToJson = Aeson.toJSON . H.fromList . map unAttr where
     unAttr (Attr name json) = (name, json)
 
 
 attrsToJSAny :: [Attr] -> IO JSAny
 attrsToJSAny attrs = castRef <$> toJSRef (attrsToJson attrs)
+
 
 -- | Parent nodes always take a list of arguments and children.
 -- @

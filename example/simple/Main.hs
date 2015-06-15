@@ -25,8 +25,7 @@ page' = classLeaf page
 
 page2 :: ReactNode Void
 page2 = div_ [] $ do
-    -- span_ [ class_ "hooray" ] "spanish"
-    span_ [] "spanish"
+    span_ [ class_ "hooray" ] "spanish"
     "hello world!"
 
 main :: IO ()
