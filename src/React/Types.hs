@@ -173,9 +173,6 @@ data ReactDOMElement sig = ReactDOMElement
 instance ToJSRef (ReactDOMElement sig) where
     toJSRef (ReactDOMElement ty props children key ref) = do
         propsObj <- castRef <$> toJSRef props
-        print props
-        print key
-        print ref
 
         keyProp <- toJSRef key
         setProp ("key" :: String) keyProp propsObj
