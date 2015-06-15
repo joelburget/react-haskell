@@ -24,7 +24,7 @@ page = createClass $ smartClass
 page' = classLeaf page
 
 page2 :: ReactNode Void
-page2 = div_ [] $ do
+page2 = div_ [ class_ "parent" ] $ do
     span_ [ class_ "hooray" ] "spanish"
     "hello world!"
 

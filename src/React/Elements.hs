@@ -39,12 +39,12 @@ domParent name attrs children =
 
 
 classParent :: ReactClass props state sig
-            -- -> [Attr]
+            -> [Attr]
             -> ReactNode sig
             -> props
             -> ReactNode sig
-classParent (ReactClass cls) children props =
-    ComponentElement (ReactComponentElement cls (attrsToJSAny []) children "" Nothing)
+classParent (ReactClass cls) attrs children props =
+    ComponentElement (ReactComponentElement cls (attrsToJSAny attrs) children "" Nothing)
 
 
 domLeaf :: JSString
@@ -55,11 +55,11 @@ domLeaf name attrs =
 
 
 classLeaf :: ReactClass props state sig
-          -- -> [Attr]
+          -> [Attr]
           -> props
           -> ReactNode sig
-classLeaf (ReactClass cls) props =
-    ComponentElement (ReactComponentElement cls (attrsToJSAny []) mempty "" Nothing)
+classLeaf (ReactClass cls) attrs props =
+    ComponentElement (ReactComponentElement cls (attrsToJSAny attrs) mempty "" Nothing)
 
 
 -- -- TODO ToJSString a => ?
