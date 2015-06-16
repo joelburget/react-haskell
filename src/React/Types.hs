@@ -3,10 +3,6 @@
     ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
     DeriveGeneric, DataKinds, GADTs, OverloadedStrings, CPP #-}
 
-#ifdef __GHCJS__
-{-# LANGUAGE JavaScriptFFI #-}
-#endif
-
 module React.Types where
 
 import Control.Applicative
@@ -27,33 +23,12 @@ import GHCJS.Foreign
 import GHCJS.Marshal
 import GHCJS.Types
 
+import React.Imports
+
 import Debug.Trace
-
-#ifdef __GHCJS__
-foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))" js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
-#else
-js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
-js_react_createElement_DOM = error "cannot evaluate js_react_createElement_DOM in ghc"
-#endif
-
-#ifdef __GHCJS__
-foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))" js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
-#else
-js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
-js_react_createElement_Class = error "cannot evaluate js_react_createElement_Class in ghc"
-#endif
-
-#ifdef __GHCJS__
-foreign import javascript unsafe "js_set_handler" js_set_handler :: JSString -> (JSFun (RawEvent -> IO ())) -> JSAny -> IO ()
-#else
-js_set_handler :: JSString -> (JSFun (RawEvent -> IO ())) -> JSAny -> IO ()
-js_set_handler = error "cannot evaluate js_set_handler in ghc"
-#endif
 
 instance Show JSString where
     show = fromJSString
-
-type JSAny = JSRef ()
 
 type JSON = Aeson.Value
 
@@ -94,10 +69,6 @@ data EventHandler signal = EventHandler
     { handler :: RawEvent -> Maybe signal
     , evtType :: EvtType
     }
-
--- newtype RawEvent = RawEvent JSAny
-data RawEvent_
-type RawEvent = JSRef RawEvent_
 
 data ReactType
     = RtClass
