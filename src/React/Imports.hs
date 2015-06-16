@@ -20,7 +20,7 @@ type RawEvent = JSRef RawEvent_
 foreign import javascript unsafe "React.render($1, $2)"
     js_render :: JSRef () -> Elem -> IO ()
 foreign import javascript unsafe "js_createClass"
-    js_createClass :: JSRef JSAny -> JSAny
+    js_createClass :: JSAny -> JSAny
 foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
     js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
 foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
@@ -31,7 +31,7 @@ foreign import javascript unsafe "js_set_handler"
 js_render :: JSRef () -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 
-js_createClass :: JSRef JSAny -> JSAny
+js_createClass :: JSAny -> JSAny
 js_createClass = error "cannot evaluate js_createClass in ghc"
 
 js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
