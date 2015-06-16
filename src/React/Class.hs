@@ -49,8 +49,6 @@ smartClass = ClassConfig
     }
 
 
--- type SmartComponent = ReactClass
-
 createClass :: ClassConfig props state insig exsig
             -> ReactClass props state exsig
 createClass ClassConfig{renderFn,
