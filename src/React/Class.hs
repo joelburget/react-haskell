@@ -51,7 +51,6 @@ smartClass = ClassConfig
 
 -- type SmartComponent = ReactClass
 
-
 createClass :: ClassConfig props state insig exsig
             -> ReactClass props state exsig
 createClass ClassConfig{renderFn,
@@ -62,9 +61,11 @@ createClass ClassConfig{renderFn,
 
     let foreignObj = do
             obj <- newObj
-            renderCb <- syncCallback AlwaysRetain True $ do
-                -- state <- readIORef stateRef
-                return renderFn
+            renderCb <- syncCallback1 AlwaysRetain True $ \returnObj -> do
+                let rendered = renderFn undefined undefined
+                    handler sig = putStrLn "some action should happen!"
+                ret <- reactNodeToJSAny handler rendered
+                setProp ("value" :: JSString) ret returnObj
             setProp ("render" :: JSString) renderCb obj
             setProp ("displayName" :: JSString) name obj
             return obj

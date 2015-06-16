@@ -16,9 +16,9 @@ import React
 page :: ReactClass () () Void
 page = createClass $ smartClass
     { name = "page"
-    , transition = \(_, state) -> (undefined, state)
+    , transition = \(state, insig) -> (state, undefined)
     , getInitialState = ()
-    , renderFn = \_ _ -> div_ [] "hello world!"
+    , renderFn = \_ _ -> page2
     }
 
 page' = classLeaf page
@@ -34,5 +34,5 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    debugRender page2 elem
-    -- render (page' ()) elem
+    -- debugRender page2 elem
+    render (page' [] ()) elem
