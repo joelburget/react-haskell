@@ -3,7 +3,6 @@
 module React.Render
     ( render
     , debugRender
-    , cancelRender
     ) where
 
 import Control.Applicative
@@ -52,7 +51,3 @@ debugRender node elem = do
 
 updateCb :: IORef [signal] -> signal -> IO ()
 updateCb ref update = modifyIORef ref (update:)
-
-
-cancelRender :: RenderHandle -> IO ()
-cancelRender = js_cancelRaf

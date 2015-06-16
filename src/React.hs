@@ -16,7 +16,6 @@ module React
     , dumbClass
 
     -- React.Render
-    , cancelRender
     , render
     , debugRender
 
