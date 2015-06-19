@@ -81,8 +81,14 @@ data ReactType
 -- scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass props state sig = ReactClass
-    { foreignClass :: IO JSAny
+data ReactClass props state insig exsig = ReactClass
+    { classForeign :: IO JSAny
+    , classRender :: props -> state -> ReactNode insig
+    , classInitialState :: state
+    , className :: JSString
+    , classTransition :: (state, insig) -> (state, Maybe exsig)
+
+    , classStateRegistry :: ClassRegistry state
     }
 
     -- { classRender :: props -> state -> ReactElement RtBuiltin insig
@@ -99,6 +105,42 @@ data ReactClass props state sig = ReactClass
     -- -- , transitionRef :: IORef [sig]
     -- }
 
+
+data ClassRegistry state = ClassRegistry
+    { registryMap :: IORef (H.HashMap Int state)
+    , registryGen :: IORef Int
+    }
+
+
+generateKey :: ClassRegistry state -> IO Int
+generateKey (ClassRegistry map gen) = do
+    k <- readIORef gen
+    writeIORef gen (k + 1)
+    return k
+
+
+allocState :: ClassRegistry state -> state -> IO Int
+allocState registry state = do
+    k <- generateKey registry
+    modifyIORef (registryMap registry) (H.insert k state)
+    return k
+
+
+deallocState :: ClassRegistry state -> Int -> IO ()
+deallocState (ClassRegistry map _) k = modifyIORef map (H.delete k)
+
+
+-- TODO(joel) - think about pushing around the IO boundary
+lookupState :: ClassRegistry state -> Int -> IO state
+lookupState (ClassRegistry registryMap _) k = do
+    map' <- readIORef registryMap
+    return $ H.lookupDefault
+        (error $ "class registry didn't contain an entry!\n" ++
+                 "componentId: " ++ show k ++ "\n" ++
+                 "keys: " ++ show (H.keys map') ++ "\n"
+        )
+        k
+        map'
 
 
 -- TODO use phantom type to indicate renderability? Only sequence is not.
@@ -170,29 +212,46 @@ data AttrOrHandler signal
 data Attr = Attr Text JSON
 
 
-data ReactComponentElement sig = ReactComponentElement
-    { reComType :: IO JSAny
-    , reComAttrs :: [AttrOrHandler sig]
-    , reComChildren :: ReactNode sig
+data ReactComponentElement exsig = forall props state insig. ReactComponentElement
+    { reComType :: ReactClass props state insig exsig
+    , reComAttrs :: [AttrOrHandler insig]
+    , reComChildren :: ReactNode insig
     , reComKey :: JSString
     , reComRef :: Maybe JSString
+
+    -- , reComClassId :: Int
+    -- , reStateVersion :: Int
+    -- , reState :: IORef (props, state)
     }
 
 
 componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
-componentToJSAny sigHandler (ReactComponentElement ty props children key ref) = do
-    propsObj <- attrHandlerToJSAny sigHandler props
+componentToJSAny
+    sigHandler
+    (ReactComponentElement ty props children key ref) = do
+        -- handle internal signals, maybe call external signal handler
+        let sigHandler' insig = do
+                componentId <- js_componentId
+                prevState <- lookupState (classStateRegistry ty) componentId
 
-    keyProp <- toJSRef key
-    setProp ("key" :: String) keyProp propsObj
+                let (newState, maybeExSig) = classTransition ty (prevState, insig)
 
-    refProp <- toJSRef ref
-    setProp ("ref" :: String) refProp propsObj
+                case maybeExSig of
+                    Just exSig -> sigHandler exSig
+                    Nothing -> return ()
+        propsObj <- attrHandlerToJSAny sigHandler' props
+        -- attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
 
-    ty' <- ty
-    children' <- reactNodeToJSAny sigHandler children
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp propsObj
 
-    castRef <$> js_react_createElement_Class ty' propsObj children'
+        refProp <- toJSRef ref
+        setProp ("ref" :: String) refProp propsObj
+
+        ty' <- classForeign ty
+        children' <- reactNodeToJSAny sigHandler' children
+
+        castRef <$> js_react_createElement_Class ty' propsObj children'
 
 
 data ReactDOMElement sig = ReactDOMElement

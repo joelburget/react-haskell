@@ -27,6 +27,8 @@ foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].conca
     js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
 foreign import javascript unsafe "js_set_handler"
     js_set_handler :: JSString -> (JSFun (RawEvent -> IO ())) -> JSAny -> IO ()
+foreign import javascript unsafe "this.componentId"
+    js_componentId :: IO Int
 #else
 js_render :: JSRef () -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"

@@ -17,7 +17,7 @@ ifThenElse b x y | b = x
                  | otherwise = y
 
 when :: Bool -> ReactNode sig -> ReactNode sig
-when False _  = undefined
+when False _  = mempty
 when True seq = seq
 
 unless :: Bool -> ReactNode sig -> ReactNode sig

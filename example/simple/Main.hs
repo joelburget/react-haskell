@@ -13,7 +13,7 @@ import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 import React
 
-page :: ReactClass () () Void
+page :: ReactClass () () String Void
 page = createClass $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state, undefined)

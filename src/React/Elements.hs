@@ -29,15 +29,6 @@ domParent name attrs children =
     DomElement (ReactDOMElement name attrs children "" Nothing)
 
 
-classParent :: ReactClass props state sig
-            -> [AttrOrHandler sig]
-            -> ReactNode sig
-            -> props
-            -> ReactNode sig
-classParent (ReactClass cls) attrs children props =
-    ComponentElement (ReactComponentElement cls attrs children "" Nothing)
-
-
 domLeaf :: JSString
         -> [AttrOrHandler sig]
         -> ReactNode sig
@@ -45,11 +36,20 @@ domLeaf name attrs =
     DomElement (ReactDOMElement name attrs mempty "" Nothing)
 
 
-classLeaf :: ReactClass props state sig
-          -> [AttrOrHandler sig]
+classParent :: ReactClass props state insig exsig
+            -> [AttrOrHandler insig]
+            -> ReactNode insig
+            -> props
+            -> ReactNode exsig
+classParent cls attrs children props =
+    ComponentElement (ReactComponentElement cls attrs children "" Nothing)
+
+
+classLeaf :: ReactClass props state insig exsig
+          -> [AttrOrHandler insig]
           -> props
-          -> ReactNode sig
-classLeaf (ReactClass cls) attrs props =
+          -> ReactNode exsig
+classLeaf cls attrs props =
     ComponentElement (ReactComponentElement cls attrs mempty "" Nothing)
 
 
