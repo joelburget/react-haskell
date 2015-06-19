@@ -72,9 +72,10 @@ willUnmount registry idRef = do
 -- TODO(joel) why not just pass in the class config?
 render :: ClassRegistry state
        -> (props -> state -> ReactNode insig)
+       -> JSRef Int
        -> JSAny
        -> IO ()
-render registry renderFn returnObj = do
+render registry renderFn idRef returnObj = do
     -- **
     -- The fundamental tension here is that this render function is
     -- defined for the class, but each invocation needs access to a
@@ -88,7 +89,7 @@ render registry renderFn returnObj = do
     --
     -- handler may be interesting here.
 
-    componentId <- js_componentId
+    Just componentId <- fromJSRef idRef
     thisState <- lookupState registry componentId
 
     let rendered = renderFn undefined thisState
@@ -101,7 +102,7 @@ render registry renderFn returnObj = do
 
         -- handler :: insig -> IO ()
         handler sig = putStrLn "TODO(joel) in handler!"
-    ret <- reactNodeToJSAny handler rendered
+    ret <- reactNodeToJSAny handler componentId rendered
     setProp ("value" :: JSString) ret returnObj
 
 
@@ -123,7 +124,7 @@ createClass ClassConfig{renderFn,
 
             setProp ("displayName" :: JSString) name obj
 
-            renderCb <- syncCallback1 NeverRetain True
+            renderCb <- syncCallback2 NeverRetain True
                 (render classRegistry renderFn)
             setProp ("render" :: JSString) renderCb obj
 

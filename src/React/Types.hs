@@ -66,7 +66,7 @@ jsName MouseLeaveEvt = "onMouseLeave"
 
 
 data EventHandler signal = EventHandler
-    { handler :: RawEvent -> Maybe signal
+    { handler :: Int -> RawEvent -> Maybe signal
     , evtType :: EvtType
     }
 
@@ -160,15 +160,15 @@ instance Monoid (ReactNode sig) where
     x `mappend` y = NodeSequence [x, y]
 
 
-reactNodeToJSAny :: (sig -> IO ()) -> ReactNode sig -> IO JSAny
-reactNodeToJSAny sigHandler (ComponentElement elem) =
-    componentToJSAny sigHandler elem
-reactNodeToJSAny sigHandler (DomElement elem)       =
-    domToJSAny sigHandler elem
-reactNodeToJSAny sigHandler (NodeText str)          =
+reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
+reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
+    componentToJSAny sigHandler componentId elem
+reactNodeToJSAny sigHandler componentId (DomElement elem)       =
+    domToJSAny sigHandler componentId elem
+reactNodeToJSAny sigHandler componentId (NodeText str)          =
     castRef <$> toJSRef str
-reactNodeToJSAny sigHandler (NodeSequence seq)      = do
-    jsNodes <- mapM (reactNodeToJSAny sigHandler) seq
+reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
+    jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
     castRef <$> toArray jsNodes
 
 
@@ -196,12 +196,12 @@ separateAttrs attrHandlers = (map makeA as, map makeH hs) where
     makeH (Handler h) = h
 
 
-attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
-attrHandlerToJSAny sigHandler attrHandlers = do
+attrHandlerToJSAny :: (sig -> IO ()) -> Int -> [AttrOrHandler sig] -> IO JSAny
+attrHandlerToJSAny sigHandler componentId attrHandlers = do
     let (attrs, handlers) = separateAttrs attrHandlers
     starter <- castRef <$> toJSRef (attrsToJson attrs)
 
-    forM_ handlers $ makeHandler starter . unHandler sigHandler
+    forM_ handlers $ makeHandler componentId starter . unHandler sigHandler
     return starter
 
 
@@ -219,19 +219,22 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
     , reComKey :: JSString
     , reComRef :: Maybe JSString
 
+    -- We can't store the class id here because we don't know it until *after*
+    -- render has run! It's not allocated until componentWillMount.
     -- , reComClassId :: Int
+
     -- , reStateVersion :: Int
     -- , reState :: IORef (props, state)
     }
 
 
-componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
+componentToJSAny :: (sig -> IO ()) -> Int -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
+    componentId
     (ReactComponentElement ty props children key ref) = do
         -- handle internal signals, maybe call external signal handler
         let sigHandler' insig = do
-                componentId <- js_componentId
                 prevState <- lookupState (classStateRegistry ty) componentId
 
                 let (newState, maybeExSig) = classTransition ty (prevState, insig)
@@ -239,7 +242,8 @@ componentToJSAny
                 case maybeExSig of
                     Just exSig -> sigHandler exSig
                     Nothing -> return ()
-        propsObj <- attrHandlerToJSAny sigHandler' props
+
+        propsObj <- attrHandlerToJSAny sigHandler' componentId props
         -- attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
 
         keyProp <- toJSRef key
@@ -249,7 +253,7 @@ componentToJSAny
         setProp ("ref" :: String) refProp propsObj
 
         ty' <- classForeign ty
-        children' <- reactNodeToJSAny sigHandler' children
+        children' <- reactNodeToJSAny sigHandler' componentId children
 
         castRef <$> js_react_createElement_Class ty' propsObj children'
 
@@ -263,9 +267,9 @@ data ReactDOMElement sig = ReactDOMElement
     }
 
 
-domToJSAny :: (sig -> IO ()) -> ReactDOMElement sig -> IO JSAny
-domToJSAny sigHandler (ReactDOMElement ty props children key ref) = do
-    propsObj <- attrHandlerToJSAny sigHandler props
+domToJSAny :: (sig -> IO ()) -> Int -> ReactDOMElement sig -> IO JSAny
+domToJSAny sigHandler componentId (ReactDOMElement ty props children key ref) = do
+    propsObj <- attrHandlerToJSAny sigHandler componentId props
 
     keyProp <- toJSRef key
     setProp ("key" :: String) keyProp propsObj
@@ -273,7 +277,7 @@ domToJSAny sigHandler (ReactDOMElement ty props children key ref) = do
     refProp <- toJSRef ref
     setProp ("ref" :: String) refProp propsObj
 
-    children' <- reactNodeToJSAny sigHandler children
+    children' <- reactNodeToJSAny sigHandler componentId children
 
     castRef <$> js_react_createElement_DOM ty propsObj children'
 
@@ -282,24 +286,28 @@ domToJSAny sigHandler (ReactDOMElement ty props children key ref) = do
 
 unHandler :: (s -> IO ())
           -> EventHandler s
-          -> (RawEvent -> Maybe (IO ()), EvtType)
-unHandler act (EventHandler handle ty) = (\e -> act <$> handle e, ty)
+          -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\ix e -> act <$> handle ix e, ty)
 
 
-makeHandler :: JSAny
+makeHandler :: Int
+            -- ^ component id
+            -> JSAny
             -- ^ object to set this attribute on
-            -> (RawEvent -> Maybe (IO ()), EvtType)
+            -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
             -- ^ handler
             -> IO ()
-makeHandler obj (handle, evtTy) = do
+makeHandler componentId obj (handle, evtTy) = do
     handle' <- handlerToJs handle
-    js_set_handler (jsName evtTy) handle' obj
+    js_set_handler componentId (jsName evtTy) handle' obj
 
 
 -- | Make a javascript callback to synchronously execute the handler
-handlerToJs :: (RawEvent -> Maybe (IO ())) -> IO (JSFun (RawEvent -> IO ()))
-handlerToJs handle = syncCallback1 AlwaysRetain True $ \evt ->
-    case handle evt of
+handlerToJs :: (Int -> RawEvent -> Maybe (IO ()))
+            -> IO (JSFun (JSRef Int -> RawEvent -> IO ()))
+handlerToJs handle = syncCallback2 AlwaysRetain True $ \idRef evt -> do
+    Just componentId <- fromJSRef idRef
+    case handle componentId evt of
         Nothing -> return ()
         Just x -> x
 
@@ -314,7 +322,8 @@ mkEventHandler :: (FromJSRef evt, NFData evt)
                -> AttrOrHandler signal
 mkEventHandler ty handle =
     -- XXX unsafe as fuck
-    let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of
+    -- XXX throwing away ix
+    let handle' ix raw = case unsafePerformIO $ fromJSRef $ castRef raw of
             Just x -> trace "mkEventHandler just" $ handle x
             Nothing -> trace "mkEventHandler nothing" $ Nothing
     -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw

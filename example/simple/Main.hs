@@ -13,20 +13,21 @@ import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 import React
 
-page :: ReactClass () () String Void
+page :: ReactClass () String String Void
 page = createClass $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state, undefined)
-    , getInitialState = ()
-    , renderFn = \_ _ -> page2
+    , getInitialState = "this is state!"
+    , renderFn = \_ -> page2
     }
 
 page' = classLeaf page
 
-page2 :: ReactNode String
-page2 = div_ [ class_ "parent" ] $ do
+page2 :: String -> ReactNode String
+page2 str = div_ [ class_ "parent" ] $ do
     span_ [ class_ "hooray", onClick (const (Just "clicked!")) ] "spanish"
     "hello world!"
+    text_ str
 
 main :: IO ()
 main = do

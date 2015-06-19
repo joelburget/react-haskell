@@ -31,13 +31,15 @@ import React.Types
 
 render :: ReactNode Void -> Elem -> IO ()
 render node elem = do
-    node' <- reactNodeToJSAny undefined node
+    -- XXX
+    node' <- reactNodeToJSAny undefined 0 node
     js_render node' elem
 
 
 debugRender :: Show sig => ReactNode sig -> Elem -> IO ()
 debugRender node elem = do
-    node' <- reactNodeToJSAny print node
+    -- XXX
+    node' <- reactNodeToJSAny print 0 node
     js_render node' elem
 
 
