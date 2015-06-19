@@ -123,15 +123,15 @@ createClass ClassConfig{renderFn,
 
             setProp ("displayName" :: JSString) name obj
 
-            renderCb <- syncCallback1 AlwaysRetain True
+            renderCb <- syncCallback1 NeverRetain True
                 (render classRegistry renderFn)
             setProp ("render" :: JSString) renderCb obj
 
-            willMountCb <- syncCallback1 AlwaysRetain True
+            willMountCb <- syncCallback1 NeverRetain True
                 (willMount classRegistry getInitialState)
             setProp ("componentWillMount" :: JSString) willMountCb obj
 
-            willUnmountCb <- syncCallback1 AlwaysRetain True
+            willUnmountCb <- syncCallback1 NeverRetain True
                 (willUnmount classRegistry)
             setProp ("componentWillUnmount" :: JSString) willUnmountCb obj
 
