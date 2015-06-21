@@ -32,9 +32,6 @@ instance Show JSString where
 
 type JSON = Aeson.Value
 
--- instance IsString JSON where
---   fromString = Str . fromString
-
 newtype ForeignNode = ForeignNode JSAny
 newtype RawAttrs = RawAttrs JSAny
 newtype ReactArray = ReactArray JSAny
@@ -90,20 +87,6 @@ data ReactClass props state insig exsig = ReactClass
 
     , classStateRegistry :: ClassRegistry props state
     }
-
-    -- { classRender :: props -> state -> ReactElement RtBuiltin insig
-    -- , classTransition :: insig -> state -> (state, sig)
-
-    -- -- The IO action should occur only once
-    -- , foreignClass :: IO ForeignClass
-
-    -- -- TODO(joel) this conflicts weirdly with `className` from ReactElement.
-    -- , className :: JSString
-    -- , initialState :: state
-
-    -- -- , stateRef :: IORef state
-    -- -- , transitionRef :: IORef [sig]
-    -- }
 
 
 data ClassRegistry props state = ClassRegistry
@@ -236,9 +219,6 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
     -- We can't store the class id here because we don't know it until *after*
     -- render has run! It's not allocated until componentWillMount.
     -- , reComClassId :: Int
-
-    -- , reStateVersion :: Int
-    -- , reState :: IORef (props, state)
     }
 
 
@@ -259,7 +239,6 @@ componentToJSAny
                     Nothing -> return ()
 
         attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
-        -- attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
 
         keyProp <- toJSRef key
         setProp ("key" :: String) keyProp attrsObj
