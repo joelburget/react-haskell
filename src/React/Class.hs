@@ -51,26 +51,22 @@ smartClass = ClassConfig
     }
 
 
-willMount :: ClassRegistry state -> state -> JSAny -> IO ()
-willMount registry state returnObj = do
-    -- create new component id
+willMount :: ClassRegistry props state -> state -> JSRef Int -> IO ()
+willMount registry state idRef = do
     -- initialize state in registry
-    componentId <- allocState registry state
-
-    -- set id on component
-    componentId' <- toJSRef componentId
-    setProp ("value" :: JSString) componentId' returnObj
+    Just componentId <- fromJSRef idRef
+    setState registry state componentId
 
 
-willUnmount :: ClassRegistry state -> JSRef Int -> IO ()
+willUnmount :: ClassRegistry props state -> JSRef Int -> IO ()
 willUnmount registry idRef = do
     -- remove state from registry
     Just componentId <- fromJSRef idRef
-    deallocState registry componentId
+    deallocRegistry registry componentId
 
 
 -- TODO(joel) why not just pass in the class config?
-render :: ClassRegistry state
+render :: ClassRegistry props state
        -> (props -> state -> ReactNode insig)
        -> JSRef Int
        -> JSAny
@@ -90,9 +86,9 @@ render registry renderFn idRef returnObj = do
     -- handler may be interesting here.
 
     Just componentId <- fromJSRef idRef
-    thisState <- lookupState registry componentId
+    (thisProps, thisState) <- lookupRegistry registry componentId
 
-    let rendered = renderFn undefined thisState
+    let rendered = renderFn thisProps thisState
         -- * use transition
         --   transition :: (state, insig) -> (state, exsig)
         -- * update IORef or something
@@ -115,9 +111,10 @@ createClass ClassConfig{renderFn,
                         startupSignals} =
 
     -- TODO(joel) - verify this use of unsafePerformIO is, well, safe
-    let classRegistry = ClassRegistry
-            (unsafePerformIO (newIORef H.empty))
-            (unsafePerformIO (newIORef 0))
+    let classRegistry = unsafePerformIO $ ClassRegistry
+            <$> newIORef H.empty
+            <*> newIORef H.empty
+            <*> newIORef 0
 
         foreignObj = do
             obj <- newObj

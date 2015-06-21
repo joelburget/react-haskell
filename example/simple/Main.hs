@@ -13,21 +13,22 @@ import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 import React
 
-page :: ReactClass () String String Void
+page :: ReactClass Int String String Void
 page = createClass $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state, undefined)
     , getInitialState = "this is state!"
-    , renderFn = \_ -> page2
+    , renderFn = page2
     }
 
 page' = classLeaf page
 
-page2 :: String -> ReactNode String
-page2 str = div_ [ class_ "parent" ] $ do
+page2 :: Int -> String -> ReactNode String
+page2 props state = div_ [ class_ "parent" ] $ do
     span_ [ class_ "hooray", onClick (const (Just "clicked!")) ] "spanish"
     "hello world!"
-    text_ str
+    text_ (show props)
+    text_ state
 
 main :: IO ()
 main = do
@@ -36,4 +37,4 @@ main = do
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
     -- debugRender page2 elem
-    render (page' [] ()) elem
+    render (page' [] 5) elem

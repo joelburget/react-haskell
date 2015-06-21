@@ -42,7 +42,7 @@ classParent :: ReactClass props state insig exsig
             -> props
             -> ReactNode exsig
 classParent cls attrs children props =
-    ComponentElement (ReactComponentElement cls attrs children "" Nothing)
+    ComponentElement (ReactComponentElement cls attrs children "" Nothing props)
 
 
 classLeaf :: ReactClass props state insig exsig
@@ -50,7 +50,7 @@ classLeaf :: ReactClass props state insig exsig
           -> props
           -> ReactNode exsig
 classLeaf cls attrs props =
-    ComponentElement (ReactComponentElement cls attrs mempty "" Nothing)
+    ComponentElement (ReactComponentElement cls attrs mempty "" Nothing props)
 
 
 -- -- TODO ToJSString a => ?

@@ -88,7 +88,7 @@ data ReactClass props state insig exsig = ReactClass
     , className :: JSString
     , classTransition :: (state, insig) -> (state, Maybe exsig)
 
-    , classStateRegistry :: ClassRegistry state
+    , classStateRegistry :: ClassRegistry props state
     }
 
     -- { classRender :: props -> state -> ReactElement RtBuiltin insig
@@ -106,41 +106,51 @@ data ReactClass props state insig exsig = ReactClass
     -- }
 
 
-data ClassRegistry state = ClassRegistry
-    { registryMap :: IORef (H.HashMap Int state)
+data ClassRegistry props state = ClassRegistry
+    { registryProps :: IORef (H.HashMap Int props)
+    , registryState :: IORef (H.HashMap Int state)
     , registryGen :: IORef Int
     }
 
 
-generateKey :: ClassRegistry state -> IO Int
-generateKey (ClassRegistry map gen) = do
+generateKey :: ClassRegistry props state -> IO Int
+generateKey (ClassRegistry _ _ gen) = do
     k <- readIORef gen
     writeIORef gen (k + 1)
     return k
 
 
-allocState :: ClassRegistry state -> state -> IO Int
-allocState registry state = do
+allocProps :: ClassRegistry props state -> props -> IO Int
+allocProps registry props = do
     k <- generateKey registry
-    modifyIORef (registryMap registry) (H.insert k state)
+    modifyIORef (registryProps registry) (H.insert k props)
     return k
 
 
-deallocState :: ClassRegistry state -> Int -> IO ()
-deallocState (ClassRegistry map _) k = modifyIORef map (H.delete k)
+setState :: ClassRegistry props state -> state -> Int -> IO ()
+setState registry state k =
+    modifyIORef (registryState registry) (H.insert k state)
+
+
+deallocRegistry :: ClassRegistry props state -> Int -> IO ()
+deallocRegistry (ClassRegistry props state _) k = do
+    modifyIORef state (H.delete k)
+    modifyIORef props (H.delete k)
 
 
 -- TODO(joel) - think about pushing around the IO boundary
-lookupState :: ClassRegistry state -> Int -> IO state
-lookupState (ClassRegistry registryMap _) k = do
-    map' <- readIORef registryMap
-    return $ H.lookupDefault
-        (error $ "class registry didn't contain an entry!\n" ++
-                 "componentId: " ++ show k ++ "\n" ++
-                 "keys: " ++ show (H.keys map') ++ "\n"
-        )
-        k
-        map'
+lookupRegistry :: ClassRegistry props state -> Int -> IO (props, state)
+lookupRegistry (ClassRegistry propsMap stateMap _) k =
+    (,) <$> errorLookup propsMap k <*> errorLookup stateMap k where
+        errorLookup table k = do
+            table' <- readIORef table
+            return $ H.lookupDefault
+                (error $ "class registry didn't contain an entry!\n" ++
+                         "componentId: " ++ show k ++ "\n" ++
+                         "keys: " ++ show (H.keys table') ++ "\n"
+                )
+                k
+                table'
 
 
 -- TODO use phantom type to indicate renderability? Only sequence is not.
@@ -162,10 +172,10 @@ instance Monoid (ReactNode sig) where
 
 reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
 reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
-    componentToJSAny sigHandler componentId elem
+    componentToJSAny sigHandler elem
 reactNodeToJSAny sigHandler componentId (DomElement elem)       =
     domToJSAny sigHandler componentId elem
-reactNodeToJSAny sigHandler componentId (NodeText str)          =
+reactNodeToJSAny sigHandler _           (NodeText str)          =
     castRef <$> toJSRef str
 reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
     jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
@@ -219,6 +229,10 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
     , reComKey :: JSString
     , reComRef :: Maybe JSString
 
+    -- Props are stored here, not used until, `render` because we need both the
+    -- props and state at the same time.
+    , reComProps :: props
+
     -- We can't store the class id here because we don't know it until *after*
     -- render has run! It's not allocated until componentWillMount.
     -- , reComClassId :: Int
@@ -228,14 +242,15 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
     }
 
 
-componentToJSAny :: (sig -> IO ()) -> Int -> ReactComponentElement sig -> IO JSAny
+componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
-    componentId
-    (ReactComponentElement ty props children key ref) = do
+    (ReactComponentElement ty attrs children key ref props) = do
+        componentId <- allocProps (classStateRegistry ty) props
+
         -- handle internal signals, maybe call external signal handler
         let sigHandler' insig = do
-                prevState <- lookupState (classStateRegistry ty) componentId
+                (_, prevState) <- lookupRegistry (classStateRegistry ty) componentId
 
                 let (newState, maybeExSig) = classTransition ty (prevState, insig)
 
@@ -243,19 +258,22 @@ componentToJSAny
                     Just exSig -> sigHandler exSig
                     Nothing -> return ()
 
-        propsObj <- attrHandlerToJSAny sigHandler' componentId props
+        attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
         -- attrHandlerToJSAny :: (sig -> IO ()) -> [AttrOrHandler sig] -> IO JSAny
 
         keyProp <- toJSRef key
-        setProp ("key" :: String) keyProp propsObj
+        setProp ("key" :: String) keyProp attrsObj
 
         refProp <- toJSRef ref
-        setProp ("ref" :: String) refProp propsObj
+        setProp ("ref" :: String) refProp attrsObj
+
+        idProp <- toJSRef componentId
+        setProp ("componentId" :: String) idProp attrsObj
 
         ty' <- classForeign ty
         children' <- reactNodeToJSAny sigHandler' componentId children
 
-        castRef <$> js_react_createElement_Class ty' propsObj children'
+        castRef <$> js_react_createElement_Class ty' attrsObj children'
 
 
 data ReactDOMElement sig = ReactDOMElement
