@@ -40,6 +40,6 @@ js_react_createElement_DOM = error "cannot evaluate js_react_createElement_DOM i
 js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
 js_react_createElement_Class = error "cannot evaluate js_react_createElement_Class in ghc"
 
-js_set_handler :: JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
+js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
 js_set_handler = error "cannot evaluate js_set_handler in ghc"
 #endif
