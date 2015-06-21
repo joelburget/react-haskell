@@ -26,14 +26,14 @@ domParent :: JSString
           -> ReactNode sig
           -> ReactNode sig
 domParent name attrs children =
-    DomElement (ReactDOMElement name attrs children "" Nothing)
+    DomElement (ReactDOMElement name attrs children Nothing Nothing)
 
 
 domLeaf :: JSString
         -> [AttrOrHandler sig]
         -> ReactNode sig
 domLeaf name attrs =
-    DomElement (ReactDOMElement name attrs mempty "" Nothing)
+    DomElement (ReactDOMElement name attrs mempty Nothing Nothing)
 
 
 classParent :: ReactClass props state insig exsig
@@ -41,16 +41,16 @@ classParent :: ReactClass props state insig exsig
             -> ReactNode insig
             -> props
             -> ReactNode exsig
-classParent cls attrs children props =
-    ComponentElement (ReactComponentElement cls attrs children "" Nothing props)
+classParent cls attrs children props = ComponentElement
+    (ReactComponentElement cls attrs children Nothing Nothing props)
 
 
 classLeaf :: ReactClass props state insig exsig
           -> [AttrOrHandler insig]
           -> props
           -> ReactNode exsig
-classLeaf cls attrs props =
-    ComponentElement (ReactComponentElement cls attrs mempty "" Nothing props)
+classLeaf cls attrs props = ComponentElement
+    (ReactComponentElement cls attrs mempty Nothing Nothing props)
 
 
 -- -- TODO ToJSString a => ?

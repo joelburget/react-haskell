@@ -21,14 +21,31 @@ page = createClass $ smartClass
     , renderFn = page2
     }
 
-page' = classLeaf page
-
 page2 :: Int -> String -> ReactNode String
 page2 props state = div_ [ class_ "parent" ] $ do
     span_ [ class_ "hooray", onClick (const (Just "clicked!")) ] "spanish"
-    "hello world!"
-    text_ (show props)
-    text_ state
+    header' [] state
+    footer' [] props
+
+header :: ReactClass String () String String
+header = createClass $ dumbClass
+    { name = "header"
+    , renderFn = \props _ -> div_ [ class_ "header" ] $ do
+        "header: "
+        text_ props
+    }
+
+footer :: ReactClass Int () String String
+footer = createClass $ dumbClass
+    { name = "name"
+    , renderFn = \props _ -> div_ [ class_ "footer" ] $ do
+        "footer: "
+        text_ (show props)
+    }
+
+page' = classLeaf page
+header' = classLeaf header
+footer' = classLeaf footer
 
 main :: IO ()
 main = do

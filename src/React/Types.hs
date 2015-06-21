@@ -209,7 +209,7 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
     { reComType :: ReactClass props state insig exsig
     , reComAttrs :: [AttrOrHandler insig]
     , reComChildren :: ReactNode insig
-    , reComKey :: JSString
+    , reComKey :: Maybe JSString
     , reComRef :: Maybe JSString
 
     -- Props are stored here, not used until, `render` because we need both the
@@ -225,7 +225,7 @@ data ReactComponentElement exsig = forall props state insig. ReactComponentEleme
 componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
-    (ReactComponentElement ty attrs children key ref props) = do
+    (ReactComponentElement ty attrs children maybeKey ref props) = do
         componentId <- allocProps (classStateRegistry ty) props
 
         -- handle internal signals, maybe call external signal handler
@@ -240,8 +240,10 @@ componentToJSAny
 
         attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
 
-        keyProp <- toJSRef key
-        setProp ("key" :: String) keyProp attrsObj
+        when (isJust maybeKey) $ do
+            let Just key = maybeKey
+            keyProp <- toJSRef key
+            setProp ("key" :: String) keyProp attrsObj
 
         refProp <- toJSRef ref
         setProp ("ref" :: String) refProp attrsObj
@@ -259,24 +261,26 @@ data ReactDOMElement sig = ReactDOMElement
     { reDomType :: JSString
     , reDomProps :: [AttrOrHandler sig]
     , reDomChildren :: ReactNode sig
-    , reDomKey :: JSString
+    , reDomKey :: Maybe JSString
     , reDomRef :: Maybe JSString
     }
 
 
 domToJSAny :: (sig -> IO ()) -> Int -> ReactDOMElement sig -> IO JSAny
-domToJSAny sigHandler componentId (ReactDOMElement ty props children key ref) = do
-    propsObj <- attrHandlerToJSAny sigHandler componentId props
+domToJSAny sigHandler componentId (ReactDOMElement ty props children maybeKey ref) = do
+    attrsObj <- attrHandlerToJSAny sigHandler componentId props
 
-    keyProp <- toJSRef key
-    setProp ("key" :: String) keyProp propsObj
+    when (isJust maybeKey) $ do
+        let Just key = maybeKey
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp attrsObj
 
     refProp <- toJSRef ref
-    setProp ("ref" :: String) refProp propsObj
+    setProp ("ref" :: String) refProp attrsObj
 
     children' <- reactNodeToJSAny sigHandler componentId children
 
-    castRef <$> js_react_createElement_DOM ty propsObj children'
+    castRef <$> js_react_createElement_DOM ty attrsObj children'
 
 
 -- attributes
