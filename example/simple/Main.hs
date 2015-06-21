@@ -17,7 +17,7 @@ page :: ReactClass Int String String Void
 page = createClass $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state, undefined)
-    , getInitialState = "this is state!"
+    , initialState = "this is state!"
     , renderFn = page2
     }
 

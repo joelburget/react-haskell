@@ -24,7 +24,7 @@ import React.Types
 
 data ClassConfig props state insig exsig = ClassConfig
     { renderFn :: props -> state -> ReactNode insig
-    , getInitialState :: state
+    , initialState :: state
     , name :: JSString
     , transition :: (state, insig) -> (state, Maybe exsig)
     , startupSignals :: [insig]
@@ -35,7 +35,7 @@ dumbClass :: ClassConfig props () sig sig
 dumbClass = ClassConfig
     { name = "Anonymous Stateless Class"
     , renderFn = \_ _ -> "give this class a `render`!"
-    , getInitialState = ()
+    , initialState = ()
     , transition = \(state, sig) -> (state, Just sig)
     , startupSignals = []
     }
@@ -45,7 +45,7 @@ smartClass :: ClassConfig props state insig exsig
 smartClass = ClassConfig
     { name = "Anonymous Stateful Class"
     , renderFn = \_ _ -> "give this class a `render`!"
-    , getInitialState = error "must define `getInitialState`!"
+    , initialState = error "must define `initialState`!"
     , transition = error "must define `transition`!"
     , startupSignals = []
     }
@@ -105,7 +105,7 @@ render registry renderFn idRef returnObj = do
 createClass :: ClassConfig props state insig exsig
             -> ReactClass props state insig exsig
 createClass ClassConfig{renderFn,
-                        getInitialState,
+                        initialState,
                         name,
                         transition,
                         startupSignals} =
@@ -126,7 +126,7 @@ createClass ClassConfig{renderFn,
             setProp ("render" :: JSString) renderCb obj
 
             willMountCb <- syncCallback1 NeverRetain True
-                (willMount classRegistry getInitialState)
+                (willMount classRegistry initialState)
             setProp ("componentWillMount" :: JSString) willMountCb obj
 
             willUnmountCb <- syncCallback1 NeverRetain True
@@ -136,4 +136,4 @@ createClass ClassConfig{renderFn,
             return obj
         foreignClass = js_createClass <$> foreignObj
 
-    in ReactClass foreignClass renderFn getInitialState name transition classRegistry
+    in ReactClass foreignClass renderFn initialState name transition classRegistry
