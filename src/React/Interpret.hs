@@ -44,6 +44,7 @@ setField attr (fld, Dict vs) = do
 -- TODO this seems wrong
 setField attr (fld, Null) = return ()
 
+
 setIx :: RawAttrs -> Int -> JSON -> IO ()
 setIx arr i (Num v) = js_set_ix_Double arr i v
 setIx arr i (Str v) = js_set_ix_String arr i v
@@ -62,20 +63,34 @@ setIx arr i (Dict d) = do
 setIx arr i Null = return ()
 
 
-interpret :: Monad m
-          => ReactT state sig anim m ()
-          -> anim
+interpret :: ReactElement ty sig
           -> (sig -> IO ())
-          -> m (IO ForeignNode)
-interpret react anim cb = do
-    ~(child:_, ()) <- runReactT react anim
-    return $ interpret' cb child
+          -> IO ForeignNode
+interpret react cb =
+    -- TODO should be able to avoid this weird pattern match by not
+    -- interpreting sequences!
+    let child:_ = runReact react
+    in interpret' cb child
 
 
 interpret' :: (signal -> IO ())
-           -> ReactNode signal
+           -> Child signal
            -> IO ForeignNode
 interpret' cb = \case
+    Static node -> interpret'' cb node
+    Dynamic nodes -> do
+        -- TODO this is all really gross. Have the imported functions operate
+        -- directly on JSRefs, not RawAttrs.
+        arr@(RawAttrs arr') <- js_empty_arr
+        forM_ nodes $ \(i, node) -> do
+            ForeignNode node' <- interpret'' cb node
+            js_set_ix_Arr arr i (RawAttrs node')
+        return (ForeignNode (castRef arr'))
+
+interpret'' :: (signal -> IO ())
+            -> ReactNode signal
+            -> IO ForeignNode
+interpret'' cb = \case
     Parent f as hs children -> do
         children' <- forM children (interpret' cb)
         let hs' = map (unHandler cb) hs

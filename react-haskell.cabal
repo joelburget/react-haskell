@@ -1,5 +1,5 @@
 name:                react-haskell
-version:             1.3.0.0
+version:             1.4.0.0
 synopsis:            Haskell React bindings
 description:
   This package provides high level bindings to Facebook's <http://facebook.github.io/react/ React> library, meant for use with GHCJS.
@@ -49,14 +49,12 @@ source-repository head
 library
   exposed-modules: React
   other-modules:
-    React.Anim,
     React.Attrs,
     React.Class,
     React.Elements,
     React.Events,
     React.Imports,
-    React.Interpret,
-    React.Local,
+    React.Rebindable,
     React.Render,
     React.Types
   other-extensions:
@@ -79,6 +77,9 @@ library
     ghcjs-base >= 0.1,
     ghcjs-prim >= 0.1.0.0,
     ghcjs-dom >= 0.1,
-    void == 0.7
+    void == 0.7,
+    aeson,
+    text,
+    unordered-containers
   hs-source-dirs:      src
   default-language:    Haskell2010

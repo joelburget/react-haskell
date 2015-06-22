@@ -1,419 +1,382 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds #-}
+-- TODO(joel) rename to React.DOM?
 module React.Elements where
 
+import Data.Aeson as Aeson
+import qualified Data.HashMap.Strict as H
+import Data.String
 import GHCJS.Foreign
+import GHCJS.Marshal
 import GHCJS.Types
 
 import React.Imports
 import React.Types
 
 
--- | Parent nodes always take children, but can also optionally take a list
--- of arguments.
---
--- Example of the first case, which exercises the simpler instance:
---
--- @
--- div_ $ ... children ...
--- @
---
--- Example of the second, which exercises the more complicated instance:
---
+-- | Parent nodes always take a list of arguments and children.
 -- @
 -- span_ [class_ "example"] $ ... children ...
 -- @
-class TermParent result where
-    -- | The argument to a parent term is either:
-    --
-    -- * a list of attributes (@[AttrOrHandler (Signal ty)]@), which leads
-    --   to a result type of @ReactT ty m a -> ReactT ty m a@.
-    --
-    -- * or children (@ReactT ty m a@), which leads to a result type of
-    --   @ReactT ty m a@.
-    type TermParentArg result :: *
-
-    termParent :: ForeignRender -> TermParentArg result -> result
-
-
-instance (Monad m, f ~ ReactT state sig anim m a) =>
-        TermParent (f -> ReactT state sig anim m a) where
-    type TermParentArg (f -> ReactT state sig anim m a) = [AttrOrHandler sig]
-
-    termParent render attrs children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        let (hs, as) = separateAttrs attrs
-        return ([Parent render as hs childNodes], a)
+--
+-- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
+-- create a ReactForeign?
+-- TODO(joel) this is essentially createElement
+domParent :: JSString
+          -> [AttrOrHandler sig]
+          -> ReactNode sig
+          -> ReactNode sig
+domParent name attrs children =
+    DomElement (ReactDOMElement name attrs children Nothing Nothing)
 
 
-instance Monad m => TermParent (ReactT state sig anim m a) where
-    type TermParentArg (ReactT state sig anim m a) = ReactT state sig anim m a
-
-    termParent render children = ReactT $ \anim -> do
-        ~(childNodes, a) <- runReactT children anim
-        return ([Parent render [] [] childNodes], a)
-
-
-foreignParent :: TermParent t
-              => ForeignRender
-              -> TermParentArg t
-              -> t
-foreignParent = termParent
+domLeaf :: JSString
+        -> [AttrOrHandler sig]
+        -> ReactNode sig
+domLeaf name attrs =
+    DomElement (ReactDOMElement name attrs mempty Nothing Nothing)
 
 
-reactParent :: TermParent t
-            => JSString
-            -> TermParentArg t
-            -> t
-reactParent name = termParent (js_React_DOM_parent name)
+classParent :: ReactClass props state insig exsig
+            -> [AttrOrHandler insig]
+            -> ReactNode insig
+            -> props
+            -> ReactNode exsig
+classParent cls attrs children props = ComponentElement
+    (ReactComponentElement cls attrs children Nothing Nothing props)
 
 
-termLeaf :: Monad m
-         => ForeignRender
-         -> [AttrOrHandler sig]
-         -> ReactT state sig anim m ()
-termLeaf render attrs = ReactT $ \_ -> do
-    let (hs, as) = separateAttrs attrs
-    return ([Leaf render as hs], ())
+classLeaf :: ReactClass props state insig exsig
+          -> [AttrOrHandler insig]
+          -> props
+          -> ReactNode exsig
+classLeaf cls attrs props = ComponentElement
+    (ReactComponentElement cls attrs mempty Nothing Nothing props)
 
 
-foreignLeaf :: Monad m
-            => ForeignRender
-            -> [AttrOrHandler sig]
-            -> ReactT state sig anim m ()
-foreignLeaf = termLeaf
-
-
-reactLeaf :: Monad m
-         => JSString
-         -> [AttrOrHandler sig]
-         -> ReactT state sig animj m ()
-reactLeaf name = termLeaf (\as' _ -> js_React_DOM_leaf name as')
-
-
--- TODO ToJSString a => ?
--- Would this just be annoyingly ambiguous?
-text_ :: JSString -> React state sig anim ()
-text_ str = ReactT $ \_ -> return ([Text (fromJSString str)], ())
+-- -- TODO ToJSString a => ?
+-- -- Would this just be annoyingly ambiguous?
+text_ :: String -> ReactNode sig
+text_ = fromString
 
 -- TODO generate these automatically
-a_ :: TermParent t => TermParentArg t -> t
-a_ = reactParent "a"
+a_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+a_ = domParent "a"
 
-abbr_ :: TermParent t => TermParentArg t -> t
-abbr_ = reactParent "abbr"
+abbr_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+abbr_ = domParent "abbr"
 
-address_ :: TermParent t => TermParentArg t -> t
-address_ = reactParent "address"
+address_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+address_ = domParent "address"
 
-article_ :: TermParent t => TermParentArg t -> t
-article_ = reactParent "article"
+article_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+article_ = domParent "article"
 
-aside_ :: TermParent t => TermParentArg t -> t
-aside_ = reactParent "aside"
+aside_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+aside_ = domParent "aside"
 
-audio_ :: TermParent t => TermParentArg t -> t
-audio_ = reactParent "audio"
+audio_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+audio_ = domParent "audio"
 
-b_ :: TermParent t => TermParentArg t -> t
-b_ = reactParent "b"
+b_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+b_ = domParent "b"
 
-bdi_ :: TermParent t => TermParentArg t -> t
-bdi_ = reactParent "bdi"
+bdi_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+bdi_ = domParent "bdi"
 
-bdo_ :: TermParent t => TermParentArg t -> t
-bdo_ = reactParent "bdo"
+bdo_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+bdo_ = domParent "bdo"
 
-big_ :: TermParent t => TermParentArg t -> t
-big_ = reactParent "big"
+big_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+big_ = domParent "big"
 
-blockquote_ :: TermParent t => TermParentArg t -> t
-blockquote_ = reactParent "blockquote"
+blockquote_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+blockquote_ = domParent "blockquote"
 
-body_ :: TermParent t => TermParentArg t -> t
-body_ = reactParent "body"
+body_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+body_ = domParent "body"
 
-button_ :: TermParent t => TermParentArg t -> t
-button_ = reactParent "button"
+button_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+button_ = domParent "button"
 
-canvas_ :: TermParent t => TermParentArg t -> t
-canvas_ = reactParent "canvas"
+canvas_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+canvas_ = domParent "canvas"
 
-caption_ :: TermParent t => TermParentArg t -> t
-caption_ = reactParent "caption"
+caption_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+caption_ = domParent "caption"
 
-cite_ :: TermParent t => TermParentArg t -> t
-cite_ = reactParent "cite"
+cite_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+cite_ = domParent "cite"
 
-code_ :: TermParent t => TermParentArg t -> t
-code_ = reactParent "code"
+code_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+code_ = domParent "code"
 
-colgroup_ :: TermParent t => TermParentArg t -> t
-colgroup_ = reactParent "colgroup"
+colgroup_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+colgroup_ = domParent "colgroup"
 
-data_ :: TermParent t => TermParentArg t -> t
-data_ = reactParent "data"
+data_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+data_ = domParent "data"
 
-datalist_ :: TermParent t => TermParentArg t -> t
-datalist_ = reactParent "datalist"
+datalist_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+datalist_ = domParent "datalist"
 
-dd_ :: TermParent t => TermParentArg t -> t
-dd_ = reactParent "dd"
+dd_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+dd_ = domParent "dd"
 
-del_ :: TermParent t => TermParentArg t -> t
-del_ = reactParent "del"
+del_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+del_ = domParent "del"
 
-details_ :: TermParent t => TermParentArg t -> t
-details_ = reactParent "details"
+details_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+details_ = domParent "details"
 
-dfn_ :: TermParent t => TermParentArg t -> t
-dfn_ = reactParent "dfn"
+dfn_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+dfn_ = domParent "dfn"
 
-div_ :: TermParent t => TermParentArg t -> t
-div_ = reactParent "div"
+div_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+div_ = domParent "div"
 
-dl_ :: TermParent t => TermParentArg t -> t
-dl_ = reactParent "dl"
+dl_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+dl_ = domParent "dl"
 
-dt_ :: TermParent t => TermParentArg t -> t
-dt_ = reactParent "dt"
+dt_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+dt_ = domParent "dt"
 
-em_ :: TermParent t => TermParentArg t -> t
-em_ = reactParent "em"
+em_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+em_ = domParent "em"
 
-fieldset_ :: TermParent t => TermParentArg t -> t
-fieldset_ = reactParent "fieldset"
+fieldset_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+fieldset_ = domParent "fieldset"
 
-figcaption_ :: TermParent t => TermParentArg t -> t
-figcaption_ = reactParent "figcaption"
+figcaption_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+figcaption_ = domParent "figcaption"
 
-figure_ :: TermParent t => TermParentArg t -> t
-figure_ = reactParent "figure"
+figure_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+figure_ = domParent "figure"
 
-footer_ :: TermParent t => TermParentArg t -> t
-footer_ = reactParent "footer"
+footer_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+footer_ = domParent "footer"
 
-form_ :: TermParent t => TermParentArg t -> t
-form_ = reactParent "form"
+form_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+form_ = domParent "form"
 
-h1_ :: TermParent t => TermParentArg t -> t
-h1_ = reactParent "h1"
+h1_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h1_ = domParent "h1"
 
-h2_ :: TermParent t => TermParentArg t -> t
-h2_ = reactParent "h2"
+h2_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h2_ = domParent "h2"
 
-h3_ :: TermParent t => TermParentArg t -> t
-h3_ = reactParent "h3"
+h3_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h3_ = domParent "h3"
 
-h4_ :: TermParent t => TermParentArg t -> t
-h4_ = reactParent "h4"
+h4_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h4_ = domParent "h4"
 
-h5_ :: TermParent t => TermParentArg t -> t
-h5_ = reactParent "h5"
+h5_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h5_ = domParent "h5"
 
-h6_ :: TermParent t => TermParentArg t -> t
-h6_ = reactParent "h6"
+h6_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+h6_ = domParent "h6"
 
-head_ :: TermParent t => TermParentArg t -> t
-head_ = reactParent "head"
+head_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+head_ = domParent "head"
 
-header_ :: TermParent t => TermParentArg t -> t
-header_ = reactParent "header"
+header_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+header_ = domParent "header"
 
-html_ :: TermParent t => TermParentArg t -> t
-html_ = reactParent "html"
+html_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+html_ = domParent "html"
 
-i_ :: TermParent t => TermParentArg t -> t
-i_ = reactParent "i"
+i_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+i_ = domParent "i"
 
-iframe_ :: TermParent t => TermParentArg t -> t
-iframe_ = reactParent "iframe"
+iframe_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+iframe_ = domParent "iframe"
 
-ins_ :: TermParent t => TermParentArg t -> t
-ins_ = reactParent "ins"
+ins_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+ins_ = domParent "ins"
 
-kbd_ :: TermParent t => TermParentArg t -> t
-kbd_ = reactParent "kbd"
+kbd_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+kbd_ = domParent "kbd"
 
-label_ :: TermParent t => TermParentArg t -> t
-label_ = reactParent "label"
+label_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+label_ = domParent "label"
 
-legend_ :: TermParent t => TermParentArg t -> t
-legend_ = reactParent "legend"
+legend_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+legend_ = domParent "legend"
 
-li_ :: TermParent t => TermParentArg t -> t
-li_ = reactParent "li"
+li_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+li_ = domParent "li"
 
-main_ :: TermParent t => TermParentArg t -> t
-main_ = reactParent "main"
+main_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+main_ = domParent "main"
 
-map_ :: TermParent t => TermParentArg t -> t
-map_ = reactParent "map"
+map_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+map_ = domParent "map"
 
-mark_ :: TermParent t => TermParentArg t -> t
-mark_ = reactParent "mark"
+mark_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+mark_ = domParent "mark"
 
-menu_ :: TermParent t => TermParentArg t -> t
-menu_ = reactParent "menu"
+menu_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+menu_ = domParent "menu"
 
-menuitem_ :: TermParent t => TermParentArg t -> t
-menuitem_ = reactParent "menuitem"
+menuitem_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+menuitem_ = domParent "menuitem"
 
-meter_ :: TermParent t => TermParentArg t -> t
-meter_ = reactParent "meter"
+meter_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+meter_ = domParent "meter"
 
-nav_ :: TermParent t => TermParentArg t -> t
-nav_ = reactParent "nav"
+nav_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+nav_ = domParent "nav"
 
-noscript_ :: TermParent t => TermParentArg t -> t
-noscript_ = reactParent "noscript"
+noscript_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+noscript_ = domParent "noscript"
 
-object_ :: TermParent t => TermParentArg t -> t
-object_ = reactParent "object"
+object_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+object_ = domParent "object"
 
-ol_ :: TermParent t => TermParentArg t -> t
-ol_ = reactParent "ol"
+ol_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+ol_ = domParent "ol"
 
-optgroup_ :: TermParent t => TermParentArg t -> t
-optgroup_ = reactParent "optgroup"
+optgroup_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+optgroup_ = domParent "optgroup"
 
-option_ :: TermParent t => TermParentArg t -> t
-option_ = reactParent "option"
+option_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+option_ = domParent "option"
 
-output_ :: TermParent t => TermParentArg t -> t
-output_ = reactParent "output"
+output_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+output_ = domParent "output"
 
-p_ :: TermParent t => TermParentArg t -> t
-p_ = reactParent "p"
+p_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+p_ = domParent "p"
 
-pre_ :: TermParent t => TermParentArg t -> t
-pre_ = reactParent "pre"
+pre_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+pre_ = domParent "pre"
 
-progress_ :: TermParent t => TermParentArg t -> t
-progress_ = reactParent "progress"
+progress_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+progress_ = domParent "progress"
 
-q_ :: TermParent t => TermParentArg t -> t
-q_ = reactParent "q"
+q_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+q_ = domParent "q"
 
-rp_ :: TermParent t => TermParentArg t -> t
-rp_ = reactParent "rp"
+rp_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+rp_ = domParent "rp"
 
-rt_ :: TermParent t => TermParentArg t -> t
-rt_ = reactParent "rt"
+rt_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+rt_ = domParent "rt"
 
-ruby_ :: TermParent t => TermParentArg t -> t
-ruby_ = reactParent "ruby"
+ruby_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+ruby_ = domParent "ruby"
 
-s_ :: TermParent t => TermParentArg t -> t
-s_ = reactParent "signal"
+s_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+s_ = domParent "signal"
 
-samp_ :: TermParent t => TermParentArg t -> t
-samp_ = reactParent "samp"
+samp_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+samp_ = domParent "samp"
 
-section_ :: TermParent t => TermParentArg t -> t
-section_ = reactParent "section"
+section_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+section_ = domParent "section"
 
-select_ :: TermParent t => TermParentArg t -> t
-select_ = reactParent "select"
+select_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+select_ = domParent "select"
 
-small_ :: TermParent t => TermParentArg t -> t
-small_ = reactParent "small"
+small_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+small_ = domParent "small"
 
-span_ :: TermParent t => TermParentArg t -> t
-span_ = reactParent "span"
+span_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+span_ = domParent "span"
 
-strong_ :: TermParent t => TermParentArg t -> t
-strong_ = reactParent "strong"
+strong_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+strong_ = domParent "strong"
 
-sub_ :: TermParent t => TermParentArg t -> t
-sub_ = reactParent "sub"
+sub_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+sub_ = domParent "sub"
 
-summary_ :: TermParent t => TermParentArg t -> t
-summary_ = reactParent "summary"
+summary_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+summary_ = domParent "summary"
 
-sup_ :: TermParent t => TermParentArg t -> t
-sup_ = reactParent "sup"
+sup_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+sup_ = domParent "sup"
 
-table_ :: TermParent t => TermParentArg t -> t
-table_ = reactParent "table"
+table_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+table_ = domParent "table"
 
-tbody_ :: TermParent t => TermParentArg t -> t
-tbody_ = reactParent "tbody"
+tbody_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+tbody_ = domParent "tbody"
 
-td_ :: TermParent t => TermParentArg t -> t
-td_ = reactParent "td"
+td_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+td_ = domParent "td"
 
-tfoot_ :: TermParent t => TermParentArg t -> t
-tfoot_ = reactParent "tfoot"
+tfoot_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+tfoot_ = domParent "tfoot"
 
-th_ :: TermParent t => TermParentArg t -> t
-th_ = reactParent "th"
+th_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+th_ = domParent "th"
 
-thead_ :: TermParent t => TermParentArg t -> t
-thead_ = reactParent "thead"
+thead_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+thead_ = domParent "thead"
 
-time_ :: TermParent t => TermParentArg t -> t
-time_ = reactParent "time"
+time_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+time_ = domParent "time"
 
-tr_ :: TermParent t => TermParentArg t -> t
-tr_ = reactParent "tr"
+tr_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+tr_ = domParent "tr"
 
-u_ :: TermParent t => TermParentArg t -> t
-u_ = reactParent "u"
+u_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+u_ = domParent "u"
 
-ul_ :: TermParent t => TermParentArg t -> t
-ul_ = reactParent "ul"
+ul_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+ul_ = domParent "ul"
 
-var_ :: TermParent t => TermParentArg t -> t
-var_ = reactParent "var"
+var_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+var_ = domParent "var"
 
-video_ :: TermParent t => TermParentArg t -> t
-video_ = reactParent "video"
+video_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+video_ = domParent "video"
 
 
-area_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-area_ = reactLeaf "area"
+area_ :: [AttrOrHandler sig] -> ReactNode sig
+area_ = domLeaf "area"
 
-base_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-base_ = reactLeaf "base"
+base_ :: [AttrOrHandler sig] -> ReactNode sig
+base_ = domLeaf "base"
 
-br_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-br_ = reactLeaf "br"
+br_ :: [AttrOrHandler sig] -> ReactNode sig
+br_ = domLeaf "br"
 
-col_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-col_ = reactLeaf "col"
+col_ :: [AttrOrHandler sig] -> ReactNode sig
+col_ = domLeaf "col"
 
-embed_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-embed_ = reactLeaf "embed"
+embed_ :: [AttrOrHandler sig] -> ReactNode sig
+embed_ = domLeaf "embed"
 
-hr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-hr_ = reactLeaf "hr"
+hr_ :: [AttrOrHandler sig] -> ReactNode sig
+hr_ = domLeaf "hr"
 
-img_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-img_ = reactLeaf "img"
+img_ :: [AttrOrHandler sig] -> ReactNode sig
+img_ = domLeaf "img"
 
-input_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-input_ = reactLeaf "input"
+input_ :: [AttrOrHandler sig] -> ReactNode sig
+input_ = domLeaf "input"
 
-keygen_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-keygen_ = reactLeaf "keygen"
+keygen_ :: [AttrOrHandler sig] -> ReactNode sig
+keygen_ = domLeaf "keygen"
 
-link_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-link_ = reactLeaf "link"
+link_ :: [AttrOrHandler sig] -> ReactNode sig
+link_ = domLeaf "link"
 
-meta_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-meta_ = reactLeaf "meta"
+meta_ :: [AttrOrHandler sig] -> ReactNode sig
+meta_ = domLeaf "meta"
 
-param_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-param_ = reactLeaf "param"
+param_ :: [AttrOrHandler sig] -> ReactNode sig
+param_ = domLeaf "param"
 
-source_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-source_ = reactLeaf "source"
+source_ :: [AttrOrHandler sig] -> ReactNode sig
+source_ = domLeaf "source"
 
-track_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-track_ = reactLeaf "track"
+track_ :: [AttrOrHandler sig] -> ReactNode sig
+track_ = domLeaf "track"
 
-wbr_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-wbr_ = reactLeaf "wbr"
+wbr_ :: [AttrOrHandler sig] -> ReactNode sig
+wbr_ = domLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
 -- style :: RawAttrs -> JSString -> IO ForeignNode
@@ -422,53 +385,53 @@ wbr_ = reactLeaf "wbr"
 
 -- svg!
 
-svg_ :: TermParent t => TermParentArg t -> t
-svg_ = reactParent "svg"
+svg_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+svg_ = domParent "svg"
 
-defs_ :: TermParent t => TermParentArg t -> t
-defs_ = reactParent "defs"
+defs_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+defs_ = domParent "defs"
 
-g_ :: TermParent t => TermParentArg t -> t
-g_ = reactParent "g"
+g_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+g_ = domParent "g"
 
-linearGradient_ :: TermParent t => TermParentArg t -> t
-linearGradient_ = reactParent "linearGradient"
+linearGradient_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+linearGradient_ = domParent "linearGradient"
 
-mask_ :: TermParent t => TermParentArg t -> t
-mask_ = reactParent "mask"
+mask_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+mask_ = domParent "mask"
 
-pattern_ :: TermParent t => TermParentArg t -> t
-pattern_ = reactParent "pattern"
+pattern_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+pattern_ = domParent "pattern"
 
-radialGradient_ :: TermParent t => TermParentArg t -> t
-radialGradient_ = reactParent "radialGradient"
+radialGradient_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+radialGradient_ = domParent "radialGradient"
 
-stop_ :: TermParent t => TermParentArg t -> t
-stop_ = reactParent "stop"
+stop_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+stop_ = domParent "stop"
 
--- text_ :: TermParent t => TermParentArg t -> t
--- text_ = reactParent "text"
+-- text_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+-- text_ = domParent "text"
 
-tspan_ :: TermParent t => TermParentArg t -> t
-tspan_ = reactParent "tspan"
+tspan_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
+tspan_ = domParent "tspan"
 
-circle_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-circle_ = reactLeaf "circle"
+circle_ :: [AttrOrHandler sig] -> ReactNode sig
+circle_ = domLeaf "circle"
 
-ellipse_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-ellipse_ = reactLeaf "ellipse"
+ellipse_ :: [AttrOrHandler sig] -> ReactNode sig
+ellipse_ = domLeaf "ellipse"
 
-line_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-line_ = reactLeaf "line"
+line_ :: [AttrOrHandler sig] -> ReactNode sig
+line_ = domLeaf "line"
 
-path_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-path_ = reactLeaf "path"
+path_ :: [AttrOrHandler sig] -> ReactNode sig
+path_ = domLeaf "path"
 
-polygon_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-polygon_ = reactLeaf "polygon"
+polygon_ :: [AttrOrHandler sig] -> ReactNode sig
+polygon_ = domLeaf "polygon"
 
-polyline_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-polyline_ = reactLeaf "polyline"
+polyline_ :: [AttrOrHandler sig] -> ReactNode sig
+polyline_ = domLeaf "polyline"
 
-rect_ :: Monad m => [AttrOrHandler sig] -> ReactT state sig anim m ()
-rect_ = reactLeaf "rect"
+rect_ :: [AttrOrHandler sig] -> ReactNode sig
+rect_ = domLeaf "rect"

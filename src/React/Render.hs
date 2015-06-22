@@ -1,8 +1,8 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, NamedFieldPuns, GADTs #-}
 
 module React.Render
     ( render
-    , cancelRender
+    , debugRender
     ) where
 
 import Control.Applicative
@@ -14,94 +14,42 @@ import Data.List
 import Data.Maybe
 import Data.Monoid
 import Data.String
+import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Marshal
 import GHCJS.Types
 
-import React.Anim
 import React.Attrs
 import React.Class
 import React.Elements
 import React.Events
 import React.Imports
-import React.Interpret
-import React.Local
+-- import React.Interpret
 import React.Types
 
 
-doRender :: Elem -> Double -> ReactClass state sig anim -> IO ()
-doRender elem time ReactClass{ classRender,
-                               classTransition,
-                               transitionRef,
-                               runningAnimRef,
-                               animRef,
-                               stateRef } = do
+render :: ReactNode Void -> Elem -> IO ()
+render node elem = do
+    -- XXX
+    node' <- reactNodeToJSAny undefined 0 node
+    js_render node' elem
 
-    transitions <- readIORef transitionRef
-    runningAnims <- readIORef runningAnimRef
-    prevState <- readIORef stateRef
-    prevAnim <- readIORef animRef
 
-    let (newState, newAnims) =
-            mapAccumL (flip classTransition) prevState transitions
+debugRender :: Show sig => ReactNode sig -> Elem -> IO ()
+debugRender node elem = do
+    -- XXX
+    node' <- reactNodeToJSAny print 0 node
+    js_render node' elem
 
-        newAnims' = concat newAnims
-        newRunningAnims = map (`RunningAnim` time) newAnims'
 
-        (runningAnims', endingAnims) = partition
-            (\(RunningAnim AnimConfig{duration} beganAt) ->
-                beganAt + duration > time)
-            (runningAnims <> newRunningAnims)
-
-        endingAnims' = zip endingAnims [1..]
-        runningAnims'' = zip runningAnims' (map (lerp time) runningAnims')
-        newAnim = stepRunningAnims prevAnim (endingAnims' ++ runningAnims'')
-
-        -- TODO should this run before or after rendering?
-        -- TODO expose a way to cancel / pass False in that case
-        endAnimTrans = mapMaybe
-            (\anim -> onComplete (config anim) True)
-            endingAnims
-
-    foreignNode <- runIdentity $
-        interpret (classRender newState) newAnim (updateCb transitionRef)
-    js_render foreignNode elem
-
-    writeIORef stateRef newState
-    writeIORef animRef newAnim
-    writeIORef runningAnimRef runningAnims'
-    writeIORef transitionRef endAnimTrans
+-- renderCb :: IO ()
+-- renderCb = do
+--     foreignNode <- interpret render (const (return ())) -- XXX
+--     js_render foreignNode elem
+--     -- raf
+--     return ()
 
 
 updateCb :: IORef [signal] -> signal -> IO ()
 updateCb ref update = modifyIORef ref (update:)
-
-
--- XXX don't think the handle remains valid. fix this with a ref.
-render :: Elem
-       -> ReactClass state sig anim
-       -> IO RenderHandle
-render elem cls@ReactClass{transitionRef, runningAnimRef} = do
-    let renderCb :: JSRef Double -> IO ()
-        renderCb timeRef = do
-            Just time <- fromJSRef timeRef
-            transitions <- readIORef transitionRef
-            runningAnims <- readIORef runningAnimRef
-
-            -- only rerender when dirty
-            when (length transitions + length runningAnims > 0) $
-                doRender elem time cls
-
-            raf
-            return ()
-
-        raf :: IO RenderHandle
-        raf = js_raf =<< syncCallback1 AlwaysRetain True renderCb
-
-    doRender elem 0 cls
-    raf
-
-
-cancelRender :: RenderHandle -> IO ()
-cancelRender = js_cancelRaf

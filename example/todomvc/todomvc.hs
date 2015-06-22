@@ -1,12 +1,14 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms  #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms, RebindableSyntax, DataKinds  #-}
 module Main where
 -- TODO:
 -- * persistence
 -- * routing
 
+import Prelude hiding ((>>), (=<<), return)
+
 import Control.Applicative
-import Control.Monad
-import Prelude hiding (div)
+import Data.String
+import Data.Void
 
 import GHCJS.Foreign
 import GHCJS.Types
@@ -36,8 +38,6 @@ data PageState = PageState
 $(makeLenses ''Todo)
 $(makeLenses ''PageState)
 
-type TodoMvc a = a PageState Transition ()
-
 initialPageState :: PageState
 initialPageState = PageState
     [Todo "abc" Active, Todo "xyz" Completed,
@@ -55,18 +55,15 @@ data Transition
     | ToggleAll
     | ClearCompleted
 
-transition' :: Transition -> PageState -> (PageState, [AnimConfig Transition ()])
-transition' t s = (transition t s, [])
-
-transition :: Transition -> PageState -> PageState
-transition (Typing str) = handleTyping str
-transition (HeaderKey Enter) = handleEnter
-transition (HeaderKey Escape) = handleEsc
-transition (Check i) = handleItemCheck i
-transition DoubleClick = handleLabelDoubleClick
-transition (Destroy i) = handleDestroy i
-transition ToggleAll = handleToggleAll
-transition ClearCompleted = clearCompleted
+pageTransition :: Transition -> PageState -> PageState
+pageTransition (Typing str) = handleTyping str
+pageTransition (HeaderKey Enter) = handleEnter
+pageTransition (HeaderKey Escape) = handleEsc
+pageTransition (Check i) = handleItemCheck i
+pageTransition DoubleClick = handleLabelDoubleClick
+pageTransition (Destroy i) = handleDestroy i
+pageTransition ToggleAll = handleToggleAll
+pageTransition ClearCompleted = clearCompleted
 
 -- UTILITY
 
@@ -75,9 +72,6 @@ toggleStatus Active = Completed
 toggleStatus Completed = Active
 
 foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
-
--- trim :: JSString -> JSString
--- trim = unsafePerformIO . ffi "(function(str) { return str.trim(); })"
 
 -- this traversal is in lens but lens-family has a weird ix which isn't
 -- what we want. definition just copied from lens.
@@ -148,9 +142,9 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- autofocus input attribute. Pressing Enter creates the todo, appends it
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
-header :: PageState -> TodoMvc React'
+header :: PageState -> ReactElement
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
-    h1_ "todos"
+    h1_ [] $ text_ "todos"
     input_ [ id_ "new-todo"
            , placeholder_ "What needs to be done?"
            , autofocus_ True
@@ -159,83 +153,102 @@ header PageState{_typingValue} = header_ [ id_ "header" ] $ do
            , onKeyDown emitKeydown
            ]
 
-todoView :: PageState -> Int -> TodoMvc React'
-todoView PageState{_todos} i = do
+todoView :: PageState -> Int -> ReactElement
+todoView PageState{_todos} i =
     let Todo{_text, _status} = _todos !! i
-    li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
-        div_ [ class_ "view" ] $ do
-            input_ [ class_ "toggle"
-                   , type_ "checkbox"
-                   , checked_ (_status == Completed)
-                   , onClick (const (Just (Check i)))
-                   ]
-            label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
-            button_ [ class_ "destroy"
-                    , onClick (const (Just (Destroy i)))
-                    ] $ return ()
+    in li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
+           div_ [ class_ "view" ] $ do
+               input_ [ class_ "toggle"
+                      , type_ "checkbox"
+                      , checked_ (_status == Completed)
+                      , onClick (const (Just (Check i)))
+                      ]
+               label_ [ onDoubleClick (const (Just DoubleClick)) ] $ text_ _text
+               button_ [ class_ "destroy"
+                       , onClick (const (Just (Destroy i)))
+                       ] $ text_ ""
 
-        input_ [ class_ "edit", value_ _text ]
+           input_ [ class_ "edit", value_ _text ]
 
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: PageState -> TodoMvc React'
-mainBody st@PageState{_todos} =
-    section_ [ id_ "main" ] $ do
-        input_ [ id_ "toggle-all", type_ "checkbox" ]
-        label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
-            "Mark all as complete"
+mainBody :: ReactClass PageState () Transition
+mainBody = createClass $ dumbClass
+    { name = "MainBody"
+    , renderFn = \st@PageState{_todos} _ ->
+          section_ [ id_ "main" ] $ do
+              input_ [ id_ "toggle-all", type_ "checkbox" ]
+              label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
+                  $ text_ "Mark all as complete"
 
-        ul_ [ id_ "todo-list" ] $ forM_ [0 .. length _todos - 1] (todoView st)
+              let blah = text_ "" >> text_ ""
+              ul_ [ id_ "todo-list" ] $ case length _todos of
+                  0 -> blah
+                  _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
+    }
 
-innerFooter :: PageState -> TodoMvc React'
-innerFooter PageState{_todos} = footer_ [ id_ "footer" ] $ do
-    let activeCount = length (todosWithStatus Active _todos)
-    let inactiveCount = length (todosWithStatus Completed _todos)
+innerFooter :: ReactClass PageState () Transition
+innerFooter = createClass $ dumbClass
+    { name = "InnerFooter"
+    , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
+          let activeCount = length (todosWithStatus Active _todos)
+          let inactiveCount = length (todosWithStatus Completed _todos)
 
-    -- "Displays the number of active todos in a pluralized form. Make sure
-    -- the number is wrapped by a <strong> tag. Also make sure to pluralize
-    -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
-    -- left"
-    span_ [ id_ "todo-count" ] $ do
-        strong_ (text_ (toJSString (show activeCount)))
+          -- "Displays the number of active todos in a pluralized form. Make sure
+          -- the number is wrapped by a <strong> tag. Also make sure to pluralize
+          -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
+          -- left"
+          span_ [ id_ "todo-count" ] $ do
+              strong_ [] (text_ (toJSString (show activeCount)))
 
-        if activeCount == 1 then " item left" else " items left"
+              text_ $ if activeCount == 1 then " item left" else " items left"
 
-    unless (inactiveCount == 0) $
-        button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
-            text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
+          unless (inactiveCount == 0) $
+              button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
+                  text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
+    }
 
-outerFooter :: TodoMvc React'
-outerFooter = footer_ [ id_ "info" ] $ do
-    -- TODO react complains about these things not having keys even though
-    -- they're statically defined. figure out how to fix this.
-    p_ "Double-click to edit a todo"
-    p_ $ do
-        "Created by "
-        a_ [ href_ "http://joelburget.com" ] "Joel Burget"
-    p_ $ do
-        "Part of "
-        a_ [ href_ "http://todomvc.com" ] "TodoMVC"
+outerFooter :: ReactClass () () Void
+outerFooter = React.createClass $ dumbClass
+    { name = "OuterFooter"
+    , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
+          -- TODO react complains about these things not having keys even though
+          -- they're statically defined. figure out how to fix this.
+          p_ [] $ text_ "Double-click to edit a todo"
+          p_ [] $ do
+              text_ "Created by "
+              a_ [ href_ "http://joelburget.com" ] $ text_ "Joel Burget"
+          p_ [] $ do
+              text_ "Part of "
+              a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
+    }
 
-wholePage :: PageState -> TodoMvc React'
-wholePage s@PageState{_todos} = div_ $ do
-    section_ [ id_ "todoapp" ] $ do
-        header s
+-- XXX doesn't sig have to be Void here - IE no signal can escape?
+wholePage :: ReactClass () PageState Void
+wholePage = createClass $ smartClass
+    { name = "WholePage"
+    , transition = pageTransition
+    , getInitialState = initialPageState
+    , renderFn = \_ s@PageState{_todos} -> div_ [] $ do
+          section_ [ id_ "todoapp" ] $ do
+              header s
 
-        -- "When there are no todos, #main and #footer should be hidden."
-        unless (null _todos) $ do
-            mainBody s
-            innerFooter s
-    outerFooter
+              -- "When there are no todos, #main and #footer should be hidden."
+              unless (null _todos) $ do
+                  mainBody' s
+                  innerFooter' s
+          outerFooter' ()
+    }
 
-todoMvcClass :: IO (TodoMvc ReactClass)
-todoMvcClass = createClass wholePage transition' initialPageState () []
+wholePage'   = classLeaf wholePage
+outerFooter' = classLeaf outerFooter
+innerFooter' = classLeaf innerFooter
+mainBody'    = classLeaf mainBody
 
 main = do
     Just doc <- currentDocument
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    cls <- todoMvcClass
-    render elem cls
+    render elem (wholePage' ())

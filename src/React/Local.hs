@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleInstances, GADTs, MultiParamTypeClasses,
-  FlexibleContexts, IncoherentInstances #-}
+  FlexibleContexts, IncoherentInstances, LambdaCase, DataKinds #-}
 -- Note on IncoherentInstances: the two instances below will both work fine
 -- for `GeneralizeSignal Void Void`. They should never be called.
-module React.Local (locally, GeneralizeSignal(..)) where
+module React.Local (GeneralizeSignal(..), locally) where
 
 import Control.Applicative
 import Data.Void
@@ -24,14 +24,33 @@ instance GeneralizeSignal Void a where
     generalizeSignal = absurd
 
 
-locally :: (Monad m, GeneralizeSignal sigloc siggen)
-        => ReactT stateloc sigloc anim m x
-        -> ReactT stategen siggen anim m x
-locally nested = result where
-    result = ReactT $ \anim -> do
-        let gensig = nodeConvert generalizeSignal
-        (nodes, x) <- runReactT nested anim
-        return (map gensig nodes, x)
+-- class SignalMax sig1 sig2 siggen where
+
+
+-- instance (GeneralizeSignal sigloc siggen, GeneralizeSignal siggen siggen) =>
+--     SignalMax sigloc siggen siggen where
+-- instance (GeneralizeSignal sigloc siggen, GeneralizeSignal siggen siggen) =>
+--     SignalMax siggen sigloc siggen where
+
+
+locally :: GeneralizeSignal sigloc siggen
+        => ReactElement ty sigloc
+        -> ReactElement RtSequence siggen
+locally = ReactSequence . generalizeChildren . runReact
+
+
+generalizeChildren :: GeneralizeSignal sigloc siggen
+                   => [Child sigloc]
+                   -> [Child siggen]
+generalizeChildren = map (childConvert generalizeSignal)
+
+
+childConvert :: (sigloc -> siggen) -> Child sigloc -> Child siggen
+childConvert generalize =
+    let gensig = nodeConvert generalize
+    in \case
+        Static node -> Static (gensig node)
+        Dynamic nodes -> Dynamic (map (\(i, node) -> (i, gensig node)) nodes)
 
 
 handlerConvert :: (sigloc -> siggen)
@@ -42,11 +61,11 @@ handlerConvert generalize (EventHandler handle ty) =
 
 
 nodeConvert :: (sigloc -> siggen)
-             -> ReactNode sigloc
-             -> ReactNode siggen
+            -> ReactNode sigloc
+            -> ReactNode siggen
 nodeConvert generalize (Parent f attrs handlers children) =
     Parent f attrs (map (handlerConvert generalize) handlers)
-        (map (nodeConvert generalize) children)
+        (map (childConvert generalize) children)
 nodeConvert generalize (Leaf f attrs handlers) =
     Leaf f attrs (map (handlerConvert generalize) handlers)
 nodeConvert _ (Text str) = Text str

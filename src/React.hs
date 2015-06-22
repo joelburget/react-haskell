@@ -8,31 +8,19 @@
 module React
     ( module X
 
-    -- React.Anim
-    , Color(..)
-    , getAnimationState
-    , Animatable(..) -- XXX
-
     -- React.Class
     , ReactClass()
+    , ClassConfig(..)
     , createClass
-
-    -- React.Local
-    , locally
-    , GeneralizeSignal(..)
+    , smartClass
+    , dumbClass
 
     -- React.Render
-    , cancelRender
     , render
+    , debugRender
 
     -- React.Types
-    , ReactT(..)
-    , React
-    , React'
-    , Pure
     , RenderHandle(..)
-    , AnimConfig(..)
-    , Easing(..)
     , EventProperties(..)
     , Target(..)
     , ModifierKeys(..)
@@ -42,8 +30,8 @@ module React
     , FocusEvent(..)
     , ForeignRender
 
-    -- XXX(joel)
-    , JSON(..)
+    , ReactType(..)
+    , ReactNode
 
     -- XXX(joel)
     , AttrOrHandler()
@@ -58,14 +46,14 @@ module React
 -- store elem in monad
 -- escaping / dangerouslySetInnerHTML
 
-import React.Anim
 import React.Class
 -- import React.Imports
 -- import React.Interpret
-import React.Local
+-- import React.Local
 import React.Render
 import React.Types
 
 import React.Attrs as X
 import React.Elements as X
 import React.Events as X
+import React.Rebindable as X

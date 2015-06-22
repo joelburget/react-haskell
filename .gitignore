@@ -5,3 +5,4 @@ example/**/*.o
 example/**/*.js
 dist/
 main/
+.DS_STORE

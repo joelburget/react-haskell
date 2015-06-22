@@ -1,42 +1,32 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
     FlexibleInstances, FlexibleContexts, TypeFamilies,
     ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
-    DeriveGeneric #-}
-{-# LANGUAGE JavaScriptFFI #-}
+    DeriveGeneric, DataKinds, GADTs, OverloadedStrings, CPP #-}
+
 module React.Types where
 
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
-import Data.Functor.Identity
+import qualified Data.HashMap.Strict as H
+import Data.IORef
+import Data.List (partition)
 import Data.Maybe
 import Data.Monoid
 import Data.String
+import Data.Text (Text)
 import GHC.Generics
 import System.IO.Unsafe
 
-import Data.Void
+import qualified Data.Aeson as Aeson
 import GHCJS.Foreign
 import GHCJS.Marshal
 import GHCJS.Types
-import Lens.Family2
 
 instance Show JSString where
     show = fromJSString
 
-type JSAny = JSRef ()
-
--- XXX
-data JSON
-  = Num  Double
-  | Str  JSString
-  | Bool Bool
-  | Arr  [JSON]
-  | Dict [(JSString, JSON)]
-  | Null
-
-instance IsString JSON where
-  fromString = Str . fromString
+type JSON = Aeson.Value
 
 newtype ForeignNode = ForeignNode JSAny
 newtype RawAttrs = RawAttrs JSAny
@@ -47,193 +37,310 @@ type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 newtype RenderHandle = RenderHandle Int
 
 data EvtType
-    = ChangeEvt
-    | KeyDownEvt
-    | KeyPressEvt
-    | KeyUpEvt
-    | ClickEvt
-    | DoubleClickEvt
-    | MouseEnterEvt
-    | MouseLeaveEvt
+   = ChangeEvt
+   | KeyDownEvt
+   | KeyPressEvt
+   | KeyUpEvt
+   | ClickEvt
+   | DoubleClickEvt
+   | MouseEnterEvt
+   | MouseLeaveEvt
+
+
+jsName :: EvtType -> JSString
+jsName ChangeEvt = "onChange"
+jsName KeyDownEvt = "onKeyDown"
+jsName KeyPressEvt = "onKeyPress"
+jsName KeyUpEvt = "onKeyUp"
+jsName ClickEvt = "onClick"
+jsName DoubleClickEvt = "onDoubleClick"
+jsName MouseEnterEvt = "onMouseEnter"
+jsName MouseLeaveEvt = "onMouseLeave"
+
 
 data EventHandler signal = EventHandler
-    { handler :: RawEvent -> Maybe signal
+    { handler :: Int -> RawEvent -> Maybe signal
     , evtType :: EvtType
     }
 
--- newtype RawEvent = RawEvent JSAny
-data RawEvent_
-type RawEvent = JSRef RawEvent_
-
-type Attrs = [(JSString, JSON)]
-
--- it'd be super cool to restrict `Pre` to a string somehow (restrict the
--- underlying monad so it can only set attrs and string?)
-
-data ReactNode signal
-    = Parent ForeignRender Attrs [EventHandler signal] [ReactNode signal]
-    | Leaf ForeignRender Attrs [EventHandler signal]
-    -- | Pre Attrs Handlers [ReactNode]
-    | Text String -- TODO(joel) JSString?
+data ReactType
+    = RtClass
+    | RtBuiltin
+    | RtSequence
 
 
--- | Standard easing functions. These are used to 'interpolate' smoothly.
+-- | A 'ReactClass' is a standalone component of a user interface which
+-- contains the state necessary to render itself. Classes are a tool for
+-- scoping.
 --
--- See <http://joelburget.com/react-haskell/ here> for visualizations.
-data Easing
-    = Linear
+-- Use 'createClass' to construct.
+data ReactClass props state insig exsig = ReactClass
+    { classForeign :: JSAny
+    , classRender :: props -> state -> ReactNode insig
+    , classInitialState :: state
+    , className :: JSString
+    , classTransition :: (state, insig) -> (state, Maybe exsig)
 
-    | EaseInQuad
-    | EaseOutQuad
-    | EaseInOutQuad
-
-    | EaseInCubic
-    | EaseOutCubic
-    | EaseInOutCubic
-
-    | EaseInQuart
-    | EaseOutQuart
-    | EaseInOutQuart
-
-    | EaseInQuint
-    | EaseOutQuint
-    | EaseInOutQuint
-
-    | EaseInElastic
-    | EaseOutElastic
-    | EaseInOutElastic
-
-    | EaseInBounce
-    | EaseOutBounce
-    | EaseInOutBounce
-
-    | EaseBezier Double Double Double Double
-    | EaseInSine
-    | EaseOutSine
-    deriving (Show, Eq, Ord)
-
--- | Properties that can animate.
---
--- Numeric values like 'width' and 'height', as well as colors.
-class Animatable a where
-    -- TODO is `to` always `animZero`?
-    -- | Use an easing function to interpolate between two values
-    interpolate :: Easing -- ^ easing function
-                -> a -- ^ from
-                -> a -- ^ to
-                -> Double -- ^ [0..1] ratio of /time/ elapsed
-                -> a
-
-    -- | Add two animations
-    animAdd :: a -> a -> a
-
-    -- | Subtract two animations
-    animSub :: a -> a -> a
-    animZero :: a
-
-
--- things you might want to control about an animation:
--- * duration
--- * from
--- * to
--- * lens
--- * easing
--- * oncomplete
--- * chaining
--- * delay
-
--- possible configurations:
--- * set new state, animate from old to new at same time
---   - need to connect ClassState and AnimationState somehow
--- * animate manually from -> to
-
-data AnimConfig sig anim = forall a. (Animatable a) => AnimConfig {
-      -- | How long this animation lasts in milliseconds
-      duration :: Double
-      -- | Where does this animation start and end?
-    , endpoints :: (a, a)
-      -- | Pointer to this field within 'AnimationState'
-    , lens :: Lens' anim a
-      -- | How is the animation eased?
-    , easing :: Easing
-      -- | Do something when it's finished?
-    , onComplete :: Bool -> Maybe sig
+    , classStateRegistry :: ClassRegistry props state insig exsig
     }
 
 
-data RunningAnim sig anim = RunningAnim
-    { config :: AnimConfig sig anim
-    , beganAt :: Double
+data RegistryStuff props state insig exsig = RegistryStuff
+    { registryProps :: props
+    , registryState :: state
+    , registryHandler :: (state, insig) -> (state, Maybe exsig)
     }
 
 
-newtype ReactT state sig anim m a = ReactT
-    { runReactT :: anim -> m ([ReactNode sig], a) }
+data ClassRegistry props state insig exsig = ClassRegistry
+    { registryStuff :: IORef (H.HashMap Int (RegistryStuff props state insig exsig))
+    , registryGen :: IORef Int
+    }
 
 
-type React state sig anim = ReactT state sig anim Identity
-type React' state sig anim = ReactT state sig anim Identity ()
-type Pure a = a () Void ()
+generateKey :: ClassRegistry props state insig exsig -> IO Int
+generateKey (ClassRegistry _ gen) = do
+    k <- readIORef gen
+    writeIORef gen (k + 1)
+    return k
 
 
-instance (Monad m, Monoid a) => Monoid (ReactT state sig anim m a) where
-    mempty = ReactT $ \_ -> return ([], mempty)
-    mappend f1 f2 = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT f1 anim
-        ~(c2, b) <- runReactT f2 anim
-        return (c1 <> c2, a <> b)
+allocProps :: ClassRegistry props state insig exsig
+           -> props
+           -> ((state, insig) -> (state, Maybe exsig))
+           -> IO Int
+allocProps registry props handler = do
+    k <- generateKey registry
+
+    -- let handler' sig = do
+    --         RegistryStuff _ prevState _ <- lookupRegistry registry k
+    --         handler sig prevState
+
+    modifyIORef (registryStuff registry) $
+        H.insert k (RegistryStuff props undefined handler)
+    return k
 
 
-instance Monad m => Functor (ReactT state sig anim m) where
-    fmap = liftM
+setState :: ClassRegistry props state insig exsig -> state -> Int -> IO ()
+setState registry state k =
+    modifyIORef (registryStuff registry) $
+        H.adjust (\(RegistryStuff p _ h) -> RegistryStuff p state h) k
 
 
-instance Monad m => Applicative (ReactT state sig anim m) where
-    pure = return
-    (<*>) = ap
+deallocRegistry :: ClassRegistry props state insig exsig -> Int -> IO ()
+deallocRegistry (ClassRegistry stuff _) k = modifyIORef stuff (H.delete k)
 
 
-instance (Monad m, a ~ ()) => IsString (ReactT state sig anim m a) where
-    fromString str = ReactT $ \_ -> return ([Text str], ())
+-- TODO(joel) - think about pushing around the IO boundary
+lookupRegistry :: ClassRegistry props state insig exsig
+               -> Int
+               -> IO (RegistryStuff props state insig exsig)
+lookupRegistry (ClassRegistry stuff _) k = do
+    stuff' <- readIORef stuff
+    return $ H.lookupDefault
+        (error $ "class registry didn't contain an entry!\n" ++
+                 "componentId: " ++ show k ++ "\n" ++
+                 "keys: " ++ show (H.keys stuff') ++ "\n"
+        )
+        k
+        stuff'
 
 
-instance Monad m => Monad (ReactT state sig anim m) where
-    return a = ReactT $ \_ -> return ([], a)
-    m >>= f = ReactT $ \anim -> do
-        ~(c1, a) <- runReactT m anim
-        ~(c2, b) <- runReactT (f a) anim
-        return (c1 <> c2, b)
+-- TODO use phantom type to indicate renderability? Only sequence is not.
+data ReactNode sig
+    = ComponentElement (ReactComponentElement sig)
+    | DomElement (ReactDOMElement sig)
+    | NodeText JSString
+    | NodeSequence [ReactNode sig]
+
+
+instance Monoid (ReactNode sig) where
+    mempty = NodeSequence []
+
+    (NodeSequence xs) `mappend` (NodeSequence ys) = NodeSequence (xs <> ys)
+    (NodeSequence xs) `mappend` y = NodeSequence (xs <> [y])
+    x `mappend` (NodeSequence ys) = NodeSequence (x : ys)
+    x `mappend` y = NodeSequence [x, y]
+
+
+reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
+reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
+    componentToJSAny sigHandler elem
+reactNodeToJSAny sigHandler componentId (DomElement elem)       =
+    domToJSAny sigHandler componentId elem
+reactNodeToJSAny sigHandler _           (NodeText str)          =
+    castRef <$> toJSRef str
+reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
+    jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
+    castRef <$> toArray jsNodes
+
+
+instance IsString (ReactNode sig) where
+    fromString str = NodeText (fromString str)
+
+
+attrsToJson :: [Attr] -> JSON
+attrsToJson = Aeson.toJSON . H.fromList . map unAttr where
+    unAttr (Attr name json) = (name, json)
+
+
+separateAttrs :: [AttrOrHandler sig] -> ([Attr], [EventHandler sig])
+separateAttrs attrHandlers = (map makeA as, map makeH hs) where
+    (as, hs) = partition isAttr attrHandlers
+
+    isAttr :: AttrOrHandler sig -> Bool
+    isAttr (StaticAttr _ _) = True
+    isAttr _ = False
+
+    makeA :: AttrOrHandler sig -> Attr
+    makeA (StaticAttr t j) = Attr t j
+
+    makeH :: AttrOrHandler sig -> EventHandler sig
+    makeH (Handler h) = h
+
+
+attrHandlerToJSAny :: (sig -> IO ()) -> Int -> [AttrOrHandler sig] -> IO JSAny
+attrHandlerToJSAny sigHandler componentId attrHandlers = do
+    let (attrs, handlers) = separateAttrs attrHandlers
+    starter <- castRef <$> toJSRef (attrsToJson attrs)
+
+    forM_ handlers $ makeHandler componentId starter . unHandler sigHandler
+    return starter
+
+
+data AttrOrHandler signal
+    = StaticAttr Text JSON
+    | Handler (EventHandler signal)
+
+data Attr = Attr Text JSON
+
+
+data ReactComponentElement exsig = forall props state insig. ReactComponentElement
+    { reComType :: ReactClass props state insig exsig
+    , reComAttrs :: [AttrOrHandler insig]
+    , reComChildren :: ReactNode insig
+    , reComKey :: Maybe JSString
+    , reComRef :: Maybe JSString
+
+    -- Props are stored here, not used until, `render` because we need both the
+    -- props and state at the same time.
+    , reComProps :: props
+
+    -- We can't store the class id here because we don't know it until *after*
+    -- render has run! It's not allocated until componentWillMount.
+    -- , reComClassId :: Int
+    }
+
+
+componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
+componentToJSAny
+    sigHandler
+    (ReactComponentElement ty attrs children maybeKey ref props) = do
+
+        componentId <- allocProps (classStateRegistry ty) props (classTransition ty)
+
+        -- handle internal signals, maybe call external signal handler
+        let sigHandler' insig = do
+                putStrLn "in sigHandler'"
+                stuff <- lookupRegistry (classStateRegistry ty) componentId
+                let prevState = registryState stuff
+                    (newState, maybeExSig) = classTransition ty (prevState, insig)
+
+                case maybeExSig of
+                    Just exSig -> sigHandler exSig
+                    Nothing -> return ()
+
+        attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
+
+        when (isJust maybeKey) $ do
+            let Just key = maybeKey
+            keyProp <- toJSRef key
+            setProp ("key" :: String) keyProp attrsObj
+
+        refProp <- toJSRef ref
+        setProp ("ref" :: String) refProp attrsObj
+
+        idProp <- toJSRef componentId
+        setProp ("componentId" :: String) idProp attrsObj
+
+        let ty' = classForeign ty
+        children' <- reactNodeToJSAny sigHandler' componentId children
+
+        castRef <$> js_react_createElement_Class ty' attrsObj children'
+
+
+data ReactDOMElement sig = ReactDOMElement
+    { reDomType :: JSString
+    , reDomProps :: [AttrOrHandler sig]
+    , reDomChildren :: ReactNode sig
+    , reDomKey :: Maybe JSString
+    , reDomRef :: Maybe JSString
+    }
+
+
+domToJSAny :: (sig -> IO ()) -> Int -> ReactDOMElement sig -> IO JSAny
+domToJSAny sigHandler componentId (ReactDOMElement ty props children maybeKey ref) = do
+    attrsObj <- attrHandlerToJSAny sigHandler componentId props
+
+    when (isJust maybeKey) $ do
+        let Just key = maybeKey
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp attrsObj
+
+    refProp <- toJSRef ref
+    setProp ("ref" :: String) refProp attrsObj
+
+    children' <- reactNodeToJSAny sigHandler componentId children
+
+    castRef <$> js_react_createElement_DOM ty attrsObj children'
 
 
 -- attributes
 
-data AttrOrHandler signal
-    = StaticAttr JSString JSON
-    | Handler (EventHandler signal)
+unHandler :: (s -> IO ())
+          -> EventHandler s
+          -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\ix e -> act <$> handle ix e, ty)
 
 
-mkStaticAttr :: JSString -> (a -> JSON) -> a -> AttrOrHandler signal
-mkStaticAttr name f a = StaticAttr name (f a)
+makeHandler :: Int
+            -- ^ component id
+            -> JSAny
+            -- ^ object to set this attribute on
+            -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+            -- ^ handler
+            -> IO ()
+makeHandler componentId obj (handle, evtTy) = do
+    handle' <- handlerToJs handle
+    js_set_handler componentId (jsName evtTy) handle' obj
 
 
-mkEventHandler :: (FromJSRef signal, NFData signal)
+-- | Make a javascript callback to synchronously execute the handler
+handlerToJs :: (Int -> RawEvent -> Maybe (IO ()))
+            -> IO (JSFun (JSRef Int -> RawEvent -> IO ()))
+handlerToJs handle = syncCallback2 AlwaysRetain True $ \idRef evt -> do
+    Just componentId <- fromJSRef idRef
+    case handle componentId evt of
+        Nothing -> return ()
+        Just x -> x
+
+
+mkStaticAttr :: Aeson.ToJSON a => Text -> a -> AttrOrHandler sig
+mkStaticAttr name = StaticAttr name . Aeson.toJSON
+
+
+mkEventHandler :: (FromJSRef evt, NFData evt)
                => EvtType
-               -> (signal -> Maybe signal')
-               -> AttrOrHandler signal'
+               -> (evt -> Maybe signal)
+               -> AttrOrHandler signal
 mkEventHandler ty handle =
     -- XXX unsafe as fuck
-    let handle' raw = case unsafePerformIO $ fromJSRef $ castRef raw of
+    -- XXX throwing away ix
+    let handle' ix raw = case unsafePerformIO $ fromJSRef $ castRef raw of
             Just x -> handle $!! x
             Nothing -> Nothing
+    -- let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
-
-
-separateAttrs :: [AttrOrHandler signal] -> ([EventHandler signal], Attrs)
-separateAttrs [] = ([], [])
-separateAttrs (StaticAttr k v:xs) =
-    let (hs, as) = separateAttrs xs in (hs, (k, v):as)
-separateAttrs (Handler h:xs) =
-    let (hs, as) = separateAttrs xs in (h:hs, as)
 
 
 -- | Low level properties common to all events
