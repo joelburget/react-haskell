@@ -137,6 +137,6 @@ createClass ClassConfig{renderFn,
             setProp ("componentWillUnmount" :: JSString) willUnmountCb obj
 
             return obj
-        foreignClass = js_createClass <$> foreignObj
+        foreignClass = unsafePerformIO $ js_createClass <$> foreignObj
 
     in ReactClass foreignClass renderFn initialState name transition classRegistry

@@ -79,7 +79,7 @@ data ReactType
 --
 -- Use 'createClass' to construct.
 data ReactClass props state insig exsig = ReactClass
-    { classForeign :: IO JSAny
+    { classForeign :: JSAny
     , classRender :: props -> state -> ReactNode insig
     , classInitialState :: state
     , className :: JSString
@@ -267,7 +267,7 @@ componentToJSAny
         idProp <- toJSRef componentId
         setProp ("componentId" :: String) idProp attrsObj
 
-        ty' <- classForeign ty
+        let ty' = classForeign ty
         children' <- reactNodeToJSAny sigHandler' componentId children
 
         castRef <$> js_react_createElement_Class ty' attrsObj children'
