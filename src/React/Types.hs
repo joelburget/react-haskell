@@ -85,55 +85,69 @@ data ReactClass props state insig exsig = ReactClass
     , className :: JSString
     , classTransition :: (state, insig) -> (state, Maybe exsig)
 
-    , classStateRegistry :: ClassRegistry props state
+    , classStateRegistry :: ClassRegistry props state insig exsig
     }
 
 
-data ClassRegistry props state = ClassRegistry
-    { registryProps :: IORef (H.HashMap Int props)
-    , registryState :: IORef (H.HashMap Int state)
+data RegistryStuff props state insig exsig = RegistryStuff
+    { registryProps :: props
+    , registryState :: state
+    , registryHandler :: (state, insig) -> (state, Maybe exsig)
+    }
+
+
+data ClassRegistry props state insig exsig = ClassRegistry
+    { registryStuff :: IORef (H.HashMap Int (RegistryStuff props state insig exsig))
     , registryGen :: IORef Int
     }
 
 
-generateKey :: ClassRegistry props state -> IO Int
-generateKey (ClassRegistry _ _ gen) = do
+generateKey :: ClassRegistry props state insig exsig -> IO Int
+generateKey (ClassRegistry _ gen) = do
     k <- readIORef gen
     writeIORef gen (k + 1)
     return k
 
 
-allocProps :: ClassRegistry props state -> props -> IO Int
-allocProps registry props = do
+allocProps :: ClassRegistry props state insig exsig
+           -> props
+           -> ((state, insig) -> (state, Maybe exsig))
+           -> IO Int
+allocProps registry props handler = do
     k <- generateKey registry
-    modifyIORef (registryProps registry) (H.insert k props)
+
+    -- let handler' sig = do
+    --         RegistryStuff _ prevState _ <- lookupRegistry registry k
+    --         handler sig prevState
+
+    modifyIORef (registryStuff registry) $
+        H.insert k (RegistryStuff props undefined handler)
     return k
 
 
-setState :: ClassRegistry props state -> state -> Int -> IO ()
+setState :: ClassRegistry props state insig exsig -> state -> Int -> IO ()
 setState registry state k =
-    modifyIORef (registryState registry) (H.insert k state)
+    modifyIORef (registryStuff registry) $
+        H.adjust (\(RegistryStuff p _ h) -> RegistryStuff p state h) k
 
 
-deallocRegistry :: ClassRegistry props state -> Int -> IO ()
-deallocRegistry (ClassRegistry props state _) k = do
-    modifyIORef state (H.delete k)
-    modifyIORef props (H.delete k)
+deallocRegistry :: ClassRegistry props state insig exsig -> Int -> IO ()
+deallocRegistry (ClassRegistry stuff _) k = modifyIORef stuff (H.delete k)
 
 
 -- TODO(joel) - think about pushing around the IO boundary
-lookupRegistry :: ClassRegistry props state -> Int -> IO (props, state)
-lookupRegistry (ClassRegistry propsMap stateMap _) k =
-    (,) <$> errorLookup propsMap k <*> errorLookup stateMap k where
-        errorLookup table k = do
-            table' <- readIORef table
-            return $ H.lookupDefault
-                (error $ "class registry didn't contain an entry!\n" ++
-                         "componentId: " ++ show k ++ "\n" ++
-                         "keys: " ++ show (H.keys table') ++ "\n"
-                )
-                k
-                table'
+lookupRegistry :: ClassRegistry props state insig exsig
+               -> Int
+               -> IO (RegistryStuff props state insig exsig)
+lookupRegistry (ClassRegistry stuff _) k = do
+    stuff' <- readIORef stuff
+    return $ H.lookupDefault
+        (error $ "class registry didn't contain an entry!\n" ++
+                 "componentId: " ++ show k ++ "\n" ++
+                 "keys: " ++ show (H.keys stuff') ++ "\n"
+        )
+        k
+        stuff'
 
 
 -- TODO use phantom type to indicate renderability? Only sequence is not.
@@ -226,13 +240,15 @@ componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
     (ReactComponentElement ty attrs children maybeKey ref props) = do
-        componentId <- allocProps (classStateRegistry ty) props
+
+        componentId <- allocProps (classStateRegistry ty) props (classTransition ty)
 
         -- handle internal signals, maybe call external signal handler
         let sigHandler' insig = do
-                (_, prevState) <- lookupRegistry (classStateRegistry ty) componentId
-
-                let (newState, maybeExSig) = classTransition ty (prevState, insig)
+                putStrLn "in sigHandler'"
+                stuff <- lookupRegistry (classStateRegistry ty) componentId
+                let prevState = registryState stuff
+                    (newState, maybeExSig) = classTransition ty (prevState, insig)
 
                 case maybeExSig of
                     Just exSig -> sigHandler exSig

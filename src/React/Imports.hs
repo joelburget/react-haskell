@@ -27,6 +27,8 @@ foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].conca
     js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
 foreign import javascript unsafe "js_set_handler"
     js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
+foreign import javascript unsafe "$1.forceUpdate()"
+    js_forceUpdate :: JSAny -> IO ()
 #else
 js_render :: JSRef () -> Elem -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
@@ -42,4 +44,7 @@ js_react_createElement_Class = error "cannot evaluate js_react_createElement_Cla
 
 js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
 js_set_handler = error "cannot evaluate js_set_handler in ghc"
+
+js_forceUpdate :: JSAny -> IO ()
+js_forceUpdate = error "cannot evaluate js_forceUpdate in ghc"
 #endif

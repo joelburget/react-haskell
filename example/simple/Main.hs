@@ -13,33 +13,30 @@ import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 import React
 
-page :: ReactClass Int String String Void
+page :: ReactClass String Int () Void
 page = createClass $ smartClass
     { name = "page"
-    , transition = \(state, insig) -> (state, undefined)
-    , initialState = "this is state!"
-    , renderFn = page2
+    , transition = \(state, insig) -> (state + 1, undefined)
+    , initialState = 0
+    , renderFn = \props state -> div_ [ class_ "parent" ] $ do
+        header' [] props
+        button_ [ onClick (const (Just ())) ] "click me!"
+        footer' [] state
     }
 
-page2 :: Int -> String -> ReactNode String
-page2 props state = div_ [ class_ "parent" ] $ do
-    span_ [ class_ "hooray", onClick (const (Just "clicked!")) ] "spanish"
-    header' [] state
-    footer' [] props
-
-header :: ReactClass String () String String
+header :: ReactClass String () () ()
 header = createClass $ dumbClass
     { name = "header"
     , renderFn = \props _ -> div_ [ class_ "header" ] $ do
-        "header: "
+        "User's name: "
         text_ props
     }
 
-footer :: ReactClass Int () String String
+footer :: ReactClass Int () () ()
 footer = createClass $ dumbClass
     { name = "name"
     , renderFn = \props _ -> div_ [ class_ "footer" ] $ do
-        "footer: "
+        "Number of clicks: "
         text_ (show props)
     }
 
@@ -53,5 +50,4 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    -- debugRender page2 elem
-    render (page' [] 5) elem
+    render (page' [] "Joel") elem

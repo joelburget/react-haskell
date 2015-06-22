@@ -51,14 +51,14 @@ smartClass = ClassConfig
     }
 
 
-willMount :: ClassRegistry props state -> state -> JSRef Int -> IO ()
+willMount :: ClassRegistry props state insig exsig -> state -> JSRef Int -> IO ()
 willMount registry state idRef = do
     -- initialize state in registry
     Just componentId <- fromJSRef idRef
     setState registry state componentId
 
 
-willUnmount :: ClassRegistry props state -> JSRef Int -> IO ()
+willUnmount :: ClassRegistry props state insig exsig -> JSRef Int -> IO ()
 willUnmount registry idRef = do
     -- remove state from registry
     Just componentId <- fromJSRef idRef
@@ -66,12 +66,12 @@ willUnmount registry idRef = do
 
 
 -- TODO(joel) why not just pass in the class config?
-render :: ClassRegistry props state
+render :: ClassRegistry props state insig exsig
        -> (props -> state -> ReactNode insig)
-       -> JSRef Int
+       -> JSRef (Int, JSAny)
        -> JSAny
        -> IO ()
-render registry renderFn idRef returnObj = do
+render registry renderFn inRefs returnObj = do
     -- **
     -- The fundamental tension here is that this render function is
     -- defined for the class, but each invocation needs access to a
@@ -85,8 +85,8 @@ render registry renderFn idRef returnObj = do
     --
     -- handler may be interesting here.
 
-    Just componentId <- fromJSRef idRef
-    (thisProps, thisState) <- lookupRegistry registry componentId
+    Just (componentId, thisObj) <- fromJSRef inRefs
+    RegistryStuff thisProps thisState thisHandler <- lookupRegistry registry componentId
 
     let rendered = renderFn thisProps thisState
         -- * use transition
@@ -97,7 +97,11 @@ render registry renderFn idRef returnObj = do
         -- *holds state stuff*
 
         -- handler :: insig -> IO ()
-        handler sig = putStrLn "TODO(joel) in handler!"
+        handler inSig = do
+            let (newState, exSig) = thisHandler (thisState, inSig)
+            setState registry newState componentId
+            js_forceUpdate thisObj
+            putStrLn "TODO output exSig!"
     ret <- reactNodeToJSAny handler componentId rendered
     setProp ("value" :: JSString) ret returnObj
 
@@ -113,7 +117,6 @@ createClass ClassConfig{renderFn,
     -- TODO(joel) - verify this use of unsafePerformIO is, well, safe
     let classRegistry = unsafePerformIO $ ClassRegistry
             <$> newIORef H.empty
-            <*> newIORef H.empty
             <*> newIORef 0
 
         foreignObj = do
