@@ -19,30 +19,42 @@ page = createClass $ smartClass
     , transition = \(state, insig) -> (state + 1, undefined)
     , initialState = 0
     , renderFn = \props state -> div_ [ class_ "parent" ] $ do
-        header' [] props
+        userName_ [] props
+        -- clicker_ [] ()
         button_ [ onClick (const (Just ())) ] "click me!"
-        footer' [] state
+        clickCounter_ [] state
+        clickCounter_ [] state
+        clickCounter_ [] state
+        clickCounter_ [] state
     }
 
-header :: ReactClass String () () ()
-header = createClass $ dumbClass
-    { name = "header"
-    , renderFn = \props _ -> div_ [ class_ "header" ] $ do
+userName :: ReactClass String () () ()
+userName = createClass $ dumbClass
+    { name = "userName"
+    , renderFn = \props _ -> div_ [ class_ "userName" ] $ do
         "User's name: "
         text_ props
     }
 
-footer :: ReactClass Int () () ()
-footer = createClass $ dumbClass
-    { name = "name"
-    , renderFn = \props _ -> div_ [ class_ "footer" ] $ do
+clicker :: ReactClass () () () ()
+clicker = createClass $ dumbClass
+    { name = "clicker"
+    , renderFn = \_ _ ->
+        button_ [ onClick (const (Just ())) ] "click me!"
+    }
+
+clickCounter :: ReactClass Int () () ()
+clickCounter = createClass $ dumbClass
+    { name = "clickCounter"
+    , renderFn = \props _ -> div_ [ class_ "clickCounter" ] $ do
         "Number of clicks: "
         text_ (show props)
     }
 
-page' = classLeaf page
-header' = classLeaf header
-footer' = classLeaf footer
+page_ = classLeaf page
+userName_ = classLeaf userName
+clicker_ = classLeaf clicker
+clickCounter_ = classLeaf clickCounter
 
 main :: IO ()
 main = do
@@ -50,4 +62,4 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render (page' [] "Joel") elem
+    render (page_ [] "Joel") elem
