@@ -51,7 +51,6 @@ willMount :: ClassRegistry props state insig exsig -> state -> JSRef Int -> IO (
 willMount registry state idRef = do
     -- initialize state in registry
     Just componentId <- fromJSRef idRef
-    putStrLn $ "mounting: " ++ show componentId
     setState registry state componentId
 
 
@@ -59,7 +58,6 @@ willUnmount :: ClassRegistry props state insig exsig -> JSRef Int -> IO ()
 willUnmount registry idRef = do
     -- remove state from registry
     Just componentId <- fromJSRef idRef
-    putStrLn $ "unmounting: " ++ show componentId
     deallocRegistry registry componentId
 
 
