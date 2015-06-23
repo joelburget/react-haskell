@@ -1,7 +1,7 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-    FlexibleInstances, FlexibleContexts, TypeFamilies,
-    ExistentialQuantification, ImpredicativeTypes, LiberalTypeSynonyms,
-    DataKinds, GADTs, OverloadedStrings, CPP #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances,
+    FlexibleContexts, TypeFamilies, ExistentialQuantification,
+    ImpredicativeTypes, LiberalTypeSynonyms, DataKinds, GADTs,
+    OverloadedStrings, CPP #-}
 
 module React.Types where
 

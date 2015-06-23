@@ -50,9 +50,7 @@ handlerToJs :: (Int -> RawEvent -> Maybe (IO ()))
             -> IO (JSFun (JSRef Int -> RawEvent -> IO ()))
 handlerToJs handle = syncCallback2 AlwaysRetain True $ \idRef evt -> do
     Just componentId <- fromJSRef idRef
-    case handle componentId evt of
-        Nothing -> return ()
-        Just x -> x
+    fromMaybe (return ()) (handle componentId evt)
 
 
 attrsToJson :: [Attr] -> JSON
@@ -96,6 +94,19 @@ reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
     castRef <$> toArray jsNodes
 
 
+-- Helper for componentToJSAny and domToJSAny
+setMaybeKey :: Maybe JSString -> JSAny -> IO ()
+setMaybeKey maybeKey attrsObj = when (isJust maybeKey) $ do
+    let Just key = maybeKey
+    setProp' "key" key attrsObj
+
+
+setProp' :: ToJSRef a => String -> a -> JSAny -> IO ()
+setProp' key prop obj = do
+    propRef <- toJSRef prop
+    setProp key propRef obj
+
+
 componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
@@ -122,16 +133,9 @@ componentToJSAny
 
         attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
 
-        when (isJust maybeKey) $ do
-            let Just key = maybeKey
-            keyProp <- toJSRef key
-            setProp ("key" :: String) keyProp attrsObj
-
-        refProp <- toJSRef ref
-        setProp ("ref" :: String) refProp attrsObj
-
-        idProp <- toJSRef componentId
-        setProp ("componentId" :: String) idProp attrsObj
+        setMaybeKey maybeKey attrsObj
+        setProp' "ref" ref attrsObj
+        setProp' "componentId" componentId attrsObj
 
         let ty' = classForeign ty
         children' <- reactNodeToJSAny sigHandler' componentId children
@@ -143,13 +147,8 @@ domToJSAny :: (sig -> IO ()) -> Int -> ReactDOMElement sig -> IO JSAny
 domToJSAny sigHandler componentId (ReactDOMElement ty props children maybeKey ref) = do
     attrsObj <- attrHandlerToJSAny sigHandler componentId props
 
-    when (isJust maybeKey) $ do
-        let Just key = maybeKey
-        keyProp <- toJSRef key
-        setProp ("key" :: String) keyProp attrsObj
-
-    refProp <- toJSRef ref
-    setProp ("ref" :: String) refProp attrsObj
+    setMaybeKey maybeKey attrsObj
+    setProp' "ref" ref attrsObj
 
     children' <- reactNodeToJSAny sigHandler componentId children
 
