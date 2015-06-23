@@ -148,9 +148,9 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
 header :: PageState -> ReactNode Transition
-header PageState{_typingValue} = header_ [ id_ "header" ] $ do
+header PageState{_typingValue} = header_ [ class_ "header" ] $ do
     h1_ [] $ text_ "todos"
-    input_ [ id_ "new-todo"
+    input_ [ class_ "new-todo"
            , placeholder_ "What needs to be done?"
            , autofocus_ True
            , value_ _typingValue
@@ -183,14 +183,14 @@ mainBody :: ReactClass PageState () Transition Transition
 mainBody = createClass $ dumbClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
-          section_ [ id_ "main" ] $ do
+          section_ [ class_ "main" ] $ do
               -- TODO - onChange
-              input_ [ id_ "toggle-all", type_ "checkbox" ]
+              input_ [ class_ "toggle-all", type_ "checkbox" ]
               label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
                   $ text_ "Mark all as complete"
 
               let blah = text_ "" >> text_ ""
-              ul_ [ id_ "todo-list" ] $ case length _todos of
+              ul_ [ class_ "todo-list" ] $ case length _todos of
                   0 -> blah
                   _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
     }
@@ -198,7 +198,7 @@ mainBody = createClass $ dumbClass
 innerFooter :: ReactClass PageState () Transition Transition
 innerFooter = createClass $ dumbClass
     { name = "InnerFooter"
-    , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
+    , renderFn = \PageState{_todos} _ -> footer_ [ class_ "footer" ] $ do
           let activeCount = length (todosWithStatus Active _todos)
           let inactiveCount = length (todosWithStatus Completed _todos)
 
@@ -206,20 +206,20 @@ innerFooter = createClass $ dumbClass
           -- the number is wrapped by a <strong> tag. Also make sure to pluralize
           -- the item word correctly: 0 items, 1 item, 2 items. Example: 2 items
           -- left"
-          span_ [ id_ "todo-count" ] $ do
+          span_ [ class_ "todo-count" ] $ do
               strong_ [] (text_ (toJSString (show activeCount)))
 
               text_ $ if activeCount == 1 then " item left" else " items left"
 
           unless (inactiveCount == 0) $
-              button_ [ id_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
+              button_ [ class_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
     }
 
 outerFooter :: ReactClass () () Transition Transition
 outerFooter = React.createClass $ dumbClass
     { name = "OuterFooter"
-    , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
+    , renderFn = \_ _ -> footer_ [ class_ "info" ] $ do
           -- TODO react complains about these things not having keys even though
           -- they're statically defined. figure out how to fix this.
           p_ [] $ text_ "Double-click to edit a todo"
@@ -238,7 +238,7 @@ wholePage = createClass $ smartClass
     , transition = pageTransition'
     , initialState = initialPageState
     , renderFn = \_ s@PageState{_todos} -> div_ [] $ do
-          section_ [ id_ "todoapp" ] $ do
+          section_ [ class_ "todoapp" ] $ do
               header s
 
               -- "When there are no todos, #main and #footer should be hidden."
