@@ -59,6 +59,7 @@ library
     React.Events,
     React.Imports,
     React.Rebindable,
+    React.Registry,
     React.Render,
     React.Types
   other-extensions:

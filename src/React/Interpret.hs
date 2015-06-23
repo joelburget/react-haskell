@@ -1,101 +1,156 @@
-{-# LANGUAGE OverloadedStrings, LambdaCase #-}
-module React.Interpret where
+{-# LANGUAGE OverloadedStrings #-}
+module React.Interpret (reactNodeToJSAny) where
 
 import Control.Monad
+import qualified Data.Aeson as Aeson
+import qualified Data.HashMap.Strict as H
+import Data.List
+import Data.Maybe
+import Data.Text (Text)
 
-import GHCJS.Prim
-import GHCJS.Types
-
-import React.Events
 import React.Imports
+import React.Registry
 import React.Types
 
 
-element :: (RawAttrs -> ReactArray -> IO ForeignNode)
-        -> Attrs
-        -> [(RawEvent -> Maybe (IO ()), EvtType)]
-        -> [ForeignNode]
-        -> IO ForeignNode
-element constructor attrs handlers content = do
-    attr <- js_empty_object
-    mapM_ (setField attr) attrs
-    mapM_ (makeHandler attr) handlers
-
-    children <- js_ReactArray_empty
-    mapM_ (js_ReactArray_push children) content
-    constructor attr children
+data Attr = Attr Text JSON
 
 
-setField :: RawAttrs -> (JSString, JSON) -> IO ()
-setField attr (fld, Num v) = js_set_field_Double attr fld v
-setField attr (fld, Str v) = js_set_field_String attr fld v
-setField attr (fld, Bool True) = js_set_field_True attr fld
-setField attr (fld, Bool False) = js_set_field_False attr fld
-setField attr (fld, Arr arr) = do
-    jsArr <- js_empty_arr
-    let arr' = zip [0..] arr
-    mapM_ (uncurry (setIx jsArr)) arr'
-    js_set_field_Arr attr fld jsArr
-setField attr (fld, Dict vs) = do
-    subObj <- js_empty_object
-    mapM_ (setField subObj) vs
-    js_set_field_Obj attr fld subObj
-
--- TODO this seems wrong
-setField attr (fld, Null) = return ()
+jsName :: EvtType -> JSString
+jsName ChangeEvt = "onChange"
+jsName KeyDownEvt = "onKeyDown"
+jsName KeyPressEvt = "onKeyPress"
+jsName KeyUpEvt = "onKeyUp"
+jsName ClickEvt = "onClick"
+jsName DoubleClickEvt = "onDoubleClick"
+jsName MouseEnterEvt = "onMouseEnter"
+jsName MouseLeaveEvt = "onMouseLeave"
 
 
-setIx :: RawAttrs -> Int -> JSON -> IO ()
-setIx arr i (Num v) = js_set_ix_Double arr i v
-setIx arr i (Str v) = js_set_ix_String arr i v
-setIx arr i (Bool v) = js_set_ix_Bool arr i v
-setIx arr i (Arr setArr) = do
-    jsArr <- js_empty_arr
-    let setArr' = zip [0..] setArr
-    mapM_ (uncurry (setIx jsArr)) setArr'
-    js_set_ix_Arr arr i jsArr
-setIx arr i (Dict d) = do
-    subObj <- js_empty_object
-    mapM_ (setField subObj) d
-    js_set_ix_Obj arr i subObj
-
--- TODO
-setIx arr i Null = return ()
+unHandler :: (s -> IO ())
+          -> EventHandler s
+          -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\ix e -> act <$> handle ix e, ty)
 
 
-interpret :: ReactElement ty sig
-          -> (sig -> IO ())
-          -> IO ForeignNode
-interpret react cb =
-    -- TODO should be able to avoid this weird pattern match by not
-    -- interpreting sequences!
-    let child:_ = runReact react
-    in interpret' cb child
+makeHandler :: Int
+            -- ^ component id
+            -> JSAny
+            -- ^ object to set this attribute on
+            -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+            -- ^ handler
+            -> IO ()
+makeHandler componentId obj (handle, evtTy) = do
+    handle' <- handlerToJs handle
+    js_set_handler componentId (jsName evtTy) handle' obj
 
 
-interpret' :: (signal -> IO ())
-           -> Child signal
-           -> IO ForeignNode
-interpret' cb = \case
-    Static node -> interpret'' cb node
-    Dynamic nodes -> do
-        -- TODO this is all really gross. Have the imported functions operate
-        -- directly on JSRefs, not RawAttrs.
-        arr@(RawAttrs arr') <- js_empty_arr
-        forM_ nodes $ \(i, node) -> do
-            ForeignNode node' <- interpret'' cb node
-            js_set_ix_Arr arr i (RawAttrs node')
-        return (ForeignNode (castRef arr'))
+-- | Make a javascript callback to synchronously execute the handler
+handlerToJs :: (Int -> RawEvent -> Maybe (IO ()))
+            -> IO (JSFun (JSRef Int -> RawEvent -> IO ()))
+handlerToJs handle = syncCallback2 AlwaysRetain True $ \idRef evt -> do
+    Just componentId <- fromJSRef idRef
+    case handle componentId evt of
+        Nothing -> return ()
+        Just x -> x
 
-interpret'' :: (signal -> IO ())
-            -> ReactNode signal
-            -> IO ForeignNode
-interpret'' cb = \case
-    Parent f as hs children -> do
-        children' <- forM children (interpret' cb)
-        let hs' = map (unHandler cb) hs
-        element f as hs' children'
-    Leaf f as hs -> do
-        let hs' = map (unHandler cb) hs
-        element f as hs' []
-    Text str -> return (ForeignNode (castRef (toJSString str)))
+
+attrsToJson :: [Attr] -> JSON
+attrsToJson = Aeson.toJSON . H.fromList . map unAttr where
+    unAttr (Attr name json) = (name, json)
+
+
+separateAttrs :: [AttrOrHandler sig] -> ([Attr], [EventHandler sig])
+separateAttrs attrHandlers = (map makeA as, map makeH hs) where
+    (as, hs) = partition isAttr attrHandlers
+
+    isAttr :: AttrOrHandler sig -> Bool
+    isAttr (StaticAttr _ _) = True
+    isAttr _ = False
+
+    makeA :: AttrOrHandler sig -> Attr
+    makeA (StaticAttr t j) = Attr t j
+
+    makeH :: AttrOrHandler sig -> EventHandler sig
+    makeH (Handler h) = h
+
+
+attrHandlerToJSAny :: (sig -> IO ()) -> Int -> [AttrOrHandler sig] -> IO JSAny
+attrHandlerToJSAny sigHandler componentId attrHandlers = do
+    let (attrs, handlers) = separateAttrs attrHandlers
+    starter <- castRef <$> toJSRef (attrsToJson attrs)
+
+    forM_ handlers $ makeHandler componentId starter . unHandler sigHandler
+    return starter
+
+
+reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
+reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
+    componentToJSAny sigHandler elem
+reactNodeToJSAny sigHandler componentId (DomElement elem)       =
+    domToJSAny sigHandler componentId elem
+reactNodeToJSAny sigHandler _           (NodeText str)          =
+    castRef <$> toJSRef str
+reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
+    jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
+    castRef <$> toArray jsNodes
+
+
+componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
+componentToJSAny
+    sigHandler
+    (ReactComponentElement ty attrs children maybeKey ref props) = do
+
+        let registry = classStateRegistry ty
+        componentId <- allocProps registry props
+
+        -- handle internal signals, maybe call external signal handler
+
+        -- Register a handler! This transitions the class to its new state and
+        -- outputs a signal if appropriate.
+        let sigHandler' insig = do
+                RegistryStuff _ state _ <-
+                    lookupRegistry registry componentId
+                let (state', maybeExSig) = classTransition ty (state, insig)
+                setState registry state' componentId
+
+                case maybeExSig of
+                    Just exSig -> sigHandler exSig
+                    Nothing -> return ()
+
+        setHandler registry sigHandler' componentId
+
+        attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
+
+        when (isJust maybeKey) $ do
+            let Just key = maybeKey
+            keyProp <- toJSRef key
+            setProp ("key" :: String) keyProp attrsObj
+
+        refProp <- toJSRef ref
+        setProp ("ref" :: String) refProp attrsObj
+
+        idProp <- toJSRef componentId
+        setProp ("componentId" :: String) idProp attrsObj
+
+        let ty' = classForeign ty
+        children' <- reactNodeToJSAny sigHandler' componentId children
+
+        castRef <$> js_react_createElement_Class ty' attrsObj children'
+
+
+domToJSAny :: (sig -> IO ()) -> Int -> ReactDOMElement sig -> IO JSAny
+domToJSAny sigHandler componentId (ReactDOMElement ty props children maybeKey ref) = do
+    attrsObj <- attrHandlerToJSAny sigHandler componentId props
+
+    when (isJust maybeKey) $ do
+        let Just key = maybeKey
+        keyProp <- toJSRef key
+        setProp ("key" :: String) keyProp attrsObj
+
+    refProp <- toJSRef ref
+    setProp ("ref" :: String) refProp attrsObj
+
+    children' <- reactNodeToJSAny sigHandler componentId children
+
+    castRef <$> js_react_createElement_DOM ty attrsObj children'

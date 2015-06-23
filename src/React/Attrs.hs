@@ -1,9 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Attrs where
 
+import qualified Data.Aeson as Aeson
 import Data.Text (Text)
 
 import React.Types
+
+
+mkStaticAttr :: Aeson.ToJSON a => Text -> a -> AttrOrHandler sig
+mkStaticAttr name = StaticAttr name . Aeson.toJSON
+
 
 key_ :: Text -> AttrOrHandler sig
 key_ = mkStaticAttr "key"

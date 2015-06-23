@@ -21,7 +21,7 @@ import React.Class
 import React.Elements
 import React.Events
 import React.Imports
--- import React.Interpret
+import React.Interpret
 import React.Types
 
 

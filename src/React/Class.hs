@@ -15,6 +15,8 @@ import Data.IORef
 import System.IO.Unsafe
 
 import React.Imports
+import React.Interpret
+import React.Registry
 import React.Types
 
 

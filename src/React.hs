@@ -47,8 +47,6 @@ module React
 -- escaping / dangerouslySetInnerHTML
 
 import React.Class
--- import React.Imports
--- import React.Interpret
 -- import React.Local
 import React.Render
 import React.Types
