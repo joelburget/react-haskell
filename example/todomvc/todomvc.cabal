@@ -12,7 +12,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 data-dir: lib
-data-files: stubs.js, bezier.js, react.js
+data-files: stubs.js, react.js
 
 flag ghcjs
     description: tell cabal we're using ghcjs
