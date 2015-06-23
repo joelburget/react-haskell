@@ -4,6 +4,7 @@
 {-# LANGUAGE JavaScriptFFI #-}
 #else
 {-# LANGUAGE RankNTypes, TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-missing-methods #-}
 #endif
 
 #ifdef __GHCJS__
