@@ -211,6 +211,11 @@ innerFooter = createClass $ dumbClass
 
               text_ $ if activeCount == 1 then " item left" else " items left"
 
+          ul_ [ class_ "filters" ] $ do
+            li_ [] $ a_ [ class_ "selected" ] "All"
+            li_ [] $ a_ [] "Active"
+            li_ [] $ a_ [] "Completed"
+
           unless (inactiveCount == 0) $
               button_ [ class_ "clear-completed" , onClick (const (Just ClearCompleted)) ] $
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
