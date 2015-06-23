@@ -236,7 +236,6 @@ outerFooter = React.createClass $ dumbClass
               a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
     }
 
--- XXX doesn't sig have to be Void here - IE no signal can escape?
 wholePage :: ReactClass () PageState Transition Void
 wholePage = createClass $ smartClass
     { name = "WholePage"
