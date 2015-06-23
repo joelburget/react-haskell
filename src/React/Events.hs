@@ -6,11 +6,6 @@ import Control.DeepSeq
 import Control.Monad
 import Data.Maybe
 
-import GHCJS.Foreign
-import GHCJS.Marshal
-import GHCJS.Prim
-import GHCJS.Types
-
 import React.Imports
 import React.Types
 

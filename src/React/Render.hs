@@ -16,10 +16,6 @@ import Data.Monoid
 import Data.String
 import Data.Void
 
-import GHCJS.Foreign
-import GHCJS.Marshal
-import GHCJS.Types
-
 import React.Attrs
 import React.Class
 import React.Elements
@@ -29,6 +25,8 @@ import React.Imports
 import React.Types
 
 
+-- `Void` forces our top-level class `transition` to always choose `Nothing`
+-- over outputting a signal.
 render :: ReactNode Void -> Elem -> IO ()
 render node elem = do
     -- XXX

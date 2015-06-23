@@ -16,12 +16,12 @@ import React
 page :: ReactClass String Int () Void
 page = createClass $ smartClass
     { name = "page"
-    , transition = \(state, insig) -> (state + 1, undefined)
+    , transition = \(state, insig) -> (state + 1, Nothing)
     , initialState = 0
     , renderFn = \props state -> div_ [ class_ "parent" ] $ do
         userName_ [] props
-        -- clicker_ [] ()
-        button_ [ onClick (const (Just ())) ] "click me!"
+        clicker_ [] ()
+        -- button_ [ onClick (const (Just ())) ] "click me!"
         clickCounter_ [] state
         clickCounter_ [] state
         clickCounter_ [] state

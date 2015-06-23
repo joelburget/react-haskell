@@ -46,6 +46,10 @@ source-repository head
   type: git
   location: https://github.com/joelburget/react-haskell.git
 
+flag ghcjs
+    description: tell cabal we're using ghcjs
+    default: True
+
 library
   exposed-modules: React
   other-modules:
@@ -74,12 +78,14 @@ library
     monads-tf,
     deepseq,
     lens-family,
-    ghcjs-base >= 0.1,
-    ghcjs-prim >= 0.1.0.0,
-    ghcjs-dom >= 0.1,
     void == 0.7,
     aeson,
     text,
     unordered-containers
+  if flag(ghcjs)
+    build-depends:
+      ghcjs-base >= 0.1,
+      ghcjs-prim >= 0.1.0.0,
+      ghcjs-dom >= 0.1
   hs-source-dirs:      src
   default-language:    Haskell2010

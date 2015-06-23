@@ -1,13 +1,16 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds, CPP #-}
 -- TODO(joel) rename to React.DOM?
 module React.Elements where
 
 import Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as H
 import Data.String
+
+#ifdef __GHCJS__
 import GHCJS.Foreign
 import GHCJS.Marshal
 import GHCJS.Types
+#endif
 
 import React.Imports
 import React.Types

@@ -2,7 +2,6 @@
 module React.Attrs where
 
 import Data.Text (Text)
-import GHCJS.Types
 
 import React.Types
 

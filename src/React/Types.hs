@@ -19,9 +19,8 @@ import GHC.Generics
 import System.IO.Unsafe
 
 import qualified Data.Aeson as Aeson
-import GHCJS.Foreign
-import GHCJS.Marshal
-import GHCJS.Types
+
+import React.Imports
 
 instance Show JSString where
     show = fromJSString
@@ -88,7 +87,7 @@ data ReactClass props state insig exsig = ReactClass
 data RegistryStuff props state insig exsig = RegistryStuff
     { registryProps :: props
     , registryState :: state
-    , registryHandler :: (state, insig) -> (state, Maybe exsig)
+    , registryHandler :: insig -> IO ()
     }
 
 
@@ -107,9 +106,8 @@ generateKey (ClassRegistry _ gen) = do
 
 allocProps :: ClassRegistry props state insig exsig
            -> props
-           -> ((state, insig) -> (state, Maybe exsig))
            -> IO Int
-allocProps registry props handler = do
+allocProps registry props = do
     k <- generateKey registry
 
     -- let handler' sig = do
@@ -117,8 +115,17 @@ allocProps registry props handler = do
     --         handler sig prevState
 
     modifyIORef (registryStuff registry) $
-        H.insert k (RegistryStuff props undefined handler)
+        H.insert k (RegistryStuff props undefined undefined)
     return k
+
+
+setHandler :: ClassRegistry props state insig exsig
+           -> (insig -> IO ())
+           -> Int
+           -> IO ()
+setHandler registry handler k =
+    modifyIORef (registryStuff registry) $
+        H.adjust (\(RegistryStuff p s _) -> RegistryStuff p s handler) k
 
 
 setState :: ClassRegistry props state insig exsig -> state -> Int -> IO ()
@@ -144,6 +151,14 @@ lookupRegistry (ClassRegistry stuff _) k = do
         )
         k
         stuff'
+
+
+-- keyed :: [ (Int, ReactNode sig) ] -> ReactNode sig
+-- keyed
+
+
+-- assignKey :: ReactNode sig -> Int -> ReactNode sig
+-- assignKey (ComponentElement (
 
 
 -- TODO use phantom type to indicate renderability? Only sequence is not.
@@ -237,18 +252,24 @@ componentToJSAny
     sigHandler
     (ReactComponentElement ty attrs children maybeKey ref props) = do
 
-        componentId <- allocProps (classStateRegistry ty) props (classTransition ty)
+        let registry = classStateRegistry ty
+        componentId <- allocProps registry props
 
         -- handle internal signals, maybe call external signal handler
+
+        -- Register a handler! This transitions the class to its new state and
+        -- outputs a signal if appropriate.
         let sigHandler' insig = do
-                putStrLn "in sigHandler'"
-                stuff <- lookupRegistry (classStateRegistry ty) componentId
-                let prevState = registryState stuff
-                    (newState, maybeExSig) = classTransition ty (prevState, insig)
+                RegistryStuff _ state _ <-
+                    lookupRegistry registry componentId
+                let (state', maybeExSig) = classTransition ty (state, insig)
+                setState registry state' componentId
 
                 case maybeExSig of
                     Just exSig -> sigHandler exSig
                     Nothing -> return ()
+
+        setHandler registry sigHandler' componentId
 
         attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
 
