@@ -110,10 +110,6 @@ allocProps :: ClassRegistry props state insig exsig
 allocProps registry props = do
     k <- generateKey registry
 
-    -- let handler' sig = do
-    --         RegistryStuff _ prevState _ <- lookupRegistry registry k
-    --         handler sig prevState
-
     modifyIORef (registryStuff registry) $
         H.insert k (RegistryStuff props undefined undefined)
     return k
