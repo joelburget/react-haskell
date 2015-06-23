@@ -40,7 +40,7 @@ homepage: https://github.com/joelburget/react-haskell
 bug-reports: https://github.com/joelburget/react-haskell/issues
 
 data-dir: lib
-data-files: stubs.js, bezier.js, react.js
+data-files: stubs.js, react.js
 
 source-repository head
   type: git
