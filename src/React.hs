@@ -20,7 +20,6 @@ module React
     , debugRender
 
     -- React.Types
-    , RenderHandle(..)
     , EventProperties(..)
     , Target(..)
     , ModifierKeys(..)

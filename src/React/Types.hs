@@ -31,8 +31,6 @@ newtype ReactArray = ReactArray JSAny
 newtype ForeignClass = ForeignClass JSAny
 type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
 
-newtype RenderHandle = RenderHandle Int
-
 data EvtType
    = ChangeEvt
    | KeyDownEvt

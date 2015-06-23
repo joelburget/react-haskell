@@ -39,15 +39,3 @@ debugRender node elem = do
     -- XXX
     node' <- reactNodeToJSAny print 0 node
     js_render node' elem
-
-
--- renderCb :: IO ()
--- renderCb = do
---     foreignNode <- interpret render (const (return ())) -- XXX
---     js_render foreignNode elem
---     -- raf
---     return ()
-
-
-updateCb :: IORef [signal] -> signal -> IO ()
-updateCb ref update = modifyIORef ref (update:)
