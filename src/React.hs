@@ -37,7 +37,6 @@ module React
     , RawAttrs(..)
     , ReactArray(..)
     , ForeignNode(..)
-    , mkStaticAttr
     ) where
 
 -- TODO
