@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms, RebindableSyntax, DataKinds  #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms, RebindableSyntax, DataKinds #-}
 module Main where
 -- TODO:
 -- * persistence
@@ -8,17 +8,21 @@ import Prelude hiding ((>>), (=<<), return)
 
 import Control.Applicative
 import Data.String
+import qualified Data.Text as T
 import Data.Void
+
+import Lens.Family2
+import Lens.Family2.Stock
+import Lens.Family2.TH
+import React
 
 import GHCJS.Foreign
 import GHCJS.Types
 import GHCJS.DOM (currentDocument)
 import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
-import Lens.Family2
-import Lens.Family2.Stock
-import Lens.Family2.TH
-import React
+
+foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
 
 -- MODEL
 
@@ -32,7 +36,7 @@ data Todo = Todo
 
 data PageState = PageState
     { _todos :: [Todo]
-    , _typingValue :: JSString
+    , _typingValue :: T.Text
     }
 
 $(makeLenses ''Todo)
@@ -56,7 +60,7 @@ data Transition
     | ClearCompleted
 
 pageTransition :: Transition -> PageState -> PageState
-pageTransition (Typing str) = handleTyping str
+pageTransition (Typing str) = handleTyping (fromJSString str)
 pageTransition (HeaderKey Enter) = handleEnter
 pageTransition (HeaderKey Escape) = handleEsc
 pageTransition (Check i) = handleItemCheck i
@@ -65,13 +69,14 @@ pageTransition (Destroy i) = handleDestroy i
 pageTransition ToggleAll = handleToggleAll
 pageTransition ClearCompleted = clearCompleted
 
+pageTransition' :: (PageState, Transition) -> (PageState, Maybe Void)
+pageTransition' (state, signal) = (pageTransition signal state, Nothing)
+
 -- UTILITY
 
 toggleStatus :: Status -> Status
 toggleStatus Active = Completed
 toggleStatus Completed = Active
-
-foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
 
 -- this traversal is in lens but lens-family has a weird ix which isn't
 -- what we want. definition just copied from lens.
@@ -92,7 +97,7 @@ iFilter n (a:as) = a : iFilter (n-1) as
 
 handleEnter :: PageState -> PageState
 handleEnter oldState@PageState{_todos, _typingValue} =
-    let trimmed = trim _typingValue
+    let trimmed = trim (toJSString _typingValue)
     in if trimmed == ""
            then oldState
            else PageState (_todos ++ [Todo trimmed Active]) ""
@@ -108,7 +113,7 @@ emitKeydown KeyboardEvent{key="Enter"} = Just (HeaderKey Enter)
 emitKeydown KeyboardEvent{key="Escape"} = Just (HeaderKey Escape)
 emitKeydown _ = Nothing
 
-handleTyping :: JSString -> PageState -> PageState
+handleTyping :: T.Text -> PageState -> PageState
 handleTyping _typingValue state = state{_typingValue}
 
 statusOfToggle :: [Todo] -> Status
@@ -142,7 +147,7 @@ clearCompleted state = state & todos %~ todosWithStatus Active
 -- autofocus input attribute. Pressing Enter creates the todo, appends it
 -- to the todo list and clears the input. Make sure to .trim() the input
 -- and then check that it's not empty before creating a new todo."
-header :: PageState -> ReactElement
+header :: PageState -> ReactNode Transition
 header PageState{_typingValue} = header_ [ id_ "header" ] $ do
     h1_ [] $ text_ "todos"
     input_ [ id_ "new-todo"
@@ -153,7 +158,7 @@ header PageState{_typingValue} = header_ [ id_ "header" ] $ do
            , onKeyDown emitKeydown
            ]
 
-todoView :: PageState -> Int -> ReactElement
+todoView :: PageState -> Int -> ReactNode Transition
 todoView PageState{_todos} i =
     let Todo{_text, _status} = _todos !! i
     in li_ [ class_ (if _status == Completed then "completed" else "") ] $ do
@@ -168,16 +173,18 @@ todoView PageState{_todos} i =
                        , onClick (const (Just (Destroy i)))
                        ] $ text_ ""
 
-           input_ [ class_ "edit", value_ _text ]
+           -- TODO - onChange
+           input_ [ class_ "edit", value_ (fromJSString _text) ]
 
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: ReactClass PageState () Transition
+mainBody :: ReactClass PageState () Transition Transition
 mainBody = createClass $ dumbClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
           section_ [ id_ "main" ] $ do
+              -- TODO - onChange
               input_ [ id_ "toggle-all", type_ "checkbox" ]
               label_ [ for_ "toggle-all" , onClick (const (Just ToggleAll)) ]
                   $ text_ "Mark all as complete"
@@ -188,7 +195,7 @@ mainBody = createClass $ dumbClass
                   _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
     }
 
-innerFooter :: ReactClass PageState () Transition
+innerFooter :: ReactClass PageState () Transition Transition
 innerFooter = createClass $ dumbClass
     { name = "InnerFooter"
     , renderFn = \PageState{_todos} _ -> footer_ [ id_ "footer" ] $ do
@@ -209,7 +216,7 @@ innerFooter = createClass $ dumbClass
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
     }
 
-outerFooter :: ReactClass () () Void
+outerFooter :: ReactClass () () Transition Transition
 outerFooter = React.createClass $ dumbClass
     { name = "OuterFooter"
     , renderFn = \_ _ -> footer_ [ id_ "info" ] $ do
@@ -225,30 +232,30 @@ outerFooter = React.createClass $ dumbClass
     }
 
 -- XXX doesn't sig have to be Void here - IE no signal can escape?
-wholePage :: ReactClass () PageState Void
+wholePage :: ReactClass () PageState Transition Void
 wholePage = createClass $ smartClass
     { name = "WholePage"
-    , transition = pageTransition
-    , getInitialState = initialPageState
+    , transition = pageTransition'
+    , initialState = initialPageState
     , renderFn = \_ s@PageState{_todos} -> div_ [] $ do
           section_ [ id_ "todoapp" ] $ do
               header s
 
               -- "When there are no todos, #main and #footer should be hidden."
               unless (null _todos) $ do
-                  mainBody' s
-                  innerFooter' s
-          outerFooter' ()
+                  mainBody_ [] s
+                  innerFooter_ [] s
+          outerFooter_ [] ()
     }
 
-wholePage'   = classLeaf wholePage
-outerFooter' = classLeaf outerFooter
-innerFooter' = classLeaf innerFooter
-mainBody'    = classLeaf mainBody
+wholePage_   = classLeaf wholePage
+outerFooter_ = classLeaf outerFooter
+innerFooter_ = classLeaf innerFooter
+mainBody_    = classLeaf mainBody
 
 main = do
     Just doc <- currentDocument
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render elem (wholePage' ())
+    render (wholePage_ [] ()) elem

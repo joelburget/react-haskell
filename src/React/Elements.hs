@@ -58,8 +58,8 @@ classLeaf cls attrs props = ComponentElement
 
 -- -- TODO ToJSString a => ?
 -- -- Would this just be annoyingly ambiguous?
-text_ :: String -> ReactNode sig
-text_ = fromString
+text_ :: JSString -> ReactNode sig
+text_ = NodeText
 
 -- TODO generate these automatically
 a_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
