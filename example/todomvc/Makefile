@@ -1,10 +1,10 @@
-.PHONY: all sandbox
+.PHONY: all
 
-all: sandbox
+all: .cabal-sandbox
 	cabal install --ghcjs
 	cp .cabal-sandbox/bin/react-haskell-todomvc.jsexe/all.js .
 
-sandbox:
+.cabal-sandbox:
 	if [ ! -d .cabal-sandbox ]; then \
 		cabal sandbox init; \
 		cabal sandbox add-source ../..; \
