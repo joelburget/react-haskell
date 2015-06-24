@@ -5,6 +5,7 @@ import Data.IORef
 
 import React.Imports
 
+
 data RegistryStuff props state insig exsig = RegistryStuff
     { registryProps :: props
     , registryState :: state

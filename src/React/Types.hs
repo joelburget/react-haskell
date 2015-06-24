@@ -60,11 +60,7 @@ data ReactType
 -- Use 'createClass' to construct.
 data ReactClass props state insig exsig = ReactClass
     { classForeign :: JSAny
-    , classRender :: props -> state -> ReactNode insig
-    , classInitialState :: state
-    , className :: JSString
     , classTransition :: (state, insig) -> (state, Maybe exsig)
-
     , classStateRegistry :: ClassRegistry props state insig exsig
     }
 

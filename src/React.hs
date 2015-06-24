@@ -11,7 +11,6 @@ module React
     -- React.Class
     , ReactClass()
     , ClassConfig(..)
-    , createClass
     , smartClass
     , dumbClass
 
@@ -36,7 +35,7 @@ module React
     , AttrOrHandler()
     , RawAttrs(..)
     , ReactArray(..)
-    , ForeignNode(..)
+    , JSAny
     ) where
 
 -- TODO
@@ -45,6 +44,7 @@ module React
 -- escaping / dangerouslySetInnerHTML
 
 import React.Class
+import React.Imports
 -- import React.Local
 import React.Render
 import React.Types

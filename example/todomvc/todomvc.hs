@@ -15,6 +15,7 @@ import Lens.Family2
 import Lens.Family2.Stock
 import Lens.Family2.TH
 import React
+import React.DOM
 
 import GHCJS.Foreign
 import GHCJS.Types
@@ -179,8 +180,8 @@ todoView PageState{_todos} i =
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody :: ReactClass PageState () Transition Transition
-mainBody = createClass $ dumbClass
+mainBody_ :: [AttrOrHandler Transition] -> PageState -> ReactNode Transition
+mainBody_ = classLeaf $ dumbClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
           section_ [ class_ "main" ] $ do
@@ -195,8 +196,8 @@ mainBody = createClass $ dumbClass
                   _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
     }
 
-innerFooter :: ReactClass PageState () Transition Transition
-innerFooter = createClass $ dumbClass
+innerFooter_ :: [AttrOrHandler Transition] -> PageState -> ReactNode Transition
+innerFooter_ = classLeaf $ dumbClass
     { name = "InnerFooter"
     , renderFn = \PageState{_todos} _ -> footer_ [ class_ "footer" ] $ do
           let activeCount = length (todosWithStatus Active _todos)
@@ -221,8 +222,8 @@ innerFooter = createClass $ dumbClass
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
     }
 
-outerFooter :: ReactClass () () Transition Transition
-outerFooter = React.createClass $ dumbClass
+outerFooter_ :: [AttrOrHandler Transition] -> () -> ReactNode Transition
+outerFooter_ = classLeaf $ dumbClass
     { name = "OuterFooter"
     , renderFn = \_ _ -> footer_ [ class_ "info" ] $ do
           -- TODO react complains about these things not having keys even though
@@ -236,8 +237,8 @@ outerFooter = React.createClass $ dumbClass
               a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
     }
 
-wholePage :: ReactClass () PageState Transition Void
-wholePage = createClass $ smartClass
+wholePage_ :: [AttrOrHandler Transition] -> () -> ReactNode Void
+wholePage_ = classLeaf $ smartClass
     { name = "WholePage"
     , transition = pageTransition'
     , initialState = initialPageState
@@ -251,11 +252,6 @@ wholePage = createClass $ smartClass
                   innerFooter_ [] s
           outerFooter_ [] ()
     }
-
-wholePage_   = classLeaf wholePage
-outerFooter_ = classLeaf outerFooter
-innerFooter_ = classLeaf innerFooter
-mainBody_    = classLeaf mainBody
 
 main = do
     Just doc <- currentDocument

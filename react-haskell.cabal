@@ -51,7 +51,9 @@ flag ghcjs
     default: True
 
 library
-  exposed-modules: React
+  exposed-modules:
+    React,
+    React.DOM
   other-modules:
     React.Attrs,
     React.Class,
