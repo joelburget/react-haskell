@@ -4,7 +4,7 @@ module Main where
 -- * persistence
 -- * routing
 
-import Prelude hiding ((>>), (=<<), return)
+import Prelude hiding ((>>), return)
 
 import Control.Applicative
 import Data.String
@@ -20,7 +20,6 @@ import React.DOM
 import GHCJS.Foreign
 import GHCJS.Types
 import GHCJS.DOM (currentDocument)
-import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 
 foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
