@@ -60,6 +60,7 @@ library
     React.Elements,
     React.Events,
     React.Imports,
+    React.PropTypes,
     React.Rebindable,
     React.Registry,
     React.Render,

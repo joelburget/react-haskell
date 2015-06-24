@@ -58,7 +58,7 @@ data ReactType
 -- scoping.
 --
 -- Use 'createClass' to construct.
-data ReactClass props state insig exsig = ReactClass
+data ReactClass props state insig exsig ctx = ReactClass
     { classForeign :: JSAny
     , classTransition :: (state, insig) -> (state, Maybe exsig)
     , classStateRegistry :: ClassRegistry props state insig exsig
@@ -99,8 +99,9 @@ data AttrOrHandler signal
     | Handler (EventHandler signal)
 
 
-data ReactComponentElement exsig = forall props state insig. ReactComponentElement
-    { reComType :: ReactClass props state insig exsig
+data ReactComponentElement exsig = forall props state insig ctx.
+    ReactComponentElement
+    { reComType :: ReactClass props state insig exsig ctx
     , reComAttrs :: [AttrOrHandler insig]
     , reComChildren :: ReactNode insig
     , reComKey :: Maybe JSString

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module React.Interpret (reactNodeToJSAny) where
+module React.Interpret (reactNodeToJSAny, setProp') where
 
 import Control.Monad
 import qualified Data.Aeson as Aeson

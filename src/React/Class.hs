@@ -1,8 +1,11 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings, DataKinds,
-    ExistentialQuantification #-}
+    ExistentialQuantification, ConstraintKinds #-}
 module React.Class
     ( ReactClass(..)
     , ClassConfig(..)
+    , ClassCtx
+    , PropRequired(..)
+    , PropType(..)
     , createClass
     , smartClass
     , dumbClass
@@ -10,42 +13,63 @@ module React.Class
 
 
 import Control.Monad
+import qualified Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as H
 import Data.IORef
+import Data.Maybe
+import Data.Text (Text)
 import System.IO.Unsafe
 
 import React.Imports
 import React.Interpret
 import React.Registry
 import React.Types
+import React.PropTypes
 
 
-data ClassConfig props state insig exsig = ClassConfig
+data ClassConfig props state insig exsig ctx = ClassConfig
     { renderFn :: props -> state -> ReactNode insig
     , initialState :: state
     , name :: JSString
     , transition :: (state, insig) -> (state, Maybe exsig)
     , startupSignals :: [insig]
+
+    -- lifecycle methods!
+    -- TODO(joel) - Lifcycle monad!
+
+--     , componentWillMount :: props -> state -> IO state
+--     , componentDidMount
+--     , componentWillReceiveProps
+--     , shouldComponentUpdate
+--     , componentWillUpdate
+--     , componentDidUpdate
+--     , componentWillUnmount
+
+    -- TODO(joel) - this is static for now - should it be dynamic? and what
+    -- does that dynamic implementation have access to?
+    , childContext :: Maybe (H.HashMap Text ctx)
     }
 
 
-dumbClass :: ClassConfig props () sig sig
+dumbClass :: ClassConfig props () sig sig JSString
 dumbClass = ClassConfig
     { name = "Anonymous Stateless Class"
     , renderFn = \_ _ -> "give this class a `render`!"
     , initialState = ()
     , transition = \(state, sig) -> (state, Just sig)
     , startupSignals = []
+    , childContext = Nothing
     }
 
 
-smartClass :: ClassConfig props state insig exsig
+smartClass :: ClassConfig props state insig exsig JSString
 smartClass = ClassConfig
     { name = "Anonymous Stateful Class"
     , renderFn = \_ _ -> "give this class a `render`!"
     , initialState = error "must define `initialState`!"
     , transition = error "must define `transition`!"
     , startupSignals = []
+    , childContext = Nothing
     }
 
 
@@ -61,6 +85,9 @@ willUnmount registry idRef = do
     -- remove state from registry
     Just componentId <- fromJSRef idRef
     deallocRegistry registry componentId
+
+
+type ClassCtx a = (ToJSRef a, PropTypable a)
 
 
 -- TODO(joel) why not just pass in the class config?
@@ -91,13 +118,15 @@ render registry renderFn inRefs returnObj = do
     setProp ("value" :: JSString) ret returnObj
 
 
-createClass :: ClassConfig props state insig exsig
-            -> ReactClass props state insig exsig
+createClass :: ClassCtx ctx
+            => ClassConfig props state insig exsig ctx
+            -> ReactClass props state insig exsig ctx
 createClass ClassConfig{renderFn,
                         initialState,
                         name,
                         transition,
-                        startupSignals} =
+                        startupSignals,
+                        childContext} =
 
     -- TODO(joel) - verify this use of unsafePerformIO is, well, safe
     let classRegistry = unsafePerformIO $ ClassRegistry
@@ -112,6 +141,21 @@ createClass ClassConfig{renderFn,
             renderCb <- syncCallback2 NeverRetain True
                 (render classRegistry renderFn)
             setProp ("render" :: JSString) renderCb obj
+
+            when (isJust childContext) $ do
+                let childContext' = fromJust childContext
+
+                ctxObj <- newObj
+                ctxTypeObj <- newObj
+                forM_ (H.toList childContext') $ \(k, v) -> do
+                    ref <- toJSRef v
+                    setProp k ref ctxObj
+
+                    let ty = toJsPropType (propType v)
+                    setProp k ty ctxTypeObj
+
+                setProp' "childContext" ctxObj obj
+                setProp' "childContextTypes" ctxTypeObj obj
 
             willMountCb <- syncCallback1 NeverRetain True
                 (willMount classRegistry initialState)
