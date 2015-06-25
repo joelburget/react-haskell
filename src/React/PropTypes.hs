@@ -31,6 +31,18 @@ foreign import javascript unsafe "React.PropTypes.object"
 foreign import javascript unsafe "$1.isRequired"
     fIsRequired :: FPropType -> FPropType
 #else
+fPropBool :: FPropType
+fPropBool = undefined
+fPropFunc :: FPropType
+fPropFunc = undefined
+fPropNumber :: FPropType
+fPropNumber = undefined
+fPropString :: FPropType
+fPropString = undefined
+fPropObject :: FPropType
+fPropObject = undefined
+fIsRequired :: FPropType -> FPropType
+fIsRequired = undefined
 #endif
 
 
@@ -44,10 +56,10 @@ data PropType
     | PropNumber PropRequired
     | PropString PropRequired
     | PropObject PropRequired
-    -- | PropArray
-    -- | PropShape (H.HashMap Text PropType)
-    -- | PropEnum [Text]
-    -- | PropUnion [PropType]
+    -- PropArray
+    -- PropShape (H.HashMap Text PropType)
+    -- PropEnum [Text]
+    -- PropUnion [PropType]
 
 
 toJsPropType :: PropType -> FPropType

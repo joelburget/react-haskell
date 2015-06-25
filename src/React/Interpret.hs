@@ -1,4 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+module React.Interpret (reactNodeToJSAny, setProp') where
+
+import Control.Monad
+import qualified Data.Aeson as Aeson
+import qualified Data.HashMap.Strict as H
+import Data.List
+import Data.Maybe
+import Data.Text (Text)
+
+import React.Imports
+import React.Registry
+import React.Types
 
 -- This module handles the translation of 'ReactNode's into javascript. The
 -- difficulty is in handling the complexity that arises from keeping state in
@@ -12,19 +24,6 @@
 -- * It deals with the current event handler, which is passed down through
 --   'reactNodeToJSAny' and all of its special cases.
 -- * It also sets the props and handler in the component registry.
-
-module React.Interpret (reactNodeToJSAny, setProp') where
-
-import Control.Monad
-import qualified Data.Aeson as Aeson
-import qualified Data.HashMap.Strict as H
-import Data.List
-import Data.Maybe
-import Data.Text (Text)
-
-import React.Imports
-import React.Registry
-import React.Types
 
 
 data Attr = Attr Text JSON

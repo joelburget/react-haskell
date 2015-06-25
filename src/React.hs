@@ -36,6 +36,10 @@ module React
     , RawAttrs(..)
     , ReactArray(..)
     , JSAny
+
+    -- React.Local
+    , GeneralizeSignal
+    , locally
     ) where
 
 -- TODO
@@ -45,12 +49,11 @@ module React
 
 import React.Class
 import React.Imports
--- import React.Local
+import React.Local
 import React.Render
 import React.Types
 
 import React.Attrs as X
 import React.Elements as X
 import React.Events as X
-import React.Local as X
 import React.Rebindable as X

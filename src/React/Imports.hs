@@ -33,6 +33,7 @@ module React.Imports where
 
 import qualified Data.Aeson as Aeson
 import Data.String
+import Data.Text (Text)
 
 data JSRef a = JSRef
 data Element
@@ -64,11 +65,12 @@ instance (FromJSRef a, FromJSRef b) => FromJSRef (a, b)
 instance FromJSRef (JSRef ())
 instance ToJSRef Int
 instance ToJSRef Aeson.Value
-instance ToJSRef JSString
 instance ToJSRef a => ToJSRef (Maybe a)
+instance ToJSRef (JSRef a)
 instance FromJSString String
 instance FromJSString JSString
 instance ToJSString String
+instance ToJSString Text
 instance ToJSString JSString
 instance IsString JSString
 
