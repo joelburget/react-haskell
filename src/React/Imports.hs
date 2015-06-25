@@ -9,8 +9,7 @@
 
 #ifdef __GHCJS__
 module React.Imports
-    ( module X
-    , JSAny
+    ( JSAny
     , RawEvent
     , Elem
     , js_render
@@ -21,58 +20,17 @@ module React.Imports
     , js_forceUpdate
     ) where
 
-import GHCJS.DOM.Types (Element(..))
-
-import GHCJS.Foreign as X
-import GHCJS.Marshal as X
-import GHCJS.Types as X
-
 -- newtype RawEvent = RawEvent JSAny
+import React.GHCJS
 #else
 module React.Imports where
 
-import qualified Data.Aeson as Aeson
-import Data.String
-import Data.Text (Text)
-
-data JSRef a = JSRef
-data Element
-data JSString_
-type JSFun = JSRef
-type JSArray = JSRef
-type JSString = JSRef JSString_
+import React.GHCJS
 
 data ForeignRetention
     = NeverRetain
     | AlwaysRetain
     | DomRetain (forall a. JSRef a)
-
-class FromJSRef a where
-    fromJSRef :: JSRef a -> IO (Maybe a)
-
-class ToJSRef a where
-    toJSRef :: a -> IO (JSRef a)
-
-class ToJSString a where
-    toJSString :: a -> JSString
-
-class FromJSString a where
-    fromJSString :: JSString -> a
-
-instance FromJSRef Aeson.Value
-instance FromJSRef Int
-instance (FromJSRef a, FromJSRef b) => FromJSRef (a, b)
-instance FromJSRef (JSRef ())
-instance ToJSRef Int
-instance ToJSRef Aeson.Value
-instance ToJSRef a => ToJSRef (Maybe a)
-instance ToJSRef (JSRef a)
-instance FromJSString String
-instance FromJSString JSString
-instance ToJSString String
-instance ToJSString Text
-instance ToJSString JSString
-instance IsString JSString
 
 castRef :: JSRef a -> JSRef b
 castRef _ = JSRef

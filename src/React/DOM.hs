@@ -2,6 +2,7 @@
 module React.DOM where
 
 import React.Elements
+import React.GHCJS
 import React.Imports
 import React.Types
 

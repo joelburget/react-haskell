@@ -5,12 +5,8 @@ import Control.Applicative
 import Control.Monad
 import Data.Maybe (fromJust)
 
-import GHCJS.DOM (currentDocument)
-import GHCJS.DOM.Types (Document)
-import GHCJS.DOM.Document (documentGetElementById)
-import GHCJS.Types (JSString)
-
 import React
+import React.GHCJS
 
 import Circles
 import Easing
@@ -19,8 +15,6 @@ import Simple
 -- import SimpleAnim
 import Slide
 import Chain
-
-import GHCJS.Foreign
 
 doRender :: React a b c -> JSString -> Document -> IO ()
 doRender cls nodeName doc = void $ join $

@@ -21,13 +21,7 @@ module React
     , ReactNode
 
     -- * Events
-    , EventProperties(..)
-    , Target(..)
-    , ModifierKeys(..)
-    , MouseEvent(..)
-    , KeyboardEvent(..)
-    , ChangeEvent(..)
-    , FocusEvent(..)
+    , module React.Events
 
     -- * Local
     , module React.Local

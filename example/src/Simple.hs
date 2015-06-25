@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings, NamedFieldPuns, LiberalTypeSynonyms #-}
 module Simple (simpleClass) where
 
-import GHCJS.Types
-
 import React
+import React.DOM
 
 -- model
 

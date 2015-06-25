@@ -8,14 +8,14 @@ module React.Types where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
+import qualified Data.Aeson as Aeson
 import Data.List (partition)
 import Data.Maybe
 import Data.Monoid
 import Data.String
 import Data.Text (Text)
 
-import qualified Data.Aeson as Aeson
-
+import React.GHCJS
 import React.Imports
 import React.Registry
 

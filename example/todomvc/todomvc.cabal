@@ -1,4 +1,4 @@
-name:                react-haskell-todomvc
+name:                todomvc
 version:             0.1.0.0
 synopsis:            yet another todomvc, this time in react-haskell
 -- description:
@@ -14,10 +14,6 @@ cabal-version:       >=1.10
 data-dir: lib
 data-files: stubs.js, react.js
 
-flag ghcjs
-    description: tell cabal we're using ghcjs
-    default: True
-
 executable react-haskell-todomvc
   main-is:             todomvc.hs
   other-extensions:
@@ -32,14 +28,10 @@ executable react-haskell-todomvc
     ExtendedDefaultRules
   build-depends:
     base >=4.6 && <5,
-    containers >= 0.5.6.2,
+    containers >= 0.5.5,
     lens-family == 1.2.0,
     lens-family-th == 0.4.1.0,
+    react-haskell,
     void == 0.7,
-    text,
-    react-haskell
-  if flag(ghcjs)
-    build-depends:
-      ghcjs-base >= 0.1,
-      ghcjs-dom >= 0.1
+    text
   default-language:    Haskell2010

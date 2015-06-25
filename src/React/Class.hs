@@ -12,6 +12,7 @@ module React.Class
     ) where
 
 
+import Control.Applicative
 import Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as H
@@ -20,11 +21,12 @@ import Data.Maybe
 import Data.Text (Text)
 import System.IO.Unsafe
 
+import React.GHCJS
 import React.Imports
 import React.Interpret
+import React.PropTypes
 import React.Registry
 import React.Types
-import React.PropTypes
 
 
 data ClassConfig props state insig exsig ctx = ClassConfig

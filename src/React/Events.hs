@@ -1,6 +1,27 @@
 {-# LANGUAGE OverloadedStrings, TypeSynonymInstances, DeriveGeneric,
     FlexibleInstances #-}
-module React.Events where
+module React.Events
+    ( EventProperties(..)
+    , Target(..)
+    , ModifierKeys(..)
+    , MouseEvent(..)
+    , KeyboardEvent(..)
+    , ChangeEvent(..)
+    , FocusEvent(..)
+
+    -- * Native Events
+    , onChange
+    , onKeyDown
+    , onKeyPress
+    , onKeyUp
+    , onMouseEnter
+    , onMouseLeave
+    , onDoubleClick
+    , onClick
+
+    -- * Synthetic Events
+    , onEnter
+    ) where
 
 import Control.Applicative
 import Control.DeepSeq
@@ -9,6 +30,7 @@ import Data.Maybe
 import GHC.Generics
 import System.IO.Unsafe
 
+import React.GHCJS
 import React.Imports
 import React.Types
 

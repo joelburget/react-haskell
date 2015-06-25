@@ -53,13 +53,15 @@ flag ghcjs
 library
   exposed-modules:
     React,
-    React.DOM
+    React.DOM,
+    React.GHCJS
   other-modules:
     React.Attrs,
     React.Class,
     React.Elements,
     React.Events,
     React.Imports,
+    React.Interpret,
     React.Local,
     React.PropTypes,
     React.Rebindable,

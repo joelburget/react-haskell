@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.Interpret (reactNodeToJSAny, setProp') where
 
+import Control.Applicative
 import Control.Monad
 import qualified Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as H
@@ -8,6 +9,7 @@ import Data.List
 import Data.Maybe
 import Data.Text (Text)
 
+import React.GHCJS
 import React.Imports
 import React.Registry
 import React.Types

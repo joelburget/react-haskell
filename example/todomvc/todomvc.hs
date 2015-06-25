@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell, LiberalTypeSynonyms, RebindableSyntax, DataKinds #-}
+{-# LANGUAGE OverloadedStrings, NamedFieldPuns, Rank2Types, TemplateHaskell,
+    LiberalTypeSynonyms, RebindableSyntax, DataKinds, CPP #-}
 module Main where
 -- TODO:
 -- * persistence
@@ -16,13 +17,14 @@ import Lens.Family2.Stock
 import Lens.Family2.TH
 import React
 import React.DOM
+import React.GHCJS
 
-import GHCJS.Foreign
-import GHCJS.Types
-import GHCJS.DOM (currentDocument)
-import GHCJS.DOM.Document (documentGetElementById)
-
+#ifdef __GHCJS__
 foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
+#else
+trim :: JSString -> JSString
+trim = undefined
+#endif
 
 -- MODEL
 

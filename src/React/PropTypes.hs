@@ -11,6 +11,7 @@ module React.PropTypes where
 import Data.Monoid
 import Data.Text (Text)
 
+import React.GHCJS
 import React.Imports
 
 

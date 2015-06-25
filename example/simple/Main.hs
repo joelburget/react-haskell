@@ -6,13 +6,9 @@ import Prelude hiding ((>>), (=<<), return)
 import Data.String
 
 import Data.Void
-import GHCJS.Foreign
-import GHCJS.Types
-import GHCJS.DOM (currentDocument)
-import GHCJS.DOM.Types (Document)
-import GHCJS.DOM.Document (documentGetElementById)
 import React
 import React.DOM
+import React.GHCJS
 
 page_ :: [AttrOrHandler ()] -> JSString -> ReactNode Void
 page_ = classLeaf $ smartClass

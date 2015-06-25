@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds, CPP #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, DataKinds,
+    ConstraintKinds #-}
 -- TODO(joel) rename to React.DOM?
 module React.Elements
     ( domParent
@@ -9,18 +10,18 @@ module React.Elements
     , foreignLeaf
     ) where
 
+import Control.Applicative
 import Data.Aeson as Aeson
 import qualified Data.HashMap.Strict as H
+import Data.IORef
+import Data.Monoid
 import Data.String
-
-#ifdef __GHCJS__
-import GHCJS.Foreign
-import GHCJS.Marshal
-import GHCJS.Types
-#endif
+import System.IO.Unsafe
 
 import React.Class
+import React.GHCJS
 import React.Imports
+import React.Registry
 import React.Types
 
 

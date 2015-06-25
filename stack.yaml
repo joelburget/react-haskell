@@ -1,0 +1,15 @@
+flags:
+  react-haskell:
+    ghcjs: false
+  simple:
+    ghcjs: false
+  todomvc:
+    ghcjs: false
+packages:
+- '.'
+- example/simple/
+- example/todomvc/
+extra-deps:
+- ghcjs-dom-0.1.1.3
+- lens-family-1.2.0
+resolver: lts-2.15
