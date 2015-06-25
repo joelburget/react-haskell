@@ -25,12 +25,6 @@ instance Show JSString where
 
 type JSON = Aeson.Value
 
-newtype ForeignNode = ForeignNode JSAny
-newtype RawAttrs = RawAttrs JSAny
-newtype ReactArray = ReactArray JSAny
-newtype ForeignClass = ForeignClass JSAny
-type ForeignRender = RawAttrs -> ReactArray -> IO ForeignNode
-
 data EvtType
    = ChangeEvt
    | KeyDownEvt
@@ -46,12 +40,6 @@ data EventHandler signal = EventHandler
     { handler :: Int -> RawEvent -> Maybe signal
     , evtType :: EvtType
     }
-
-
-data ReactType
-    = RtClass
-    | RtBuiltin
-    | RtSequence
 
 
 -- | A 'ReactClass' is a standalone component of a user interface which
