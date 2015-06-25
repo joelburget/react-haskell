@@ -1,4 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
+
+-- This module handles the translation of 'ReactNode's into javascript. The
+-- difficulty is in handling the complexity that arises from keeping state in
+-- Haskell rather than in JS. This means we can't just blindly call ToJSRef
+-- (which would be very convenient).
+--
+-- The raison d'etre of this module is 'reactNodeToJSAny', which delegates to
+-- helpers for each type of react node.
+--
+-- Most interesting code is in 'componentToJSAny'.
+-- * It deals with the current event handler, which is passed down through
+--   'reactNodeToJSAny' and all of its special cases.
+-- * It also sets the props and handler in the component registry.
+
 module React.Interpret (reactNodeToJSAny, setProp') where
 
 import Control.Monad
@@ -14,6 +28,18 @@ import React.Types
 
 
 data Attr = Attr Text JSON
+
+
+reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
+reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
+    componentToJSAny sigHandler elem
+reactNodeToJSAny sigHandler componentId (DomElement elem)       =
+    domToJSAny sigHandler componentId elem
+reactNodeToJSAny sigHandler _           (NodeText str)          =
+    castRef <$> toJSRef str
+reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
+    jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
+    castRef <$> toArray jsNodes
 
 
 jsName :: EvtType -> JSString
@@ -80,18 +106,6 @@ attrHandlerToJSAny sigHandler componentId attrHandlers = do
 
     forM_ handlers $ makeHandler componentId starter . unHandler sigHandler
     return starter
-
-
-reactNodeToJSAny :: (sig -> IO ()) -> Int -> ReactNode sig -> IO JSAny
-reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
-    componentToJSAny sigHandler elem
-reactNodeToJSAny sigHandler componentId (DomElement elem)       =
-    domToJSAny sigHandler componentId elem
-reactNodeToJSAny sigHandler _           (NodeText str)          =
-    castRef <$> toJSRef str
-reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
-    jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
-    castRef <$> toArray jsNodes
 
 
 -- Helper for componentToJSAny and domToJSAny
