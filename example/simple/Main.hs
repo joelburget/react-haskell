@@ -12,49 +12,44 @@ import GHCJS.DOM (currentDocument)
 import GHCJS.DOM.Types (Document)
 import GHCJS.DOM.Document (documentGetElementById)
 import React
+import React.DOM
 
-page :: ReactClass String Int () Void
-page = createClass $ smartClass
+page_ :: [AttrOrHandler ()] -> JSString -> ReactNode Void
+page_ = classLeaf $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state + 1, Nothing)
     , initialState = 0
     , renderFn = \props state -> div_ [ class_ "parent" ] $ do
         userName_ [] props
         clicker_ [] ()
-        -- button_ [ onClick (const (Just ())) ] "click me!"
         clickCounter_ [] state
         clickCounter_ [] state
         clickCounter_ [] state
         clickCounter_ [] state
     }
 
-userName :: ReactClass String () () ()
-userName = createClass $ dumbClass
+userName_ :: [AttrOrHandler ()] -> JSString -> ReactNode ()
+userName_ = classLeaf $ dumbClass
     { name = "userName"
     , renderFn = \props _ -> div_ [ class_ "userName" ] $ do
         "User's name: "
         text_ props
     }
 
-clicker :: ReactClass () () () ()
-clicker = createClass $ dumbClass
+clicker_ :: [AttrOrHandler ()] -> () -> ReactNode ()
+clicker_ = classLeaf $ dumbClass
     { name = "clicker"
     , renderFn = \_ _ ->
         button_ [ onClick (const (Just ())) ] "click me!"
     }
 
-clickCounter :: ReactClass Int () () ()
-clickCounter = createClass $ dumbClass
+clickCounter_ :: [AttrOrHandler ()] -> Int -> ReactNode ()
+clickCounter_ = classLeaf $ dumbClass
     { name = "clickCounter"
     , renderFn = \props _ -> div_ [ class_ "clickCounter" ] $ do
         "Number of clicks: "
-        text_ (show props)
+        text_ (fromString (show props))
     }
-
-page_ = classLeaf page
-userName_ = classLeaf userName
-clicker_ = classLeaf clicker
-clickCounter_ = classLeaf clickCounter
 
 main :: IO ()
 main = do
