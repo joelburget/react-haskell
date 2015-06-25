@@ -40,6 +40,10 @@ reactNodeToJSAny sigHandler _           (NodeText str)          =
 reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
     jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
     castRef <$> toArray jsNodes
+reactNodeToJSAny sigHandler componentId (LocalNode f node)      =
+    -- Convert from 'sig -> IO ()' to 'insig -> IO ()'
+    let sigHandler' = sigHandler . f
+    in reactNodeToJSAny sigHandler' componentId node
 
 
 jsName :: EvtType -> JSString

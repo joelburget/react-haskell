@@ -52,4 +52,5 @@ import React.Types
 import React.Attrs as X
 import React.Elements as X
 import React.Events as X
+import React.Local as X
 import React.Rebindable as X

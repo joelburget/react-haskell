@@ -20,15 +20,16 @@ page_ = classLeaf $ smartClass
     , transition = \(state, insig) -> (state + 1, Nothing)
     , initialState = 0
     , renderFn = \props state -> div_ [ class_ "parent" ] $ do
-        userName_ [] props
+        locally $ userName_ [] props
         clicker_ [] ()
-        clickCounter_ [] state
-        clickCounter_ [] state
-        clickCounter_ [] state
-        clickCounter_ [] state
+        locally $ div_ [] $ do
+            clickCounter_ [] state
+            clickCounter_ [] state
+            clickCounter_ [] state
+            clickCounter_ [] state
     }
 
-userName_ :: [AttrOrHandler ()] -> JSString -> ReactNode ()
+userName_ :: [AttrOrHandler Void] -> JSString -> ReactNode Void
 userName_ = classLeaf $ dumbClass
     { name = "userName"
     , renderFn = \props _ -> div_ [ class_ "userName" ] $ do
@@ -43,7 +44,7 @@ clicker_ = classLeaf $ dumbClass
         button_ [ onClick (const (Just ())) ] "click me!"
     }
 
-clickCounter_ :: [AttrOrHandler ()] -> Int -> ReactNode ()
+clickCounter_ :: [AttrOrHandler Void] -> Int -> ReactNode Void
 clickCounter_ = classLeaf $ dumbClass
     { name = "clickCounter"
     , renderFn = \props _ -> div_ [ class_ "clickCounter" ] $ do

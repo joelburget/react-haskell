@@ -47,6 +47,7 @@ data EventHandler signal = EventHandler
     , evtType :: EvtType
     }
 
+
 data ReactType
     = RtClass
     | RtBuiltin
@@ -79,6 +80,7 @@ data ReactNode sig
     | DomElement (ReactDOMElement sig)
     | NodeText JSString
     | NodeSequence [ReactNode sig]
+    | forall insig. LocalNode (insig -> sig) (ReactNode insig)
 
 
 instance Monoid (ReactNode sig) where
@@ -107,7 +109,7 @@ data ReactComponentElement exsig = forall props state insig ctx.
     , reComKey :: Maybe JSString
     , reComRef :: Maybe JSString
 
-    -- Props are stored here, not used until, `render` because we need both the
+    -- Props are stored here, not used until `render`, because we need both the
     -- props and state at the same time.
     , reComProps :: props
 
