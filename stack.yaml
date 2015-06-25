@@ -1,10 +1,6 @@
 flags:
   react-haskell:
     ghcjs: false
-  simple:
-    ghcjs: false
-  todomvc:
-    ghcjs: false
 packages:
 - '.'
 - example/simple/
