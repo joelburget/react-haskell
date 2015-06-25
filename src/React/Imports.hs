@@ -11,7 +11,6 @@
 module React.Imports
     ( JSAny
     , RawEvent
-    , Elem
     , js_render
     , js_createClass
     , js_react_createElement_DOM
@@ -63,11 +62,10 @@ syncCallback2 = undefined
 data RawEvent_
 type RawEvent = JSRef RawEvent_
 type JSAny = JSRef ()
-type Elem = Element
 
 #ifdef __GHCJS__
 foreign import javascript unsafe "React.render($1, $2)"
-    js_render :: JSRef () -> Elem -> IO ()
+    js_render :: JSRef () -> Element -> IO ()
 foreign import javascript unsafe "js_createClass"
     js_createClass :: JSAny -> JSAny
 foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
@@ -80,7 +78,7 @@ foreign import javascript unsafe "js_set_handler"
 foreign import javascript unsafe "$1.forceUpdate()"
     js_forceUpdate :: JSAny -> IO ()
 #else
-js_render :: JSRef () -> Elem -> IO ()
+js_render :: JSRef () -> Element -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 
 js_createClass :: JSAny -> JSAny
