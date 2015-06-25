@@ -6,19 +6,21 @@
 -- Stability   :  experimental
 -- Portability :  non-portable
 module React
-    ( module X
-
-    -- React.Class
-    , ReactClass()
+    (
+    -- * Classes
+      ReactClass()
     , ClassConfig(..)
     , smartClass
     , dumbClass
 
-    -- React.Render
+    -- * Rendering
     , render
     , debugRender
 
-    -- React.Types
+    -- * React Nodes
+    , ReactNode
+
+    -- * Events
     , EventProperties(..)
     , Target(..)
     , ModifierKeys(..)
@@ -26,20 +28,22 @@ module React
     , KeyboardEvent(..)
     , ChangeEvent(..)
     , FocusEvent(..)
-    , ForeignRender
 
-    , ReactType(..)
-    , ReactNode
+    -- * Local
+    , module React.Local
 
     -- XXX(joel)
     , AttrOrHandler()
-    , RawAttrs(..)
-    , ReactArray(..)
-    , JSAny
 
-    -- React.Local
-    , GeneralizeSignal
-    , locally
+    -- TODO - create React.Internal module for these?
+    -- * Attributes
+    , module React.Attrs
+
+    -- * Rebindable Syntax
+    , module React.Rebindable
+
+    -- * Creating Elements
+    , module React.Elements
     ) where
 
 -- TODO
@@ -53,7 +57,7 @@ import React.Local
 import React.Render
 import React.Types
 
-import React.Attrs as X
-import React.Elements as X
-import React.Events as X
-import React.Rebindable as X
+import React.Attrs
+import React.Elements
+import React.Events
+import React.Rebindable
