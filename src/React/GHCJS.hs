@@ -9,6 +9,7 @@ module React.GHCJS
     ( currentDocument
     , Document
     , Element
+    , JSAny
     , documentGetElementById
 #ifdef __GHCJS__
     , module X
@@ -24,18 +25,23 @@ module React.GHCJS
 #endif
     ) where
 
+-- Export useful things from GHCJS, or mocks of them if we're running in GHC
+
 import qualified Data.Aeson as Aeson
 import Data.String
 import Data.Text (Text)
 
 #ifdef __GHCJS__
+
 import GHCJS.Foreign as X
 import GHCJS.Marshal as X
 import GHCJS.Types as X
 import GHCJS.DOM (currentDocument)
 import GHCJS.DOM.Types (Document, Element)
 import GHCJS.DOM.Document (documentGetElementById)
+
 #else
+
 data Document
 data Element
 data JSRef a = JSRef
@@ -79,4 +85,7 @@ documentGetElementById ::
     -- (IsDocument self, ToJSString elementId) =>
     self -> elementId -> IO (Maybe Element)
 documentGetElementById = undefined
+
 #endif
+
+type JSAny = JSRef ()

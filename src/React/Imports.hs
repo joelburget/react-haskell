@@ -7,10 +7,20 @@
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 #endif
 
-#ifdef __GHCJS__
 module React.Imports
-    ( JSAny
-    , RawEvent
+    ( RawEvent
+
+    -- * GHCJS stubs
+    , ForeignRetention(..)
+    , castRef
+    , newObj
+    , eqRef
+    , toArray
+    , setProp
+    , syncCallback1
+    , syncCallback2
+
+    -- * Foreign imports
     , js_render
     , js_createClass
     , js_react_createElement_DOM
@@ -19,12 +29,31 @@ module React.Imports
     , js_forceUpdate
     ) where
 
--- newtype RawEvent = RawEvent JSAny
 import React.GHCJS
-#else
-module React.Imports where
 
-import React.GHCJS
+data RawEvent_
+type RawEvent = JSRef RawEvent_
+
+#ifdef __GHCJS__
+
+foreign import javascript unsafe "React.render($1, $2)"
+    js_render :: JSRef () -> Element -> IO ()
+foreign import javascript unsafe "js_createClass"
+    js_createClass :: JSAny -> JSAny
+foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
+    js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
+foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
+-- foreign import javascript unsafe "function(x, y, z) { console.log(x, y, z, [x,y].concat(z)); return React.createElement.apply(null, [x, y].concat(z)); }($1, $2, $3)"
+    js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
+foreign import javascript unsafe "js_set_handler"
+    js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
+foreign import javascript unsafe "$1.forceUpdate()"
+    js_forceUpdate :: JSAny -> IO ()
+
+#else
+
+-- First mock some data and functions from GHCJS that we use but don't export
+-- (which is why they dont' live in React.GHCJS)
 
 data ForeignRetention
     = NeverRetain
@@ -57,27 +86,9 @@ syncCallback2 :: ForeignRetention
               -> (JSRef a -> JSRef b -> IO c)
               -> IO (JSFun (JSRef a -> JSRef b -> IO c))
 syncCallback2 = undefined
-#endif
 
-data RawEvent_
-type RawEvent = JSRef RawEvent_
-type JSAny = JSRef ()
+-- ... And mock the foreign imports
 
-#ifdef __GHCJS__
-foreign import javascript unsafe "React.render($1, $2)"
-    js_render :: JSRef () -> Element -> IO ()
-foreign import javascript unsafe "js_createClass"
-    js_createClass :: JSAny -> JSAny
-foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
-    js_react_createElement_DOM :: JSString -> JSAny -> JSAny -> IO JSAny
-foreign import javascript unsafe "React.createElement.apply(null, [$1, $2].concat($3))"
--- foreign import javascript unsafe "function(x, y, z) { console.log(x, y, z, [x,y].concat(z)); return React.createElement.apply(null, [x, y].concat(z)); }($1, $2, $3)"
-    js_react_createElement_Class :: JSAny -> JSAny -> JSAny -> IO JSAny
-foreign import javascript unsafe "js_set_handler"
-    js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
-foreign import javascript unsafe "$1.forceUpdate()"
-    js_forceUpdate :: JSAny -> IO ()
-#else
 js_render :: JSRef () -> Element -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
 
@@ -95,4 +106,5 @@ js_set_handler = error "cannot evaluate js_set_handler in ghc"
 
 js_forceUpdate :: JSAny -> IO ()
 js_forceUpdate = error "cannot evaluate js_forceUpdate in ghc"
+
 #endif
