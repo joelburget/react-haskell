@@ -18,10 +18,6 @@ cabal-version:       >=1.10
 data-dir: lib
 data-files: stubs.js, react.js
 
-flag ghcjs
-    description: tell cabal we're using ghcjs
-    default: True
-
 executable react-haskell-example
   main-is:             Main.hs
   -- other-modules:
@@ -39,10 +35,7 @@ executable react-haskell-example
     base >= 4.7 && < 5,
     containers >= 0.5.5,
     lens-family == 1.2.0,
-    react-haskell >= 1.3
-  if flag(ghcjs)
-    build-depends:
-      ghcjs-base >= 0.1,
-      ghcjs-dom >= 0.1
+    react-haskell >= 1.3,
+    void >= 0.7
   -- hs-source-dirs:
   default-language:    Haskell2010
