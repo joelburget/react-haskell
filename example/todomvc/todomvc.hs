@@ -19,6 +19,7 @@ import Lens.Family2.TH
 import React
 import React.DOM
 import React.GHCJS
+import React.Rebindable
 
 #ifdef __GHCJS__
 foreign import javascript unsafe "$1.trim()" trim :: JSString -> JSString
@@ -182,7 +183,7 @@ todoView PageState{_todos} i =
 todosWithStatus :: Status -> [Todo] -> [Todo]
 todosWithStatus stat = filter (\Todo{_status} -> _status == stat)
 
-mainBody_ :: [AttrOrHandler Transition] -> PageState -> ReactNode Transition
+mainBody_ :: PageState -> ReactNode Transition
 mainBody_ = classLeaf $ dumbClass
     { name = "MainBody"
     , renderFn = \st@PageState{_todos} _ ->
@@ -198,7 +199,7 @@ mainBody_ = classLeaf $ dumbClass
                   _ -> Foldable.foldMap (todoView st) [0 .. length _todos - 1]
     }
 
-innerFooter_ :: [AttrOrHandler Transition] -> PageState -> ReactNode Transition
+innerFooter_ :: PageState -> ReactNode Transition
 innerFooter_ = classLeaf $ dumbClass
     { name = "InnerFooter"
     , renderFn = \PageState{_todos} _ -> footer_ [ class_ "footer" ] $ do
@@ -224,7 +225,7 @@ innerFooter_ = classLeaf $ dumbClass
                   text_ (toJSString ("Clear completed (" ++ show inactiveCount ++ ")"))
     }
 
-outerFooter_ :: [AttrOrHandler Transition] -> () -> ReactNode Transition
+outerFooter_ :: () -> ReactNode Transition
 outerFooter_ = classLeaf $ dumbClass
     { name = "OuterFooter"
     , renderFn = \_ _ -> footer_ [ class_ "info" ] $ do
@@ -239,7 +240,7 @@ outerFooter_ = classLeaf $ dumbClass
               a_ [ href_ "http://todomvc.com" ] $ text_ "TodoMVC"
     }
 
-wholePage_ :: [AttrOrHandler Transition] -> () -> ReactNode Void
+wholePage_ :: () -> ReactNode Void
 wholePage_ = classLeaf $ smartClass
     { name = "WholePage"
     , transition = pageTransition'
@@ -250,9 +251,9 @@ wholePage_ = classLeaf $ smartClass
 
               -- "When there are no todos, #main and #footer should be hidden."
               unless (null _todos) $ do
-                  mainBody_ [] s
-                  innerFooter_ [] s
-          outerFooter_ [] ()
+                  mainBody_ s
+                  innerFooter_ s
+          outerFooter_ ()
     }
 
 main = do
@@ -260,4 +261,4 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render (wholePage_ [] ()) elem
+    render (wholePage_ ()) elem

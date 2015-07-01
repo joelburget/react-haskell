@@ -9,23 +9,24 @@ import Data.Void
 import React
 import React.DOM
 import React.GHCJS
+import React.Rebindable
 
-page_ :: [AttrOrHandler ()] -> JSString -> ReactNode Void
+page_ :: JSString -> ReactNode Void
 page_ = classLeaf $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state + 1, Nothing)
     , initialState = 0
     , renderFn = \props state -> div_ [ class_ "parent" ] $ do
-        locally $ userName_ [] props
-        clicker_ [] ()
+        locally $ userName_ props
+        clicker_ ()
         locally $ div_ [] $ do
-            clickCounter_ [] state
-            clickCounter_ [] state
-            clickCounter_ [] state
-            clickCounter_ [] state
+            clickCounter_ state
+            clickCounter_ state
+            clickCounter_ state
+            clickCounter_ state
     }
 
-userName_ :: [AttrOrHandler Void] -> JSString -> ReactNode Void
+userName_ :: JSString -> ReactNode Void
 userName_ = classLeaf $ dumbClass
     { name = "userName"
     , renderFn = \props _ -> div_ [ class_ "userName" ] $ do
@@ -33,14 +34,14 @@ userName_ = classLeaf $ dumbClass
         text_ props
     }
 
-clicker_ :: [AttrOrHandler ()] -> () -> ReactNode ()
+clicker_ :: () -> ReactNode ()
 clicker_ = classLeaf $ dumbClass
     { name = "clicker"
     , renderFn = \_ _ ->
         button_ [ onClick (const (Just ())) ] "click me!"
     }
 
-clickCounter_ :: [AttrOrHandler Void] -> Int -> ReactNode Void
+clickCounter_ :: Int -> ReactNode Void
 clickCounter_ = classLeaf $ dumbClass
     { name = "clickCounter"
     , renderFn = \props _ -> div_ [ class_ "clickCounter" ] $ do
@@ -54,4 +55,4 @@ main = do
     let elemId :: JSString
         elemId = "inject"
     Just elem <- documentGetElementById doc elemId
-    render (page_ [] "Joel") elem
+    render (page_ "Joel") elem

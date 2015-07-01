@@ -92,7 +92,6 @@ data AttrOrHandler signal
 data ReactComponentElement exsig = forall props state insig ctx.
     ReactComponentElement
     { reComType :: ReactClass props state insig exsig ctx
-    , reComAttrs :: [AttrOrHandler insig]
     , reComChildren :: ReactNode insig
     , reComKey :: Maybe JSString
     , reComRef :: Maybe JSString

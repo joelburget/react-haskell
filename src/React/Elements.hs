@@ -49,20 +49,18 @@ domLeaf name attrs =
 
 
 classParent' :: ReactClass props state insig exsig
-            -> [AttrOrHandler insig]
             -> ReactNode insig
             -> props
             -> ReactNode exsig
-classParent' cls attrs children props = ComponentElement
-    (ReactComponentElement cls attrs children Nothing Nothing props)
+classParent' cls children props = ComponentElement
+    (ReactComponentElement cls children Nothing Nothing props)
 
 
 classLeaf' :: ReactClass props state insig exsig
-          -> [AttrOrHandler insig]
           -> props
           -> ReactNode exsig
-classLeaf' cls attrs props = ComponentElement
-    (ReactComponentElement cls attrs mempty Nothing Nothing props)
+classLeaf' cls props = ComponentElement
+    (ReactComponentElement cls mempty Nothing Nothing props)
 
 
 classParent :: ClassConfig props state insig exsig
@@ -84,7 +82,6 @@ classLeaf = classLeaf' . createClass
 -- of the component.
 -- XXX how to get signal out!
 foreignParent :: JSAny
-              -> [AttrOrHandler sig]
               -> ReactNode sig
               -> props
               -> ReactNode sig
@@ -98,7 +95,6 @@ foreignParent obj = classParent' $ ReactClass
 -- of the component.
 -- XXX how to get signal out!
 foreignLeaf :: JSAny
-            -> [AttrOrHandler sig]
             -> props
             -> ReactNode sig
 foreignLeaf obj = classLeaf' $ ReactClass

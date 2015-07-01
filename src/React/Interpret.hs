@@ -129,7 +129,7 @@ setProp' key prop obj = do
 componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny
 componentToJSAny
     sigHandler
-    (ReactComponentElement ty attrs children maybeKey ref props) = do
+    (ReactComponentElement ty children maybeKey ref props) = do
 
         let registry = classStateRegistry ty
         componentId <- allocProps registry props
@@ -150,7 +150,7 @@ componentToJSAny
 
         setHandler registry sigHandler' componentId
 
-        attrsObj <- attrHandlerToJSAny sigHandler' componentId attrs
+        attrsObj <- newObj
 
         setMaybeKey maybeKey attrsObj
         setProp' "ref" ref attrsObj
