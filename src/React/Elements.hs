@@ -88,7 +88,10 @@ foreignParent :: JSAny
 foreignParent obj = classParent' $ ReactClass
     obj
     (\((), sig) -> ((), Just sig))
-    undefined
+    -- XXX
+    (unsafePerformIO $ ClassRegistry
+            <$> newIORef H.empty
+            <*> newIORef 0)
 
 
 -- Note: state here reflects the state managed by react-haskell, not the state
@@ -100,4 +103,7 @@ foreignLeaf :: JSAny
 foreignLeaf obj = classLeaf' $ ReactClass
     obj
     (\((), sig) -> ((), Just sig))
-    undefined
+    -- XXX
+    (unsafePerformIO $ ClassRegistry
+            <$> newIORef H.empty
+            <*> newIORef 0)
