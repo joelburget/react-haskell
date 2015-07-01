@@ -194,7 +194,7 @@ mainBody_ = classLeaf $ dumbClass
               let blah = text_ "" >> text_ ""
               ul_ [ class_ "todo-list" ] $ case length _todos of
                   0 -> blah
-                  _ -> foldr (>>) blah $ map (todoView st) [0 .. length _todos - 1]
+                  _ -> Foldable.foldMap (todoView st) [0 .. length _todos - 1]
     }
 
 innerFooter_ :: [AttrOrHandler Transition] -> PageState -> ReactNode Transition
