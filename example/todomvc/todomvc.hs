@@ -11,6 +11,7 @@ import Control.Applicative
 import Data.String
 import qualified Data.Text as T
 import Data.Void
+import qualified Data.Foldable as Foldable
 
 import Lens.Family2
 import Lens.Family2.Stock
