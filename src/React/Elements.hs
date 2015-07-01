@@ -48,7 +48,7 @@ domLeaf name attrs =
     DomElement (ReactDOMElement name attrs mempty Nothing Nothing)
 
 
-classParent' :: ReactClass props state insig exsig
+classParent' :: ReactClass props state insig exsig ctx
             -> ReactNode insig
             -> props
             -> ReactNode exsig
@@ -56,23 +56,23 @@ classParent' cls children props = ComponentElement
     (ReactComponentElement cls children Nothing Nothing props)
 
 
-classLeaf' :: ReactClass props state insig exsig
+classLeaf' :: ReactClass props state insig exsig ctx
           -> props
           -> ReactNode exsig
 classLeaf' cls props = ComponentElement
     (ReactComponentElement cls mempty Nothing Nothing props)
 
 
-classParent :: ClassConfig props state insig exsig
-            -> [AttrOrHandler insig]
+classParent :: ClassCtx ctx
+            => ClassConfig props state insig exsig ctx
             -> ReactNode insig
             -> props
             -> ReactNode exsig
 classParent = classParent' . createClass
 
 
-classLeaf :: ClassConfig props state insig exsig
-          -> [AttrOrHandler insig]
+classLeaf :: ClassCtx ctx
+          => ClassConfig props state insig exsig ctx
           -> props
           -> ReactNode exsig
 classLeaf = classLeaf' . createClass
