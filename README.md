@@ -9,13 +9,16 @@ I was driven to create this thing because I had a large existing Haskell codebas
 Let's put a simple paragraph on the page:
 
 ```haskell
-sample :: React () ()
+sample :: ReactNode a
 sample = p_ [ class_ "style" ] $ em_ "Andy Warhol"
 
 main :: IO ()
 main = do
-    Just elem <- elemById "id"
-    render elem sample
+    Just doc <- currentDocument
+    let elemId :: JSString
+        elemId = "inject"
+    Just elem <- documentGetElementById doc elemId
+    render sample elem
 ```
 
 That creates a DOM node on the page that looks like:
@@ -29,7 +32,7 @@ That creates a DOM node on the page that looks like:
 We can make that a little more complicated with some more child nodes.
 
 ```haskell
-sample :: React () ()
+sample :: ReactNode a
 sample = div_ [ class_ "beautify" ] $ do
     "The Velvet Underground"
 
@@ -41,8 +44,8 @@ sample = div_ [ class_ "beautify" ] $ do
 But of course that input doesn't do anything. Let's change that.
 
 ```haskell
-sample :: JSString -> React AppKey ()
-sample str = div_ $ do
+sample :: JSString -> ReactNode JSString
+sample = div_ $ do
     "Favorite artist:"
 
     input_ [ onChange (Just . value . target) ]
@@ -73,13 +76,13 @@ build-depends:
 Now we can write `Main.hs`.
 
 ```haskell
-sample :: React () ()
+sample :: ReactNode a
 sample = p_ [ class_ "style" ] $ em_ "Andy Warhol"
 
 main :: IO ()
 main = do
     Just elem <- elemById "id"
-    render elem sample
+    render sample elem
 ```
 
 ## Next Steps
