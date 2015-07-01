@@ -33,9 +33,6 @@ module React
     -- * Attributes
     , module React.Attrs
 
-    -- * Rebindable Syntax
-    , module React.Rebindable
-
     -- * Creating Elements
     , module React.Elements
     ) where
