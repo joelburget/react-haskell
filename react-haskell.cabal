@@ -54,7 +54,8 @@ library
   exposed-modules:
     React,
     React.DOM,
-    React.GHCJS
+    React.GHCJS,
+    React.Rebindable
   other-modules:
     React.Attrs,
     React.Class,
@@ -64,7 +65,6 @@ library
     React.Interpret,
     React.Local,
     React.PropTypes,
-    React.Rebindable,
     React.Registry,
     React.Render,
     React.Types
