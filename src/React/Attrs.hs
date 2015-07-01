@@ -26,9 +26,6 @@ id_ = mkStaticAttr "id"
 src_ :: Text -> AttrOrHandler sig
 src_ = mkStaticAttr "src"
 
-style_ :: JSON -> AttrOrHandler sig
-style_ = mkStaticAttr "style"
-
 value_ :: Text -> AttrOrHandler sig
 value_ = mkStaticAttr "value"
 
