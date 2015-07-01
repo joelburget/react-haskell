@@ -11,9 +11,12 @@ module React.GHCJS
     , Element
     , JSAny
     , documentGetElementById
+
+    -- * GHCJS stubs
 #ifdef __GHCJS__
     , module X
 #else
+    , ForeignRetention(..)
     , JSRef(..)
     , JSFun
     , JSArray
@@ -22,6 +25,14 @@ module React.GHCJS
     , ToJSString(..)
     , FromJSRef(..)
     , ToJSRef(..)
+    , castRef
+    , newObj
+    , setProp
+    , eqRef
+    , toArray
+    , setProp
+    , syncCallback1
+    , syncCallback2
 #endif
     ) where
 
@@ -85,6 +96,38 @@ documentGetElementById ::
     -- (IsDocument self, ToJSString elementId) =>
     self -> elementId -> IO (Maybe Element)
 documentGetElementById = undefined
+
+castRef :: JSRef a -> JSRef b
+castRef _ = JSRef
+
+newObj :: IO (JSRef a)
+newObj = undefined
+
+data ForeignRetention
+    = NeverRetain
+    | AlwaysRetain
+    | DomRetain (forall a. JSRef a)
+
+eqRef :: JSRef a -> JSRef a -> Bool
+eqRef = undefined
+
+toArray :: [JSRef a] -> IO (JSArray a)
+toArray = undefined
+
+setProp :: ToJSString a => a -> JSRef b -> JSRef c -> IO ()
+setProp = undefined
+
+syncCallback1 :: ForeignRetention
+              -> Bool
+              -> (JSRef a -> IO b)
+              -> IO (JSFun (JSRef a -> IO b))
+syncCallback1 = undefined
+
+syncCallback2 :: ForeignRetention
+              -> Bool
+              -> (JSRef a -> JSRef b -> IO c)
+              -> IO (JSFun (JSRef a -> JSRef b -> IO c))
+syncCallback2 = undefined
 
 #endif
 

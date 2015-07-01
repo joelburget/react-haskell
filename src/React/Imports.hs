@@ -10,16 +10,6 @@
 module React.Imports
     ( RawEvent
 
-    -- * GHCJS stubs
-    , ForeignRetention(..)
-    , castRef
-    , newObj
-    , eqRef
-    , toArray
-    , setProp
-    , syncCallback1
-    , syncCallback2
-
     -- * Foreign imports
     , js_render
     , js_createClass
@@ -52,42 +42,7 @@ foreign import javascript unsafe "$1.forceUpdate()"
 
 #else
 
--- First mock some data and functions from GHCJS that we use but don't export
--- (which is why they dont' live in React.GHCJS)
-
-data ForeignRetention
-    = NeverRetain
-    | AlwaysRetain
-    | DomRetain (forall a. JSRef a)
-
-castRef :: JSRef a -> JSRef b
-castRef _ = JSRef
-
-newObj :: IO (JSRef a)
-newObj = undefined
-
-eqRef :: JSRef a -> JSRef a -> Bool
-eqRef = undefined
-
-toArray :: [JSRef a] -> IO (JSArray a)
-toArray = undefined
-
-setProp :: ToJSString a => a -> JSRef b -> JSRef c -> IO ()
-setProp = undefined
-
-syncCallback1 :: ForeignRetention
-              -> Bool
-              -> (JSRef a -> IO b)
-              -> IO (JSFun (JSRef a -> IO b))
-syncCallback1 = undefined
-
-syncCallback2 :: ForeignRetention
-              -> Bool
-              -> (JSRef a -> JSRef b -> IO c)
-              -> IO (JSFun (JSRef a -> JSRef b -> IO c))
-syncCallback2 = undefined
-
--- ... And mock the foreign imports
+-- mock the foreign imports
 
 js_render :: JSRef () -> Element -> IO ()
 js_render = error "cannot evaluate js_render in ghc"
