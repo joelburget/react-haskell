@@ -2,7 +2,7 @@
 
 all: sandbox
 	cabal install --ghcjs
-	cp .cabal-sandbox/bin/react-haskell-example.jsexe/all.js .
+	cp .cabal-sandbox/bin/animation.jsexe/all.js .
 
 sandbox:
 	if [ ! -d .cabal-sandbox ]; then \
