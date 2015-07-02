@@ -7,3 +7,4 @@ dist/
 main/
 .DS_STORE
 .stack-work
+node_modules
