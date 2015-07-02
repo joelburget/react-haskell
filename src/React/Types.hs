@@ -61,11 +61,13 @@ data ReactClass props state insig exsig ctx = ReactClass
 -- assignKey :: ReactNode sig -> Int -> ReactNode sig
 -- assignKey (ComponentElement (
 
-
 -- TODO use phantom type to indicate renderability? Only sequence is not.
 data ReactNode sig
     = ComponentElement (ReactComponentElement sig)
     | DomElement (ReactDOMElement sig)
+
+    | ForeignClass (ImportedClass sig) (ReactNode sig)
+
     | NodeText JSString
     | NodeSequence [ReactNode sig]
     | forall insig. LocalNode (insig -> sig) (ReactNode insig)

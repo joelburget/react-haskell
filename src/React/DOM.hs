@@ -1,10 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.DOM where
 
+import Data.Monoid
+
 import React.Elements
 import React.GHCJS
 import React.Imports
 import React.Types
+
+
+-- | Parent nodes always take a list of arguments and children.
+-- @
+-- span_ [class_ "example"] $ ... children ...
+-- @
+domParent :: JSString
+          -> [AttrOrHandler sig]
+          -> ReactNode sig
+          -> ReactNode sig
+domParent name attrs children =
+    DomElement (ReactDOMElement name attrs children Nothing Nothing)
+
+
+domLeaf :: JSString
+        -> [AttrOrHandler sig]
+        -> ReactNode sig
+domLeaf name attrs =
+    DomElement (ReactDOMElement name attrs mempty Nothing Nothing)
+
 
 -- -- TODO ToJSString a => ?
 -- -- Would this just be annoyingly ambiguous?

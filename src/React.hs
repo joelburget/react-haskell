@@ -35,6 +35,9 @@ module React
 
     -- * Creating Elements
     , module React.Elements
+
+    -- * JS Interop
+    , ImportedClass
     ) where
 
 -- TODO

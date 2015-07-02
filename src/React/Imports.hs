@@ -9,6 +9,7 @@
 
 module React.Imports
     ( RawEvent
+    , ImportedClass
 
     -- * Foreign imports
     , js_render
@@ -17,12 +18,16 @@ module React.Imports
     , js_react_createElement_Class
     , js_set_handler
     , js_forceUpdate
+    , js_foreignParent
     ) where
 
 import React.GHCJS
 
 data RawEvent_
 type RawEvent = JSRef RawEvent_
+
+data ImportedClass_ sig
+type ImportedClass sig = JSRef (ImportedClass_ sig)
 
 #ifdef __GHCJS__
 
@@ -39,6 +44,8 @@ foreign import javascript unsafe "js_set_handler"
     js_set_handler :: Int -> JSString -> (JSFun (JSRef Int -> RawEvent -> IO ())) -> JSAny -> IO ()
 foreign import javascript unsafe "$1.forceUpdate()"
     js_forceUpdate :: JSAny -> IO ()
+foreign import javascript unsafe "React.createElement($1, null, $2)"
+    js_foreignParent :: ImportedClass sig -> JSAny -> IO JSAny
 
 #else
 
@@ -61,5 +68,8 @@ js_set_handler = error "cannot evaluate js_set_handler in ghc"
 
 js_forceUpdate :: JSAny -> IO ()
 js_forceUpdate = error "cannot evaluate js_forceUpdate in ghc"
+
+js_foreignParent :: ImportedClass sig -> JSAny -> IO JSAny
+js_foreignParent = error "cannot evaluate js_foreignParent in ghc"
 
 #endif

@@ -36,6 +36,20 @@ reactNodeToJSAny sigHandler componentId (ComponentElement elem) =
     componentToJSAny sigHandler elem
 reactNodeToJSAny sigHandler componentId (DomElement elem)       =
     domToJSAny sigHandler componentId elem
+
+-- This isn't entirely fair to foreign (exported) classes. We've set them up
+-- with our createClass machinery, so they expect to have a componentId, but we
+-- give them none...
+-- reactNodeToJSAny _ _ (ForeignElement elem)                   =
+--     return $ castRef elem
+
+reactNodeToJSAny sigHandler componentId (ForeignClass elem children) = do
+    -- pass the handler and component id on to the children - their events will
+    -- just be handled by the parent class.
+    children' <- reactNodeToJSAny sigHandler componentId children
+    js_foreignParent elem children'
+    -- foreignClassToJSAny componentId cls
+
 reactNodeToJSAny sigHandler _           (NodeText str)          =
     castRef <$> toJSRef str
 reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
@@ -124,6 +138,13 @@ setProp' :: ToJSRef a => String -> a -> JSAny -> IO ()
 setProp' key prop obj = do
     propRef <- toJSRef prop
     setProp key propRef obj
+
+
+-- foreignElementToJSAny :: Int -> IO JSAny -> IO JSAny
+-- foreignElementToJSAny componentId
+
+-- foreignClassToJSAny :: Int -> ExportedClass -> IO JSAny
+-- foreignClassToJSAny componentId cls = do
 
 
 componentToJSAny :: (sig -> IO ()) -> ReactComponentElement sig -> IO JSAny

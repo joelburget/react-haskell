@@ -2,12 +2,19 @@
     ConstraintKinds #-}
 -- TODO(joel) rename to React.DOM?
 module React.Elements
-    ( domParent
-    , domLeaf
-    , classParent
+    (
+    -- * Class creation
+      classParent
     , classLeaf
-    , foreignParent
-    , foreignLeaf
+
+    -- * JS Interop
+    , exportClassLeaf
+    -- , exportNode
+    , importLeafClass
+    , importParentClass
+
+    , ExportedNode
+    , ExportedClass
     ) where
 
 import Control.Applicative
@@ -16,49 +23,28 @@ import qualified Data.HashMap.Strict as H
 import Data.IORef
 import Data.Monoid
 import Data.String
+import Data.Void
 import System.IO.Unsafe
 
 import React.Class
 import React.GHCJS
 import React.Imports
+import React.Interpret
 import React.Registry
 import React.Types
 
 
--- | Parent nodes always take a list of arguments and children.
--- @
--- span_ [class_ "example"] $ ... children ...
--- @
---
--- TODO questionable whether foreign nodes should use ReactBuiltin. Maybe
--- create a ReactForeign?
--- TODO(joel) this is essentially createElement
-domParent :: JSString
-          -> [AttrOrHandler sig]
-          -> ReactNode sig
-          -> ReactNode sig
-domParent name attrs children =
-    DomElement (ReactDOMElement name attrs children Nothing Nothing)
-
-
-domLeaf :: JSString
-        -> [AttrOrHandler sig]
-        -> ReactNode sig
-domLeaf name attrs =
-    DomElement (ReactDOMElement name attrs mempty Nothing Nothing)
-
-
 classParent' :: ReactClass props state insig exsig ctx
-            -> ReactNode insig
-            -> props
-            -> ReactNode exsig
+             -> ReactNode insig
+             -> props
+             -> ReactNode exsig
 classParent' cls children props = ComponentElement
     (ReactComponentElement cls children Nothing Nothing props)
 
 
 classLeaf' :: ReactClass props state insig exsig ctx
-          -> props
-          -> ReactNode exsig
+           -> props
+           -> ReactNode exsig
 classLeaf' cls props = ComponentElement
     (ReactComponentElement cls mempty Nothing Nothing props)
 
@@ -71,6 +57,7 @@ classParent :: ClassCtx ctx
 classParent = classParent' . createClass
 
 
+-- TODO refine this type to reflect that it can send back signals
 classLeaf :: ClassCtx ctx
           => ClassConfig props state insig exsig ctx
           -> props
@@ -78,32 +65,61 @@ classLeaf :: ClassCtx ctx
 classLeaf = classLeaf' . createClass
 
 
--- Note: state here reflects the state managed by react-haskell, not the state
--- of the component.
--- XXX how to get signal out!
-foreignParent :: JSAny
-              -> ReactNode sig
-              -> props
-              -> ReactNode sig
-foreignParent obj = classParent' $ ReactClass
-    obj
-    (\((), sig) -> ((), Just sig))
-    -- XXX
-    (unsafePerformIO $ ClassRegistry
-            <$> newIORef H.empty
-            <*> newIORef 0)
+data ExportedClass_
+type ExportedClass = JSRef ExportedClass_
+
+newtype ExportedNode sig = ExportedNode (IO JSAny)
+
+instance ToJSRef (ExportedNode sig) where
+    toJSRef (ExportedNode n) = castRef <$> n
 
 
+-- XXX
+-- Must make sure to get componentId to this class! Currently it's in props,
+-- but maybe should move...
+exportClassLeaf :: ClassCtx ctx
+                => ClassConfig props state insig exsig ctx
+                -> ExportedClass
+exportClassLeaf conf =
+    castRef $ classForeign $ createClass conf
+
+
+-- XXX
+-- Must make sure to update state in JS when it changes in HS!
+-- exportNode :: (sig -> IO ()) -> ReactNode sig -> ExportedNode sig
+-- exportNode handler = ExportedNode . reactNodeToJSAny handler undefined
+
+
+
 -- Note: state here reflects the state managed by react-haskell, not the state
 -- of the component.
--- XXX how to get signal out!
-foreignLeaf :: JSAny
-            -> props
-            -> ReactNode sig
-foreignLeaf obj = classLeaf' $ ReactClass
-    obj
-    (\((), sig) -> ((), Just sig))
-    -- XXX
-    (unsafePerformIO $ ClassRegistry
-            <$> newIORef H.empty
-            <*> newIORef 0)
+-- TODO - figure out how to handle callbacks (change Void -> a)
+
+
+importLeafClass :: ImportedClass sig
+                -> ReactNode sig
+importLeafClass elem = ForeignClass elem ""
+
+
+
+importParentClass :: ImportedClass sig
+                  -> ReactNode sig
+                  -> ReactNode sig
+importParentClass elem children = ForeignClass elem children
+
+
+
+-- importLeafClass :: ToJSRef props
+--                 => ImportedClass props sig
+--                 -> props
+--                 -> ReactNode sig
+-- importLeafClass elem props = ForeignClass elem (toJSRef props) ""
+
+
+
+-- importParentClass :: ToJSRef props
+--                   => ImportedClass props sig
+--                   -> props
+--                   -> ReactNode sig
+--                   -> ReactNode sig
+-- importParentClass elem props children = ForeignClass elem (toJSRef props) children

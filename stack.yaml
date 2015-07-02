@@ -3,6 +3,7 @@ flags:
     ghcjs: false
 packages:
 - '.'
+- example/foreign/
 - example/simple/
 - example/todomvc/
 extra-deps:
