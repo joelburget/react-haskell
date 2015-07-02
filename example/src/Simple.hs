@@ -14,7 +14,6 @@ data SimpleState = SimpleState
     , fighter2 :: JSString
     , typing :: JSString -- what the user's currently typing
     }
-type Simple a = a SimpleState Transition ()
 
 initialState = SimpleState "little mac!" "pit" ""
 
@@ -27,7 +26,7 @@ transition Enter SimpleState{fighter1, typing} =
 
 -- view
 
-view :: SimpleState -> Simple React'
+view :: SimpleState -> ReactNode Transition
 view (SimpleState fighter1 fighter2 typing) = div_ $ do
     div_ $ do
         "send a new competitor into the ring: "
@@ -50,5 +49,10 @@ view (SimpleState fighter1 fighter2 typing) = div_ $ do
         "fighter 2: "
         text_ fighter2
 
-simpleClass :: IO (Simple ReactClass)
-simpleClass = createClass view transition initialState () []
+simpleClass :: () -> ReactNode Void
+simpleClass = classLeaf $ smartClass
+    { name = "Simple"
+    , renderFn = \_ -> view
+    , initialState = initialState
+    , transition = transition
+    }

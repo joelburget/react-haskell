@@ -53,6 +53,10 @@ view slid = div_ [ class_ "slider-container" ] $ do
          ]
          ""
 
-slideClass :: IO (Slide ReactClass)
-slideClass =
-    createClass view transition initialClassState initialAnimationState []
+slideClass :: [AttrOrHandler Void] -> () -> ReactNode Void
+slideClass = classLeaf $ smartClass
+    { name = "Slide"
+    , transition = transition
+    , renderFn = view
+    , initialState = (initialClassState, initialAnimationState )
+    }

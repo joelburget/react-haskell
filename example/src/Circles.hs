@@ -4,6 +4,7 @@ module Circles (circlesClass) where
 import Control.Applicative
 import Control.Monad
 import Data.String (fromString)
+import Data.Void
 
 import Lens.Family2
 
@@ -16,7 +17,7 @@ data Circ = C1 | C2 | C3 | C4 deriving (Eq, Show)
 data CircState = CircState Circ [Circ]
 data AnimState = AnimState Color Color Color Color (Double, Double)
 data Transition = SingleFlash Circ | RepeatingFlash
-type Circles a = a CircState Transition AnimState
+
 
 coord :: Circ -> (Double, Double)
 coord C1 = (-1, -1)
@@ -55,10 +56,10 @@ ptL f (AnimState c1 c2 c3 c4 pt) = AnimState c1 c2 c3 c4 <$> f pt
 
 -- update
 
-transition :: Transition
-           -> CircState
-           -> (CircState, [AnimConfig Transition AnimState])
-transition flash (CircState c' cs) =
+transitionFn :: Transition
+             -> CircState
+             -> (CircState, [AnimConfig Transition AnimState])
+transitionFn flash (CircState c' cs) =
     let colorTrans = fillorange `animSub` fillblue
         (newLoc, cs', newSignal) = case flash of
             RepeatingFlash -> (head cs, tail cs, Just RepeatingFlash)
@@ -91,7 +92,7 @@ fillorange = Color 245 175 51
 fill_' = fill_ . fromString . show
 
 
-circ :: Circ -> Color -> Circles React'
+circ :: Circ -> Color -> ReactNode CircState
 circ c = circ' True (const (Just (SingleFlash c))) (coord c)
 
 
@@ -99,7 +100,7 @@ circ' :: Bool
       -> (MouseEvent -> Maybe Transition)
       -> (Double, Double)
       -> Color
-      -> Circles React'
+      -> ReactNode CircState
 circ' clickable handler (x, y) color =
     let lst = [ cx_ x
               , cy_ y
@@ -113,21 +114,20 @@ circ' clickable handler (x, y) color =
     in circle_ (if clickable then lst' else lst)
 
 
-mainView :: CircState -> Circles React'
-mainView (CircState c _) = div_ $ do
-    AnimState c1 c2 c3 c4 trans <- getAnimationState
-
-    svg_ [ width_ 600
-         , height_ 600
-         , viewBox_ "-1.5 -1.5 3 3"
-         ] $ do
-        circ C1 (fillblue `animAdd` c1)
-        circ C2 (fillblue `animAdd` c2)
-        circ C3 (fillblue `animAdd` c3)
-        circ C4 (fillblue `animAdd` c4)
-        circ' False (const Nothing) (coord c `animSub` trans) fillblue
-
-
-circlesClass :: IO (Circles ReactClass)
-circlesClass =
-    createClass mainView transition initialState initialAnimationState [RepeatingFlash]
+circlesClass :: [AttrOrHandler Void] -> () -> ReactNode Void
+circlesClass = classLeaf $ smartClass
+    { name = "Circles"
+    , transition = transitionFn
+    , initialState = initialState
+    , renderFn = \_ (CircState c _) -> div_ [] $ do
+          -- AnimState c1 c2 c3 c4 trans <- getAnimationState
+          svg_ [ width_ 600
+               , height_ 600
+               , viewBox_ "-1.5 -1.5 3 3"
+               ] $ do
+              circ C1 (fillblue `animAdd` c1)
+              circ C2 (fillblue `animAdd` c2)
+              circ C3 (fillblue `animAdd` c3)
+              circ C4 (fillblue `animAdd` c4)
+              circ' False (const Nothing) (coord c `animSub` trans) fillblue
+    }

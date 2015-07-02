@@ -22,14 +22,14 @@ initialAnimationState = 0
 
 -- update
 
-chain :: Double -> AnimConfig Toggle Double
-chain from = AnimConfig
-    { duration = 1000
-    , lens = id
-    , endpoints = (from, 0)
-    , easing = EaseInOutQuad
-    , onComplete = const Nothing
-    }
+-- chain :: Double -> AnimConfig Toggle Double
+-- chain from = AnimConfig
+--     { duration = 1000
+--     , lens = id
+--     , endpoints = (from, 0)
+--     , easing = EaseInOutQuad
+--     , onComplete = const Nothing
+--     }
 
 transition :: Toggle -> ChainState -> (ChainState, [AnimConfig Toggle Double])
 transition Toggle Open = (Closed, [ chain 1 ])

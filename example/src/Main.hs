@@ -1,12 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Applicative
-import Control.Monad
-import Data.Maybe (fromJust)
-
 import React
 import React.GHCJS
+import Data.Void
 
 import Circles
 import Easing
@@ -16,20 +13,21 @@ import Simple
 import Slide
 import Chain
 
-doRender :: React a b c -> JSString -> Document -> IO ()
-doRender cls nodeName doc = void $ join $
-    render <$> (fromJust <$> documentGetElementById doc nodeName) <*> pure cls
-
-doRender' :: IO (React a b c) -> JSString -> Document -> IO ()
-doRender' cls str doc = join $ doRender <$> cls <*> pure str <*> pure doc
+wholePage_ :: [AttrOrHandler Void] -> () -> ReactNode Void
+wholePage_ = classLeaf $ dumbClass
+    { name = "WholePage"
+    , renderFn = \_ _ -> main_ $ do
+          simpleClass_ [] ()
+          circlesClass_ [] ()
+          easingClass_ [] ()
+          slideClass_ [] ()
+          chainClass_ [] ()
+    }
 
 main :: IO ()
 main = do
     Just doc <- currentDocument
-    forM_
-        [ ("simple-demo", doRender' simpleClass)
-        , ("circles-demo", doRender' circlesClass)
-        , ("easing-demo", doRender' easingClass)
-        , ("slide-demo", doRender' slideClass)
-        , ("chain-demo", doRender' chainClass)
-        ] $ \(name, rndr) -> rndr name doc
+    let elemId :: JSString
+        elemId = "inject"
+    Just elem <- documentGetElementById doc elemId
+    render (wholePage_ [] ()) elem
