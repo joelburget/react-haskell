@@ -12,8 +12,8 @@ import React.DOM
 import React.GHCJS
 import React.Rebindable
 
-foreign import javascript "window.Layout" pageLayout
-    :: ImportedClass ()
+foreign import javascript "window.Layout"
+    pageLayout :: ImportedClass ()
 
 page_ :: () -> ReactNode Void
 page_ = classLeaf $ smartClass

@@ -15,6 +15,9 @@ cabal-version:       >=1.10
 executable foreign
   main-is:             Main.hs
   -- other-modules:
+  js-sources:
+    lib/react.js
+    lib/stubs.js
   other-extensions:    OverloadedStrings, NamedFieldPuns, LiberalTypeSynonyms
   build-depends:
     base >= 4.7 && < 5,
