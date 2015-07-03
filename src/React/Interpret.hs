@@ -51,7 +51,7 @@ reactNodeToJSAny sigHandler componentId (ForeignClass elem children) = do
     -- foreignClassToJSAny componentId cls
 
 reactNodeToJSAny sigHandler _           (NodeText str)          =
-    castRef <$> toJSRef str
+    castRef <$> toJSRef (toJSString str)
 reactNodeToJSAny sigHandler componentId (NodeSequence seq)      = do
     jsNodes <- mapM (reactNodeToJSAny sigHandler componentId) seq
     castRef <$> toArray jsNodes

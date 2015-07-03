@@ -2,6 +2,7 @@
 module React.DOM where
 
 import Data.Monoid
+import Data.Text (Text)
 
 import React.Elements
 import React.GHCJS
@@ -30,7 +31,7 @@ domLeaf name attrs =
 
 -- -- TODO ToJSString a => ?
 -- -- Would this just be annoyingly ambiguous?
-text_ :: JSString -> ReactNode sig
+text_ :: Text -> ReactNode sig
 text_ = NodeText
 
 -- TODO generate these automatically

@@ -68,7 +68,7 @@ data ReactNode sig
 
     | ForeignClass (ImportedClass sig) (ReactNode sig)
 
-    | NodeText JSString
+    | NodeText Text
     | NodeSequence [ReactNode sig]
     | forall insig. LocalNode (insig -> sig) (ReactNode insig)
 
