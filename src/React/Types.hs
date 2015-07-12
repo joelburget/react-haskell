@@ -68,7 +68,8 @@ data ReactNode sig
     = ComponentElement (ReactComponentElement sig)
     | DomElement (ReactDOMElement sig)
 
-    | ForeignClass (ImportedClass sig) (ReactNode sig)
+    | forall props. ToJSRef props =>
+        ForeignClass (ImportedClass props sig) props (ReactNode sig)
 
     | NodeText Text
     | NodeSequence [ReactNode sig]

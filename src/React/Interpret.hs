@@ -43,12 +43,12 @@ reactNodeToJSAny sigHandler componentId (DomElement elem)       =
 -- reactNodeToJSAny _ _ (ForeignElement elem)                   =
 --     return $ castRef elem
 
-reactNodeToJSAny sigHandler componentId (ForeignClass elem children) = do
+reactNodeToJSAny sigHandler componentId (ForeignClass cls props children) = do
     -- pass the handler and component id on to the children - their events will
     -- just be handled by the parent class.
     children' <- reactNodeToJSAny sigHandler componentId children
-    js_foreignParent elem children'
-    -- foreignClassToJSAny componentId cls
+    props' <- toJSRef props
+    js_foreignParent cls props' children'
 
 reactNodeToJSAny sigHandler _           (NodeText str)          =
     castRef <$> toJSRef (toJSString str)

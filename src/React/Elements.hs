@@ -96,16 +96,17 @@ exportClassLeaf conf =
 -- TODO - figure out how to handle callbacks (change Void -> a)
 
 
-importLeafClass :: ImportedClass sig
+importLeafClass :: ToJSRef props
+                => ImportedClass props sig
+                -> props
                 -> ReactNode sig
-importLeafClass elem = ForeignClass elem ""
+importLeafClass elem props = ForeignClass elem props mempty
 
 
 
-importParentClass :: ImportedClass sig
+importParentClass :: ToJSRef props
+                  => ImportedClass props sig
+                  -> props
                   -> ReactNode sig
                   -> ReactNode sig
-importParentClass elem children = ForeignClass elem children
-
-
-
+importParentClass elem props children = ForeignClass elem props children
