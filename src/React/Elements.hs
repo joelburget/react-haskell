@@ -109,17 +109,3 @@ importParentClass elem children = ForeignClass elem children
 
 
 
--- importLeafClass :: ToJSRef props
---                 => ImportedClass props sig
---                 -> props
---                 -> ReactNode sig
--- importLeafClass elem props = ForeignClass elem (toJSRef props) ""
-
-
-
--- importParentClass :: ToJSRef props
---                   => ImportedClass props sig
---                   -> props
---                   -> ReactNode sig
---                   -> ReactNode sig
--- importParentClass elem props children = ForeignClass elem (toJSRef props) children
