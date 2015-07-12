@@ -13,7 +13,7 @@ import React.GHCJS
 import React.Rebindable
 
 foreign import javascript "window.Layout"
-    pageLayout :: ImportedClass ()
+    pageLayout :: ImportedClass NoProps ()
 
 page_ :: () -> ReactNode Void
 page_ = classLeaf $ smartClass
@@ -26,7 +26,7 @@ page_ = classLeaf $ smartClass
     }
 
 pageLayout_ :: ReactNode () -> ReactNode ()
-pageLayout_ = importParentClass pageLayout
+pageLayout_ = importParentClass pageLayout noProps
 
 clicker_ :: () -> ReactNode ()
 clicker_ = classLeaf $ dumbClass

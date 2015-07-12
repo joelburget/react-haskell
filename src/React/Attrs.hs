@@ -4,7 +4,28 @@ module React.Attrs where
 import qualified Data.Aeson as Aeson
 import Data.Text (Text)
 
+import React.GHCJS
 import React.Types
+
+
+-- | When importing a foreign class you must specify the props it takes. In the
+-- common case where it takes no props, only handles layout, it's convenient to
+-- specify the type of props as 'NoProps'.
+--
+-- Example:
+--
+--     pageLayout_ :: ReactNode () -> ReactNode ()
+--     pageLayout_ = importParentClass pageLayout noProps
+newtype NoProps = NoProps ()
+
+
+-- | Used when importing a foreign class taking no props. See above example.
+noProps :: NoProps
+noProps = NoProps ()
+
+
+instance ToJSRef NoProps where
+    toJSRef _ = newObj
 
 
 mkStaticAttr :: Aeson.ToJSON a => Text -> a -> AttrOrHandler sig
