@@ -62,6 +62,8 @@ reactNodeToJSAny sigHandler componentId (LocalNode f node)      =
 
 
 jsName :: EvtType -> JSString
+jsName BlurEvt = "onBlur"
+jsName FocusEvt = "onFocus"
 jsName ChangeEvt = "onChange"
 jsName KeyDownEvt = "onKeyDown"
 jsName KeyPressEvt = "onKeyPress"

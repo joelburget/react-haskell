@@ -8,8 +8,11 @@ module React.Events
     , KeyboardEvent(..)
     , ChangeEvent(..)
     , FocusEvent(..)
+    , BlurEvent(..)
 
     -- * Native Events
+    , onBlur
+    , onFocus
     , onChange
     , onKeyDown
     , onKeyPress
@@ -141,14 +144,26 @@ instance FromJSRef ChangeEvent where
 instance NFData ChangeEvent where
     rnf e@(ChangeEvent str stamp) = str `seq` stamp `seq` ()
 
-data FocusEvent e =
-  FocusEvent { -- focusEventProperties :: ! (EventProperties e)
-               domEventTarget :: !e -- NativeElem
-             , relatedTarget :: !e -- NativeElem
-             }
+-- data FocusEvent e =
+--   FocusEvent { -- focusEventProperties :: ! (EventProperties e)
+--                domEventTarget :: !e -- NativeElem
+--              , relatedTarget :: !e -- NativeElem
+--              }
 
-instance NFData e => NFData (FocusEvent e) where
-    rnf (FocusEvent a b) = a `seq` b `seq` ()
+-- instance NFData e => NFData (FocusEvent e) where
+--     rnf (FocusEvent a b) = a `seq` b `seq` ()
+
+data FocusEvent = FocusEvent deriving Generic
+
+instance NFData FocusEvent
+
+instance FromJSRef FocusEvent where
+
+data BlurEvent = BlurEvent deriving (Show, Generic)
+
+instance FromJSRef BlurEvent where
+
+instance NFData BlurEvent
 
 
 -- XXX isn't this in GHCJS.Prim?
@@ -156,6 +171,12 @@ instance Eq JSString where
     (==) = eqRef
 
 -- TODO: handle (a -> Maybe b) or (a -> b)
+
+onBlur :: (BlurEvent -> Maybe s) -> AttrOrHandler s
+onBlur = mkEventHandler BlurEvt
+
+onFocus :: (FocusEvent -> Maybe s) -> AttrOrHandler s
+onFocus = mkEventHandler FocusEvt
 
 onChange :: (ChangeEvent -> Maybe s) -> AttrOrHandler s
 onChange = mkEventHandler ChangeEvt

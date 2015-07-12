@@ -27,6 +27,8 @@ type JSON = Aeson.Value
 
 data EvtType
    = ChangeEvt
+   | BlurEvt
+   | FocusEvt
    | KeyDownEvt
    | KeyPressEvt
    | KeyUpEvt
