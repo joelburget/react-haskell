@@ -43,8 +43,7 @@ mkEventHandler :: (FromJSRef evt, NFData evt)
                -> (evt -> Maybe signal)
                -> AttrOrHandler signal
 mkEventHandler ty handle =
-    -- XXX throwing away ix
-    let handle' ix raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
+    let handle' raw = handle $!! fromJust $ unsafePerformIO $ fromJSRef $ castRef raw
     in Handler (EventHandler handle' ty)
 
 

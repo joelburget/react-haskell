@@ -13,26 +13,35 @@ import React.GHCJS
 import React.Rebindable
 
 foreign import javascript "window.Layout"
-    pageLayout :: ImportedClass NoProps ()
+    pageLayout :: ImportedClass NoProps Side
+
+data Side = LeftSide | RightSide
+
+transitionHandler :: ((Int, Int), Side) -> ((Int, Int), Maybe Void)
+transitionHandler ((l, r), LeftSide)  = ((l + 1, r), Nothing)
+transitionHandler ((l, r), RightSide) = ((l, r + 1), Nothing)
 
 page_ :: () -> ReactNode Void
 page_ = classLeaf $ smartClass
     { name = "page"
-    , transition = \(state, insig) -> (state + 1, Nothing)
-    , initialState = 0
-    , renderFn = \_ state -> pageLayout_ $ do
-            clicker_ ()
-            counter_ state
+    , transition = transitionHandler
+    , initialState = (0, 0)
+    , renderFn = \_ (left, right) -> pageLayout_ $ do
+            clicker_ LeftSide
+            counter_ left
+
+            clicker_ RightSide
+            counter_ right
     }
 
-pageLayout_ :: ReactNode () -> ReactNode ()
+pageLayout_ :: ReactNode Side -> ReactNode Side
 pageLayout_ = importParentClass pageLayout noProps
 
-clicker_ :: () -> ReactNode ()
+clicker_ :: Side -> ReactNode Side
 clicker_ = classLeaf $ dumbClass
     { name = "clicker"
-    , renderFn = \_ _ ->
-        button_ [ onClick (const (Just ())) ] "click me!"
+    , renderFn = \side _ ->
+        button_ [ onClick (const (Just side)) ] "click me!"
     }
 
 counter_ :: Int -> ReactNode a

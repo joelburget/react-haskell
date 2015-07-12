@@ -76,15 +76,15 @@ jsName MouseLeaveEvt = "onMouseLeave"
 
 unHandler :: (s -> IO ())
           -> EventHandler s
-          -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
-unHandler act (EventHandler handle ty) = (\ix e -> act <$> handle ix e, ty)
+          -> (RawEvent -> Maybe (IO ()), EvtType)
+unHandler act (EventHandler handle ty) = (\e -> act <$> handle e, ty)
 
 
 makeHandler :: Int
             -- ^ component id
             -> JSAny
             -- ^ object to set this attribute on
-            -> (Int -> RawEvent -> Maybe (IO ()), EvtType)
+            -> (RawEvent -> Maybe (IO ()), EvtType)
             -- ^ handler
             -> IO ()
 makeHandler componentId obj (handle, evtTy) = do
@@ -93,11 +93,10 @@ makeHandler componentId obj (handle, evtTy) = do
 
 
 -- | Make a javascript callback to synchronously execute the handler
-handlerToJs :: (Int -> RawEvent -> Maybe (IO ()))
-            -> IO (JSFun (JSRef Int -> RawEvent -> IO ()))
-handlerToJs handle = syncCallback2 AlwaysRetain True $ \idRef evt -> do
-    Just componentId <- fromJSRef idRef
-    fromMaybe (return ()) (handle componentId evt)
+handlerToJs :: (RawEvent -> Maybe (IO ()))
+            -> IO (JSFun (RawEvent -> IO ()))
+handlerToJs handle = syncCallback1 AlwaysRetain True $
+    fromMaybe (return ()) . handle
 
 
 attrsToJson :: [Attr] -> JSON

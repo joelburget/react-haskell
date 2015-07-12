@@ -39,7 +39,7 @@ data EvtType
 
 
 data EventHandler signal = EventHandler
-    { handler :: Int -> RawEvent -> Maybe signal
+    { handler :: RawEvent -> Maybe signal
     , evtType :: EvtType
     }
 
