@@ -34,6 +34,9 @@ domLeaf name attrs =
 text_ :: Text -> ReactNode sig
 text_ = NodeText
 
+textarea_ :: [AttrOrHandler sig] -> Text -> ReactNode sig
+textarea_ attrs str = domParent "textarea" attrs (text_ str)
+
 -- TODO generate these automatically
 a_ :: [AttrOrHandler sig] -> ReactNode sig -> ReactNode sig
 a_ = domParent "a"
@@ -356,7 +359,6 @@ wbr_ = domLeaf "wbr"
 
 -- script :: RawAttrs -> JSString -> IO ForeignNode
 -- style :: RawAttrs -> JSString -> IO ForeignNode
--- textarea :: RawAttrs -> JSString -> IO ForeignNode
 -- title :: RawAttrs -> JSString -> IO ForeignNode
 
 -- svg!
