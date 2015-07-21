@@ -29,6 +29,7 @@ import React.Registry
 import React.Types
 
 
+-- TODO think about whether this could be a monoid or something
 data ClassConfig props state insig exsig ctx = ClassConfig
     { renderFn :: props -> state -> ReactNode insig
     , initialState :: state
