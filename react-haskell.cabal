@@ -1,5 +1,5 @@
 name:                react-haskell
-version:             2.0.0
+version:             2.0.1
 synopsis:            Haskell React bindings
 description:
   This package provides high level bindings to Facebook's <http://facebook.github.io/react/ React> library, meant for use with GHCJS.

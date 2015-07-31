@@ -70,15 +70,30 @@ data ReactClass props state insig exsig ctx = ReactClass
 -- assignKey (ComponentElement (
 
 -- TODO use phantom type to indicate renderability? Only sequence is not.
+--
+-- | A 'render'able node.
+--
+-- See the React [formal type definitions](http://facebook.github.io/react/docs/glossary.html#formal-type-definitions) for more context.
 data ReactNode sig
+    -- | A React class. Corresponds to 'ReactComponentElement'.
     = ComponentElement (ReactComponentElement sig)
+    -- | A React DOM node. Corresponds to 'ReactDOMElement'
     | DomElement (ReactDOMElement sig)
 
+    -- | A renderable string. Corresponds to 'ReactText'.
+    | NodeText Text
+    -- | A sequence of react nodes. Corresponds to 'ReactFragment'.
+    | NodeSequence [ReactNode sig]
+
+    -- | A (JavaScript) React class. Also corresponds to
+    -- 'ReactComponentElement'.
     | forall props. ToJSRef props =>
         ForeignClass (ImportedClass props sig) props (ReactNode sig)
 
-    | NodeText Text
-    | NodeSequence [ReactNode sig]
+    -- | A local React Node. No direct correspondence in the formal type
+    -- definitions.
+    --
+    -- This exists to embed generalizable nodes using 'local'.
     | forall insig. LocalNode (insig -> sig) (ReactNode insig)
 
 
