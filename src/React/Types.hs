@@ -110,6 +110,12 @@ instance IsString (ReactNode sig) where
     fromString str = NodeText (fromString str)
 
 
+-- | DOM nodes mix attributes and handlers.
+--
+-- @
+--          v- attribute v  v----- handler -----v
+-- input_ [ class_ "input", onChange handleChange ]
+-- @
 data AttrOrHandler signal
     = StaticAttr Text JSON
     | Handler (EventHandler signal)

@@ -14,8 +14,10 @@ import React.Types
 --
 -- Example:
 --
---     pageLayout_ :: ReactNode () -> ReactNode ()
---     pageLayout_ = importParentClass pageLayout noProps
+-- @
+-- pageLayout_ :: ReactNode () -> ReactNode ()
+-- pageLayout_ = importParentClass pageLayout noProps
+-- @
 newtype NoProps = NoProps ()
 
 
