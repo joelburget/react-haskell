@@ -10,24 +10,27 @@ description:
   .
   Here's a simple example which demonstrates basic elements, attributes, state, and handling events.
   .
-  > -- We're creating a class with JSString state
-  > data Example
-  > instance ReactKey Example where
-  >     type ClassState Example = JSString
-  >     type AnimationState Example = ()
-  >     type Signal Example = JSString
+  > page_ :: ReactNode Void
+  > page_ =
+  >     let cls = smartClass
+  >             { name = "page"
   >
-  > -- updating to the new state without animation
-  > transition :: JSString -> JSString -> (JSString, [AnimConfig Example])
-  > transition oldState signal = (signal, [])
+  >             -- initially the input is empty
+  >             , initialState = ""
   >
-  > view :: JSString -> React Example ()
-  > view str = div_ [ class_ "container" ] $ do
-  >     input_ [ value_ str, onChange (Just . value . target) ]
+  >             -- always transition to the input's new value
+  >             , transition = \(_, value) -> (value, Nothing)
+  >
+  >             , renderFn = \_ str -> div_ [ class_ "container" ] $ do
+  >                 input_ [ value_ str, onChange (Just . value . target) ]
+  >             }
+  >     in classLeaf cls ()
   >
   > main :: IO ()
-  > main = withElem "id" $ \elem ->
-  >     render elem =<< createClass view transition "" () []
+  > main = do
+  >     Just doc <- currentDocument
+  >     Just elem <- documentGetElementById doc ("elem" :: JSString)
+  >     render page_ elem
 license:             MIT
 license-file:        LICENSE
 author:              Joel Burget
