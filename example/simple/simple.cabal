@@ -22,6 +22,7 @@ executable simple
   build-depends:
     base >= 4.7 && < 5,
     react-haskell,
+    text,
     void == 0.7
   -- hs-source-dirs:
   default-language:    Haskell2010

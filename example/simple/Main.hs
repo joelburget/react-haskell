@@ -5,13 +5,14 @@ module Main where
 import Prelude hiding ((>>), (=<<), return)
 import Data.String
 
+import Data.Text (Text)
 import Data.Void
 import React
 import React.DOM
 import React.GHCJS
 import React.Rebindable
 
-page_ :: JSString -> ReactNode Void
+page_ :: Text -> ReactNode Void
 page_ = classLeaf $ smartClass
     { name = "page"
     , transition = \(state, insig) -> (state + 1, Nothing)
@@ -26,7 +27,7 @@ page_ = classLeaf $ smartClass
             clickCounter_ state
     }
 
-userName_ :: JSString -> ReactNode Void
+userName_ :: Text -> ReactNode Void
 userName_ = classLeaf $ dumbClass
     { name = "userName"
     , renderFn = \props _ -> div_ [ class_ "userName" ] $ do

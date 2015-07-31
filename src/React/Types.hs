@@ -49,6 +49,12 @@ data EventHandler signal = EventHandler
 -- scoping.
 --
 -- Use 'createClass' to construct.
+--
+-- * 'props': The type of props passed in.
+-- * 'state': The type of state this class maintains.
+-- * 'insig': The type of signals this class handles (see 'classTransition')
+-- * 'exsig': The type of signals this class emits (see 'classTransition')
+-- * 'ctx': This is only used for React's mythical context feature -- If you know what that is, see 'childContext' for usage.
 data ReactClass props state insig exsig ctx = ReactClass
     { classForeign :: JSAny
     , classTransition :: (state, insig) -> (state, Maybe exsig)

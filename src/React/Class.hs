@@ -54,6 +54,7 @@ data ClassConfig props state insig exsig ctx = ClassConfig
     }
 
 
+-- | Defaults for a stateless ("layout") class.
 dumbClass :: ClassConfig props () sig sig JSString
 dumbClass = ClassConfig
     { name = "Anonymous Stateless Class"
@@ -65,6 +66,7 @@ dumbClass = ClassConfig
     }
 
 
+-- | Defaults for a stateful ("controller") class.
 smartClass :: ClassConfig props state insig exsig JSString
 smartClass = ClassConfig
     { name = "Anonymous Stateful Class"
@@ -90,6 +92,11 @@ willUnmount registry idRef = do
     deallocRegistry registry componentId
 
 
+-- | A type that can be used in a child context.
+--
+-- React manages context (unlike props and state, which are managed entirely
+-- within Haskell), so anything used in child context must be convertable to a
+-- 'JSRef' and must be describable by a 'PropType'.
 type ClassCtx a = (ToJSRef a, PropTypable a)
 
 

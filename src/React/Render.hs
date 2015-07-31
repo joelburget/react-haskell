@@ -13,17 +13,18 @@ import React.Interpret
 import React.Types
 
 
--- `Void` forces our top-level class `transition` to always choose `Nothing`
--- over outputting a signal.
+-- | Render a top-level component.
+--
+-- Note that the rendered component can't possibly emit signals.
 render :: ReactNode Void -> Element -> IO ()
 render node elem = do
-    -- XXX
     node' <- reactNodeToJSAny undefined 0 node
     js_render node' elem
 
 
+-- | Unlike 'render', 'debugRender' can render components that emit signals, as
+-- long as they can be shown.
 debugRender :: Show sig => ReactNode sig -> Element -> IO ()
 debugRender node elem = do
-    -- XXX
     node' <- reactNodeToJSAny print 0 node
     js_render node' elem

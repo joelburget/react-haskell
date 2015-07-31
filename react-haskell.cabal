@@ -13,7 +13,9 @@ description:
   > page_ :: ReactNode Void
   > page_ =
   >     let cls = smartClass
-  >             { name = "page"
+  >             -- this is a record and these should really be curly braces,
+  >             -- but haddock breaks on them.
+  >             [ name = "page"
   >
   >             -- initially the input is empty
   >             , initialState = ""
@@ -23,7 +25,7 @@ description:
   >
   >             , renderFn = \_ str -> div_ [ class_ "container" ] $ do
   >                 input_ [ value_ str, onChange (Just . value . target) ]
-  >             }
+  >             ]
   >     in classLeaf cls ()
   >
   > main :: IO ()

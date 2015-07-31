@@ -50,6 +50,7 @@ fIsRequired = undefined
 data PropRequired = IsRequired | IsntRequired
 
 
+-- | The equivalent to React propTypes.
 data PropType
     -- = PropArrayOf PropType
     = PropBool PropRequired
@@ -74,6 +75,16 @@ ptReq :: PropRequired -> FPropType -> FPropType
 ptReq IsRequired = fIsRequired
 ptReq IsntRequired = id
 
+
+-- | Describe the PropType of a type
+--
+-- Examples:
+--
+-- @
+-- propType (_ :: JSString) = PropString IsRequired
+--
+-- propType (_ :: Bool) = PropBool IsRequired
+-- @
 class PropTypable a where
     propType :: a -> PropType
 
