@@ -160,11 +160,6 @@ instance FromJSRef BlurEvent where
 
 instance NFData BlurEvent
 
-
--- XXX isn't this in GHCJS.Prim?
-instance Eq JSString where
-    (==) = eqRef
-
 -- TODO: handle (a -> Maybe b) or (a -> b)
 
 onBlur :: (BlurEvent -> Maybe s) -> AttrOrHandler s
