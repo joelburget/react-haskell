@@ -109,6 +109,11 @@ instance Monoid (ReactNode sig) where
 instance IsString (ReactNode sig) where
     fromString str = NodeText (fromString str)
 
+-- sigMap isn't quite ''fmap' because we can observe the application.
+-- | Change the signal type of a @ReactNode@ by applying the given function.
+sigMap :: (a -> b) -> ReactNode a -> ReactNode b
+sigMap f (LocalNode g node) = LocalNode (f . g) node
+sigMap f rNode = LocalNode f rNode
 
 -- | DOM nodes mix attributes and handlers.
 --
